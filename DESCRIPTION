@@ -1,10 +1,10 @@
 Package: centrifugeR
 Type: Package
-Title: Analyze and dispaly microbial data in R
+Title: Analyze and dispaly metagenomics data in R
 Version: 0.1
 Date: 2015-10-18
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
-Description: More about what it does (maybe more than one line)
-Suggests: shiny, shinyFiles, sunburstR, DT, sparkline, commonR
-License: GPLv3
+Description: R package to visualize and analyse metagenomics data created by Kraken, metaphlan, and centrifuge.
+Imports: shiny, sparkline, htmlwidgets, sunburstR, DT
+License: GPL-3
 LazyData: TRUE
