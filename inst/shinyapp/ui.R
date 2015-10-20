@@ -1,10 +1,8 @@
 library(shiny)
-library(sunburstR)
-library(DT)
 
 # identifications that are considered contaminants and may be filtered by default
 commoncontaminants=c('s_Homo sapiens','u_unclassified','s_synthetic construct','s_Enterobacteria phage phiX174 sensu lato')
-allcontaminants=c(commoncontaminants,'s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae')
+allcontaminants=c(commoncontaminants,'s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae', 's_Ralstonia pickettii')
 
 shinyUI(navbarPage("Metagenomics results viewer",
   #theme = "bootstrap.css",
@@ -34,6 +32,14 @@ shinyUI(navbarPage("Metagenomics results viewer",
         -moz-box-sizing: content-box;
         box-sizing: content-box;
       }
+      div[id=samples_overview]>div>table>thead>tr> th:first-child,
+      div[id=samples_overview]>div>table>tbody>tr> td:first-child {
+        min-width: 250px;
+      }
+      div[id=samples_comparison]>div>table>thead>tr> th:first-child,
+      div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
+        min-width: 225px;
+      }
     "))
   ),
   tabPanel("Data",
@@ -47,11 +53,7 @@ shinyUI(navbarPage("Metagenomics results viewer",
                   '.report'
                 )
       ),
-      textInput("data_dir", "Data directory on server", value = "", width="80%"),
-      selectizeInput('contaminant_selector', label="Filter contaminants",
-                    allcontaminants, selected=commoncontaminants,
-                    multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
-                    width="80%")
+      textInput("data_dir", "Data directory on server", value = "/scratch0/igm3/fbreitwieser/microbiome-pipeline/processing/cp_patients2", width="80%")
     )
   ),
   tabPanel("Sample viewer",

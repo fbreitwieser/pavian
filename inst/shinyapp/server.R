@@ -1,7 +1,4 @@
-library(sunburstR)
-library(DT)
-library(commonR)
-library(sparkline)
+library(shiny)
 
 shinyServer(function(input, output, clientData, session) {
 
@@ -15,8 +12,8 @@ shinyServer(function(input, output, clientData, session) {
     print(kraken_files)
     my_kraken_reports <- lapply(kraken_files,
            function(x) {
-             commonR::load.or.create(function() {
-               commonR::read.krakenres(x)
+             load.or.create(function() {
+               read.krakenres(x)
              }, basename(x))
            })
     names(my_kraken_reports) <- sub(paste0(input$data_dir,"/"),"",kraken_files,fixed=TRUE)
@@ -24,8 +21,9 @@ shinyServer(function(input, output, clientData, session) {
   })
 
   ## Observe the directory textInput to update sample selectors when it changed
-  observe({
-    my.samples <- gtools::mixedsort(list.dirs(input$data_dir, full.names=FALSE, recursive = FALSE))
+  observe( {
+
+    my.samples <- paddedsort(list.dirs(input$data_dir, full.names=FALSE, recursive = FALSE))
     kraken_files <- sub(paste0(input$data_dir,"/"),"",list_kraken_files(input$data_dir),fixed=FALSE)
     updateTextInput(session, 'data_dir',
                     label=paste0("Data directory on server (",length(my.samples)," samples in selected directory)"))
@@ -36,13 +34,14 @@ shinyServer(function(input, output, clientData, session) {
       updateSelectizeInput(session, sample_selector,
                            label=paste(length(my.samples),"samples in directory",input$data_dir),
                            choices=my.samples, selected=my.samples)
+
   })
 
   ## keep sample_selector2 and sample_selector3 synced
-  observeEvent(input$sample_selector2, function() {
+  observeEvent(input$sample_selector2, {
     updateSelectizeInput(session,"sample_selector3",selected=input$sample_selector2)
   })
-  observeEvent(input$sample_selector3, function() {
+  observeEvent(input$sample_selector3, {
     updateSelectizeInput(session,"sample_selector2",selected=input$sample_selector3)
   })
 
@@ -63,7 +62,7 @@ shinyServer(function(input, output, clientData, session) {
 
     ## filter contaminants
     for (c in input$contaminant_selector2)
-      my_report <- commonR::filter.taxon(my_report, c)
+      my_report <- filter_taxon(my_report, c)
 
     my_report
   })
@@ -71,7 +70,6 @@ shinyServer(function(input, output, clientData, session) {
   ##----------------------
   ## Sample viewer outputs
   output$sunburst <- sunburstR::renderSunburst({
-    source("/home/fbreitwieser/projects/centrifugeR/R/kraken_sunburst.R")
 
     # get reports with rows as selected in the table
     my_report <- sample_view_report()[sort(input$sample_view_rows_all),]
@@ -99,7 +97,7 @@ shinyServer(function(input, output, clientData, session) {
   output$samples_overview <- DT::renderDataTable({
 
     # TODO: Display sample names as a column such that they can be sorted or filtered (not as row names)
-    samples_summary <- do.call(rbind,lapply(kraken_reports(),commonR::summarize.kraken.report))
+    samples_summary <- do.call(rbind,lapply(kraken_reports(), summarize.kraken.report))
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
 
@@ -115,7 +113,10 @@ shinyServer(function(input, output, clientData, session) {
     numeric.col <- c("reads")
     my_reports <- kraken_reports()
     my_reports <- lapply(names(my_reports),function(report_name) {
-      report <- subset(my_reports[[report_name]],level==input$classification_level,c(id.col,numeric.col))
+      ## subset report to the requested level
+      report <- my_reports[[report_name]][my_reports[[report_name]]$level==input$classification_level,
+                                          c(id.col,numeric.col)]
+      ## set the basename of the report file as name for the numeric column
       colnames(report)[2] <- sub(".*/(.*)(-PT.*)?.report","\\1",report_name)
       report
     })
@@ -128,7 +129,7 @@ shinyServer(function(input, output, clientData, session) {
 
     ## filter contaminants if defined
     if (length(input$contaminant_selector3) > 0 ) {
-      summarized_report <- subset(summarized_report, !name %in% input$contaminant_selector3)
+      summarized_report <- summarized_report[!summarized_report$name %in% input$contaminant_selector3,]
     }
 
     ## transform to percent

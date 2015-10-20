@@ -1,14 +1,12 @@
 
 #' kraken_sunburst: Create a
 #'
-#' @param krakenres
-#' @param log10
+#' @param krakenres kraken report, read with read.krakenres
 #'
-#' @return
+#' @return sunburst widget
 #' @export
 #'
-#' @examples
-kraken_sunburst <- function(krakenres,log10=FALSE) {
+kraken_sunburst <- function(krakenres) {
 
   ## update end nodes if the data.frame was subset
   end_node <- krakenres[,"depth"] >= c(krakenres[,"depth"][-1],0)
@@ -24,8 +22,5 @@ kraken_sunburst <- function(krakenres,log10=FALSE) {
   kk$taxonstring <- gsub("|","-",kk$taxonstring,fixed = TRUE)
   kk <- kk[!is.na(kk$taxonstring),]
 
-  if (isTRUE(log10)) {
-    kk$counts <- log10(kk$counts)
-  }
-  sunburst(data.frame(V1=kk$taxonstring,V2=kk$reads_stay),count=TRUE)
+  sunburstR::sunburst(data.frame(V1=kk$taxonstring,V2=kk$reads_stay),count=TRUE)
 }
