@@ -17,7 +17,7 @@ padded_sort <- function(x, n_pad=5) {
     return(x)
   sprintf_pad_string <- paste0("%.",n_pad,"d")
 
-  numeric_matches <- sapply(regmatches(x, gregexpr('\\d+', x)),as.numeric)
+  numeric_matches <- sapply(regmatches(x, regexpr('\\d+', x)),as.numeric)
   padded_x <- sapply(seq_along(x), function(n) {
     if (length(numeric_matches[[n]]) > 0) {
       sub('\\d+',sprintf(sprintf_pad_string,
@@ -30,3 +30,4 @@ padded_sort <- function(x, n_pad=5) {
   ## sort by both padded_x and x to break ties, such as between A1 and A01
   x[order(padded_x,x)]
 }
+

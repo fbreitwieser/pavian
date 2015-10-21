@@ -2,10 +2,12 @@ library(shiny)
 library(centrifugeR)
 
 # identifications that are considered contaminants and may be filtered by default
-commoncontaminants=c('s_Homo sapiens','u_unclassified','s_synthetic construct','s_Enterobacteria phage phiX174 sensu lato')
-allcontaminants=c(commoncontaminants,'s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae', 's_Ralstonia pickettii')
+commoncontaminants1=c('s_Homo sapiens','s_synthetic construct','u_unclassified','s_Enterobacteria phage phiX174 sensu lato')
+allcontaminants=c(commoncontaminants1,'s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae', 's_Ralstonia pickettii')
+commoncontaminants <- c()  ## this vector is initially filtered
 
-shinyUI(navbarPage("Metagenomics results viewer",
+
+shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
   #theme = "bootstrap.css",
   tags$head(
     tags$style(HTML("
@@ -71,7 +73,8 @@ shinyUI(navbarPage("Metagenomics results viewer",
                          label="No sample directory selected - please update it on the 'Data' tab",
                          choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
          style="font-size:80%"),
-        DT::dataTableOutput('samples_overview')
+        DT::dataTableOutput('samples_overview'),
+        uiOutput("view_in_sample_viewer")
     )
   ),
   tabPanel("Sample viewer",
@@ -94,16 +97,18 @@ shinyUI(navbarPage("Metagenomics results viewer",
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
                     width="80%")
       )),
-    fluidRow(DT::dataTableOutput('sample_view'))
+    fluidRow(DT::dataTableOutput('sample_view')),
+    fluidRow(uiOutput("view_in_samples_comparison"))
 
   ),
-  tabPanel("Sample comparison",
+  tabPanel("Samples comparison",
     fluidRow(
       column(5,
         div(
           selectizeInput('sample_selector3',
                          label="No sample directory selected - please update it on the 'Data' tab",
-                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%')),
+                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
+         style="font-size:80%"),
         div(selectizeInput('contaminant_selector3', label="Filter contaminants",
                     allcontaminants, selected=commoncontaminants,
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
@@ -113,7 +118,7 @@ shinyUI(navbarPage("Metagenomics results viewer",
       column(1, radioButtons("input",label=NULL, c("kraken","centrifuge","blastx-lca","metaphlan"), "kraken" )),
       column(1, radioButtons("classification_level",label=NULL,c("S","G","F","O","C","P","D"),"S")),
       #column(1, checkboxInput("update_pubmed", 'Update Pubmed counts', value = FALSE)),
-      column(2, checkboxInput("display_heatmap", 'Display Heatmap', value = FALSE),
+      column(4, checkboxInput("display_heatmap", 'Display Heatmap', value = FALSE),
                 radioButtons("heatmap_scale", 'Scale',
                             c("none","row","column"),selected="none",inline=TRUE),
                 checkboxGroupInput("heatmap_cluster", "Cluster",
@@ -126,6 +131,11 @@ shinyUI(navbarPage("Metagenomics results viewer",
     fluidRow(
       column(1),
       d3heatmap::d3heatmapOutput('samples_comparison_heatmap',width="100%")
+    )
+  ), ## end tabPanel samples_comparison
+  tabPanel("Clustering",
+    fluidRow(
+      shiny::plotOutput("cluster_plot")
     )
   )
 ))

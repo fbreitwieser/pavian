@@ -32,13 +32,19 @@ shinyServer(function(input, output, clientData, session) {
            function(x) {
              load_or_create(function() {
                read_krakenres(x)
-             }, basename(x), cache_dir = getOption("centrifugeR.cache_dir"))
+             }, sprintf("%s.rds",basename(x)), cache_dir = getOption("centrifugeR.cache_dir"))
            })
     names(my_kraken_reports) <- sub(paste0(input$data_dir,"/"),"",kraken_files,fixed=TRUE)
 	  names(my_kraken_reports) <- sub(".report$","",names(my_kraken_reports))
     info_message("Kraken report names: ",paste(names(my_kraken_reports),collapse="\n\t"))
     my_kraken_reports
   })
+
+  sorted_kraken_files <- function() {
+    kraken_files <- sub(paste0(input$data_dir,"/"),"",list_kraken_files(input$data_dir, input$file_glob_pattern),fixed=TRUE)
+    #padded_sort(sub(".report$","",kraken_files))
+    sort(sub(".report$","",kraken_files))
+  }
 
   ## Observe the directory textInput to update sample selectors when it changed
   observe( {
@@ -50,8 +56,7 @@ shinyServer(function(input, output, clientData, session) {
         updateSelectizeInput(session, sample_selector, label = "No valid directory", choices = c(), selected = c())
       }
     } else {
-      kraken_files <- sub(paste0(input$data_dir,"/"),"",list_kraken_files(input$data_dir, input$file_glob_pattern),fixed=TRUE)
-	    kraken_files <- padded_sort(sub(".report$","",kraken_files))
+      kraken_files <- sorted_kraken_files()
       my_samples <- get_sample_name(kraken_files,input$regex_pattern)
       info_message("Found ",length(kraken_files)," files: \n\t",paste0(kraken_files," [sample ",my_samples,"]",collapse="\n\t"))
       updateTextInput(session, 'data_dir',
@@ -201,8 +206,40 @@ shinyServer(function(input, output, clientData, session) {
     my_report$level <- as.factor(my_report$level)
 
     colnames(my_report) <- beautify_string(colnames(my_report))
-    DT::datatable(my_report, filter='top')
+    DT::datatable(my_report, filter='top',selection='single')
   }, server=TRUE)
+
+  ## When a row (i.e. a taxonomical entry) gets selected in the sample view table, an action button appears to view the species in the overview
+  output$view_in_samples_comparison <- renderUI({
+    selected_row <- input$sample_view_rows_selected
+    if (length(selected_row) != 1)
+      return()
+
+    my_report <- sample_view_report()
+    selected_sample <- my_report[input$sample_view_rows_selected,"name"]
+    selected_sample <- sub("^u_","",selected_sample)
+    selected_sample <- sub("^-_","",selected_sample)
+    selected_sample <- sub("^d_","domain ",selected_sample)
+    selected_sample <- sub("^k_","kingdom ",selected_sample)
+    selected_sample <- sub("^p_","phylum ",selected_sample)
+    selected_sample <- sub("^o_","order ",selected_sample)
+    selected_sample <- sub("^f_","family ",selected_sample)
+    selected_sample <- sub("^g_","genus ",selected_sample)
+    selected_sample <- sub("^s_","species ",selected_sample)
+
+    ## TODO: Add a custom search functionality
+    #actionButton("view_selected_in_samples_comparison",paste("--> View abundances of ",selected_sample,"across samples"))
+  })
+
+  observeEvent(input$view_selected_in_samples_comparison,{
+    my_report <- sample_view_report()
+    selected_sample <- my_report[input$sample_view_rows_selected,"name"]
+    selected_level <- my_report[input$sample_view_rows_selected,"name"]
+
+
+    updateTabsetPanel(session,"main_page",selected="Sample comparison")
+  }, ignoreNULL = TRUE)
+
 
   ##-------------------------
   ## Samples overview output
@@ -216,16 +253,33 @@ shinyServer(function(input, output, clientData, session) {
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
 
-    DT::datatable(samples_summary)
+    DT::datatable(samples_summary,selection='single')
   })
+
+
+  ## When a row (i.e. a sample gets selected in the samples) an action button appears to view in the sample viewer
+  output$view_in_sample_viewer <- renderUI({
+    selected_row <- input$samples_overview_rows_selected
+    if (length(selected_row) != 1)
+      return()
+
+    selected_sample <- sorted_kraken_files()[input$samples_overview_rows_selected]
+    actionButton("view_selected_in_sample_viewer",paste("--> View details of sample",selected_sample))
+  })
+
+  observeEvent(input$view_selected_in_sample_viewer,{
+    selected_sample <- sorted_kraken_files()[input$samples_overview_rows_selected]
+    updateSelectInput(session,'sample_selector',selected=selected_sample)
+    updateTabsetPanel(session,"main_page",selected="Sample viewer")
+  }, ignoreNULL = TRUE)
 
   ##---------------------------
   ## Samples comparison output
   output$samples_comparison <- DT::renderDataTable({
 
     summarized_report <- get_summarized_report(input$classification_level, input$contaminant_selector3, input$numeric_display)
-	if (length(summarized_report) == 0)
-		return()
+	  if (length(summarized_report) == 0)
+		  return()
 
     ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
     sparklineColumnDefs <- list(
@@ -262,9 +316,8 @@ shinyServer(function(input, output, clientData, session) {
       drawCallback = sparklineDrawCallback,
       order = list(attr(summarized_report,'mean_column')-1,"desc"),
       filter = "top",
-      selection = "none",
       search = list(regex = TRUE, caseInsensitive = FALSE)   ## add regular expression search
-      ),rownames=FALSE)
+      ),rownames=FALSE,selection='single')
 
     ## use the sparkline package and the getDependencies function in htmlwidgets to get the
     ## dependencies required for constructing sparklines and then inject it into the dependencies
@@ -291,6 +344,27 @@ shinyServer(function(input, output, clientData, session) {
                            #colors=colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name ="RdYlBu")))(100)
                            )
     }
+  })
+
+  output$cluster_plot <- renderPlot({
+	  my_reports <- kraken_reports()
+	  if (length(my_reports) == 0)
+		  return()
+
+	  all.s.reads <- reshape(get_level_reads(my_reports,level=="S",min.perc=0)[,c(".id","name","reads")],
+	                         timevar=".id",
+	                         idvar="name",
+	                         direction="wide")
+	  rownames(all.s.reads) <- all.s.reads$NAME
+	  all.s.reads$name <- NULL
+	  colnames(all.s.reads) <- sub("reads.(.*)","\\1",colnames(all.s.reads))
+
+	  eucl.dist <- dist(t(all.s.reads))
+	  hc <- hclust(eucl.dist)
+	  dend <- as.dendrogram(hc)
+
+	  gapmap::gapmap(m = as.matrix(eucl.dist), d_row= rev(dend), d_col=dend,
+	                 h_ratio=c(0.2,0.5,0.3),v_ratio=c(0.2,0.5,0.3))
   })
 
 })
