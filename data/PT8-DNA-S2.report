@@ -1,0 +1,91 @@
+  0.20	28528	28528	U	0	unclassified
+ 99.80	13961725	243	-	1	root
+ 99.73	13952231	0	-	131567	  cellular organisms
+ 99.73	13952209	3	D	2759	    Eukaryota
+ 99.73	13952206	0	-	33154	      Opisthokonta
+ 99.73	13952205	0	K	33208	        Metazoa
+ 99.73	13952205	0	-	6072	          Eumetazoa
+ 99.73	13952205	0	-	33213	            Bilateria
+ 99.73	13952205	0	-	33511	              Deuterostomia
+ 99.73	13952205	0	P	7711	                Chordata
+ 99.73	13952205	0	-	89593	                  Craniata
+ 99.73	13952205	0	-	7742	                    Vertebrata
+ 99.73	13952205	0	-	7776	                      Gnathostomata
+ 99.73	13952205	0	-	117570	                        Teleostomi
+ 99.73	13952205	0	-	117571	                          Euteleostomi
+ 99.73	13952205	0	-	8287	                            Sarcopterygii
+ 99.73	13952205	0	-	1338369	                              Dipnotetrapodomorpha
+ 99.73	13952205	0	-	32523	                                Tetrapoda
+ 99.73	13952205	0	-	32524	                                  Amniota
+ 99.73	13952205	0	C	40674	                                    Mammalia
+ 99.73	13952205	0	-	32525	                                      Theria
+ 99.73	13952205	0	-	9347	                                        Eutheria
+ 99.73	13952205	0	-	1437010	                                          Boreoeutheria
+ 99.73	13952205	0	-	314146	                                            Euarchontoglires
+ 99.73	13952205	0	O	9443	                                              Primates
+ 99.73	13952205	0	-	376913	                                                Haplorrhini
+ 99.73	13952205	0	-	314293	                                                  Simiiformes
+ 99.73	13952205	0	-	9526	                                                    Catarrhini
+ 99.73	13952205	0	-	314295	                                                      Hominoidea
+ 99.73	13952205	0	F	9604	                                                        Hominidae
+ 99.73	13952205	0	-	207598	                                                          Homininae
+ 99.73	13952205	0	G	9605	                                                            Homo
+ 99.73	13952205	13952205	S	9606	                                                              Homo sapiens
+  0.00	1	0	K	4751	        Fungi
+  0.00	1	0	-	451864	          Dikarya
+  0.00	1	0	P	4890	            Ascomycota
+  0.00	1	0	-	716545	              saccharomyceta
+  0.00	1	0	-	147537	                Saccharomycotina
+  0.00	1	0	C	4891	                  Saccharomycetes
+  0.00	1	0	O	4892	                    Saccharomycetales
+  0.00	1	0	F	4893	                      Saccharomycetaceae
+  0.00	1	0	G	4930	                        Saccharomyces
+  0.00	1	1	S	4932	                          Saccharomyces cerevisiae
+  0.00	22	0	D	2	    Bacteria
+  0.00	18	0	P	201174	      Actinobacteria
+  0.00	18	0	C	1760	        Actinobacteria
+  0.00	18	0	-	85003	          Actinobacteridae
+  0.00	18	0	O	2037	            Actinomycetales
+  0.00	15	0	-	85007	              Corynebacterineae
+  0.00	15	0	F	1762	                Mycobacteriaceae
+  0.00	15	0	G	1763	                  Mycobacterium
+  0.00	15	14	-	77643	                    Mycobacterium tuberculosis complex
+  0.00	1	1	S	78331	                      Mycobacterium canettii
+  0.00	3	0	-	85009	              Propionibacterineae
+  0.00	3	0	F	31957	                Propionibacteriaceae
+  0.00	3	0	G	1743	                  Propionibacterium
+  0.00	3	3	S	1747	                    Propionibacterium acnes
+  0.00	4	0	P	1224	      Proteobacteria
+  0.00	2	0	C	28211	        Alphaproteobacteria
+  0.00	2	0	O	356	          Rhizobiales
+  0.00	1	0	F	41294	            Bradyrhizobiaceae
+  0.00	1	0	G	374	              Bradyrhizobium
+  0.00	1	1	S	288000	                Bradyrhizobium sp. BTAi1
+  0.00	1	0	F	82115	            Rhizobiaceae
+  0.00	1	0	-	227290	              Rhizobium/Agrobacterium group
+  0.00	1	0	G	379	                Rhizobium
+  0.00	1	0	S	384	                  Rhizobium leguminosarum
+  0.00	1	0	-	386	                    Rhizobium leguminosarum bv. trifolii
+  0.00	1	1	-	395492	                      Rhizobium leguminosarum bv. trifolii WSM2304
+  0.00	1	0	C	1236	        Gammaproteobacteria
+  0.00	1	0	O	72274	          Pseudomonadales
+  0.00	1	0	F	135621	            Pseudomonadaceae
+  0.00	1	0	G	286	              Pseudomonas
+  0.00	1	0	-	136845	                Pseudomonas putida group
+  0.00	1	1	S	303	                  Pseudomonas putida
+  0.00	1	0	C	28216	        Betaproteobacteria
+  0.00	1	0	O	80840	          Burkholderiales
+  0.00	1	0	F	506	            Alcaligenaceae
+  0.00	1	0	G	222	              Achromobacter
+  0.00	1	0	S	85698	                Achromobacter xylosoxidans
+  0.00	1	1	-	1167634	                  Achromobacter xylosoxidans NH44784-1996
+  0.07	9250	0	-	28384	  other sequences
+  0.07	9250	25	-	81077	    artificial sequences
+  0.07	9225	9225	S	32630	      synthetic construct
+  0.00	1	0	D	10239	  Viruses
+  0.00	1	0	-	35268	    Retro-transcribing viruses
+  0.00	1	0	F	11632	      Retroviridae
+  0.00	1	0	-	35276	        unclassified Retroviridae
+  0.00	1	0	-	206037	          Human endogenous retroviruses
+  0.00	1	0	S	45617	            Human endogenous retrovirus K
+  0.00	1	1	-	166122	              Human endogenous retrovirus K113

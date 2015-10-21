@@ -10,44 +10,47 @@
 #' @export
 #'
 #' @examples
-#' \donotrun{
-#' load.or.create(function() {
+#'\donotrun{
+#' load_or_create(function() {
 #'   rnorm(10000)
 #' }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
-#' }
-load.or.create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
-  if (!file.exists(cache_dir)) {
+#'}
+load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
+  if (is.null(cache_dir))
+    cache_dir <- "cache"
+
+  if (!dir.exists(cache_dir)) {
     dir.create(cache_dir)
   }
-  sav.file <- sprintf("%s/%s",cache_dir, name)
-  if (!file.exists(sav.file) || isTRUE(recreate)) {
+  sav_file <- sprintf("%s/%s",cache_dir, name)
+  if (!file.exists(sav_file) || isTRUE(recreate)) {
     message('creating ',name," ... ",appendLF=F)
     res <- f()
-    saveRDS(res,file=sav.file)
+    saveRDS(res,file=sav_file)
   } else {
     message('loading ',name," ... ",appendLF=F)
-    res <- readRDS(sav.file)
+    res <- readRDS(sav_file)
   }
   message("finished")
   return(res)
 }
 
-get.combinations <- function(...) {
+get_combinations <- function(...) {
   x <- list(...)
   #all.elemens <- Reduce(union,x)
-  my.names <- names(x)
+  my_names <- names(x)
 
   res <- c()
   # look at each combination of 1, 2, ..., n elements
   for (num.elements in length(x):1) {
 
-    apply(combn(my.names,num.elements),2,function(y) {
+    apply(combn(my_names,num.elements),2,function(y) {
       print(y)
-      my.name <- paste(y,collapse="&")
-      combn.elements <- Reduce(intersect,x[y])
-      if (length(combn.elements) > 0) {
-        res[my.name] <<- length(combn.elements)
-        x[y] <<- lapply(x[y], function(z) z[!z %in% combn.elements])
+      my_name <- paste(y,collapse="&")
+      comn_elements <- Reduce(intersect,x[y])
+      if (length(comn_elements) > 0) {
+        res[my_name] <<- length(comn_elements)
+        x[y] <<- lapply(x[y], function(z) z[!z %in% comn_elements])
       }
     })
   }

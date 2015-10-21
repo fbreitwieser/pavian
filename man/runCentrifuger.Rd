@@ -4,7 +4,10 @@
 \alias{runCentrifuger}
 \title{Run Centrifuger web interface}
 \usage{
-runCentrifuger()
+runCentrifuger(cache_dir = "cache")
+}
+\arguments{
+\item{cache_dir}{Directory to save temporary files}
 }
 \description{
 Run Centrifuger web interface

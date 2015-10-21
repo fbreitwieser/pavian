@@ -2,7 +2,8 @@
 
 export(filter_taxon)
 export(kraken_sunburst)
-export(load.or.create)
-export(paddedsort)
+export(load_or_create)
+export(padded_sort)
+export(read_krakenres)
 export(runCentrifuger)
-export(summarize.kraken.report)
+export(summarize_kraken_report)

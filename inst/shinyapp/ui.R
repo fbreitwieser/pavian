@@ -1,4 +1,5 @@
 library(shiny)
+library(centrifugeR)
 
 # identifications that are considered contaminants and may be filtered by default
 commoncontaminants=c('s_Homo sapiens','u_unclassified','s_synthetic construct','s_Enterobacteria phage phiX174 sensu lato')
@@ -53,7 +54,12 @@ shinyUI(navbarPage("Metagenomics results viewer",
                   '.report'
                 )
       ),
-      textInput("data_dir", "Data directory on server", value = "/scratch0/igm3/fbreitwieser/microbiome-pipeline/processing/cp_patients2", width="80%")
+      textInput("data_dir", "Data directory on server", value =
+                  system.file("data",package = "centrifugeR"), width="80%"),
+      textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
+                value = "%s-*.report", width="80%"),
+      textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
+                value = "([^-]*)-.*.report", width="80%")
     )
   ),
   tabPanel("Sample viewer",
@@ -64,7 +70,7 @@ shinyUI(navbarPage("Metagenomics results viewer",
                          label="No sample directory selected - please update it on the 'Data' tab",
                          choices=NULL, multiple=FALSE,width='100%'),
          style="font-size:80%"),
-      sunburstR::sunburstOutput("sunburst")
+      sunburstR::sunburstOutput("sunburst",width="90%")
       ),
       column(3,selectizeInput('contaminant_selector2', label="Filter contaminants",
                     allcontaminants, selected=commoncontaminants,

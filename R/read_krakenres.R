@@ -1,42 +1,42 @@
 # vim: noai:ts=2:sw=2
 
 ## recursive function that transforms the kraken dataframe into a cascading list
-build.kraken.tree <- function(krakenres) {
+build_kraken_tree <- function(krakenres) {
   if (nrow(krakenres) == 0 || nrow(krakenres) == 1) {
     # this should only happen if the original input to the function has a size <= 1
     return(list(krakenres))
   }
 
   ## select the current depth as the one of the topmost data.frame row
-  sel.depth <- krakenres[,'depth'] == krakenres[1,'depth']
+  sel_depth <- krakenres[,'depth'] == krakenres[1,'depth']
 
   ## partition the data.frame into parts with that depth
-  depth.partitions <- cumsum(sel.depth)
+  depth_partitions <- cumsum(sel_depth)
 
   ## for each depth partition
-  res <- lapply(unique(depth.partitions),
-                function(my.depth.partition) {
-                  sel <- depth.partitions == my.depth.partition
+  res <- lapply(unique(depth_partitions),
+                function(my_depth_partition) {
+                  sel <- depth_partitions == my_depth_partition
 
                   ## return the data.frame row if it is only one row (leaf node, ends recursion)
                   if (sum(sel) == 1)
                     return(krakenres[sel,,drop=F])
 
                   ## otherwise: take first row as partition descriptor ..
-                  first.row <- which(sel)[1]
+                  first_row <- which(sel)[1]
                   ##  and recurse deeper into the depths with the remaining rows
-                  dres <- build.kraken.tree(krakenres[which(sel)[-1],,drop=F])
+                  dres <- build_kraken_tree(krakenres[which(sel)[-1],,drop=F])
 
-                  attr(dres,"row") <- krakenres[first.row,,drop=F]
+                  attr(dres,"row") <- krakenres[first_row,,drop=F]
                   dres
                 })
-  names(res) <- krakenres$name[sel.depth]
+  names(res) <- krakenres$name[sel_depth]
   res
 }
 
 
-## Collapse taxonomic levels to only those mentioned in keep.levels
-collapse.levels <- function(krakenlist,keep.levels=LETTERS,filter_taxon=NULL) {
+## Collapse taxonomic levels to only those mentioned in keep_levels
+collapse.levels <- function(krakenlist,keep_levels=LETTERS,filter_taxon=NULL) {
   ## input: a list, in which each element is either a
   ##            a list or a data.frame (for the leafs)
   ##   the input has an attribute row that gives details on the current level
@@ -48,11 +48,11 @@ collapse.levels <- function(krakenlist,keep.levels=LETTERS,filter_taxon=NULL) {
     return(krakenlist)
   }
 
-  parent.row <- attr(krakenlist,"row")
-  all.child.rows <- c()
+  parent_row <- attr(krakenlist,"row")
+  all.child_rows <- c()
 
-  if (is.null(parent.row)) {
-    return(do.call(rbind,lapply(krakenlist,collapse.levels,keep.levels=keep.levels,filter_taxon=filter_taxon)))
+  if (is.null(parent_row)) {
+    return(do_call(rbind,lapply(krakenlist,collapse.levels,keep_levels=keep_levels,filter_taxon=filter_taxon)))
   }
 
   ## rm.reads captures the number of reads that are deleted.
@@ -61,53 +61,53 @@ collapse.levels <- function(krakenlist,keep.levels=LETTERS,filter_taxon=NULL) {
 
   for (kl in krakenlist) {
     if (is.data.frame(kl)) {  ## is a leaf node?
-      child.rows <- kl
+      child_rows <- kl
     } else {                 ## recurse deeper into tree
-      child.rows <- collapse.levels(kl,keep.levels,filter_taxon=filter_taxon)
-      if ('rm.reads' %in% names(attributes(child.rows))) {
-        rm.reads <- rm.reads + attr(child.rows,'rm.reads')
+      child_rows <- collapse.levels(kl,keep_levels,filter_taxon=filter_taxon)
+      if ('rm.reads' %in% names(attributes(child_rows))) {
+        rm.reads <- rm.reads + attr(child_rows,'rm.reads')
       }
     }
 
     ## check if this level and the levels below should be removed
-    delete.taxon <- child.rows[1,'name'] %in% filter_taxon
+    delete.taxon <- child_rows[1,'name'] %in% filter_taxon
     if (delete.taxon) {
-      rm.reads <- rm.reads + child.rows[1,'reads']
-      message(sprintf("removed %7s reads, including %s childs, for %s",child.rows[1,'reads'],nrow(child.rows)-1,child.rows[1,'name']))
+      rm.reads <- rm.reads + child_rows[1,'reads']
+      message(sprintf("removed %7s reads, including %s childs, for %s",child_rows[1,'reads'],nrow(child_rows)-1,child_rows[1,'name']))
 
       ## remove all children
-      child.rows <- NULL
+      child_rows <- NULL
 
     } else {
 
     ## check if the last (top-most) row should be kept
-    keep.last.child <- child.rows[1,'level'] %in% keep.levels
+    keep_last.child <- child_rows[1,'level'] %in% keep_levels
 
-    if (!keep.last.child) {
-      cols <- cols[cols %in% colnames(parent.row)]
+    if (!keep_last.child) {
+      cols <- cols[cols %in% colnames(parent_row)]
 
       ## save the specified colum information to the parent
-      parent.row[,cols] <- parent.row[,cols] + child.rows[1,cols]
+      parent_row[,cols] <- parent_row[,cols] + child_rows[1,cols]
 
       ## remove row
-      child.rows <- child.rows[-1,,drop=FALSE]
+      child_rows <- child_rows[-1,,drop=FALSE]
 
       ## decrease depths of rows below child row
-      if (nrow(child.rows) > 0)
-        child.rows[,'depth'] <- child.rows[,'depth'] - 1
+      if (nrow(child_rows) > 0)
+        child_rows[,'depth'] <- child_rows[,'depth'] - 1
 
     }
     }
-    all.child.rows <- rbind(all.child.rows,child.rows)
+    all.child_rows <- rbind(all.child_rows,child_rows)
   }
 
   ## subtract deleted read count from parent row
-  parent.row[,'reads'] <- parent.row[,'reads'] - rm.reads
-  res <- rbind(parent.row,all.child.rows)
+  parent_row[,'reads'] <- parent_row[,'reads'] - rm.reads
+  res <- rbind(parent_row,all.child_rows)
 
-  if (parent.row[,'reads'] < 0)
+  if (parent_row[,'reads'] < 0)
     stop("mistake made in removing reads")
-  #if (parent.row[,'reads'] == 0)
+  #if (parent_row[,'reads'] == 0)
   #  res <- c()
 
   if (rm.reads > 0)
@@ -115,64 +115,65 @@ collapse.levels <- function(krakenlist,keep.levels=LETTERS,filter_taxon=NULL) {
   return(res)
 }
 
-delete.levels.below <- function(krakenres,level="S") {
-  del.level <- 0
-  do.del <- FALSE
-  del.row <- 0
+delete_levels_below <- function(krakenres,level="S") {
+  del_level <- 0
+  do_del <- FALSE
+  del_row <- 0
 
   cols <- c("reads_stay","n_unique_kmers","n_kmers")
   sub.sums <- c(0,0,0)
 
-  rows.to.delete <- c()
+  rows_to_delete <- c()
   for (i in seq_len(nrow(krakenres))) {
     if (krakenres[i,'level'] %in% level) {
-      del.depth <- krakenres[i,'depth']
-      do.del <- TRUE
-      del.row <- i
+      del_depth <- krakenres[i,'depth']
+      do_del <- TRUE
+      del_row <- i
       sub.sums <- c(0,0,0)
     } else {
-      if (do.del) {
-        if (krakenres[i,'depth'] > del.level) {
-          rows.to.delete <- c(rows.to.delete,i)
+      if (do_del) {
+        if (krakenres[i,'depth'] > del_level) {
+          rows_to_delete <- c(rows_to_delete,i)
           sub.sums <- sub.sums + krakenres[i,cols]
         } else {
-          krakenres[del.row,cols] <- krakenres[del.row,cols]+sub.sums
+          krakenres[del_row,cols] <- krakenres[del_row,cols]+sub.sums
           sub.sums <- c(0,0,0)
-          do.del <- FALSE
+          do_del <- FALSE
         }
       }
     }
   }
-  krakenres[-rows.to.delete,]
+  krakenres[-rows_to_delete,]
 }
 
 
 #' Read kraken report
 #'
 #' @param myfile kraken report file
-#' @param collapse  should the results be collapsed to only those levels specified in keep.levels?
-#' @param keep.levels levels to keep when collapse is TRUE
+#' @param collapse  should the results be collapsed to only those levels specified in keep_levels?
+#' @param keep_levels levels to keep when collapse is TRUE
 #' @param min.depth minimum depth
 #' @param filter_taxon filter certain taxon names
-#' @param v2 report format is in v2, with kmer frequencies
-#' @param add.level.columns if TRUE, for each level columns are added
+#' @param has_header if the kraken report has a header or not
+#' @param add_level_columns if TRUE, for each level columns are added
 #'
 #' @return report data.frame
+#' @export
 #'
-read.krakenres <- function(myfile,collapse=TRUE,keep.levels=c("D","K","P","C","O","F","G","S"),min.depth=0,filter_taxon=NULL,
-has.header=NULL,add.level.columns=FALSE) {
+read_krakenres <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O","F","G","S"),min.depth=0,filter_taxon=NULL,
+has_header=NULL,add_level_columns=FALSE) {
   if (is.null(myfile))
     file = "~/work/support/Patient_29Jan_CSF-identify-pathogen/JH64778849.report"
   else
     file <- myfile
 
-	if (is.null(has.header)) {
+	if (is.null(has_header)) {
 		first.line <- readLines(myfile,n=1)
-		has.header <- grepl("^[a-zA-Z]",first.line)
+		has_header <- grepl("^[a-zA-Z]",first.line)
 	}
 
-  if (has.header) {
-  krakenres <- read.table(file,sep="\t",header = T,
+  if (has_header) {
+  krakenres <- read_table(file,sep="\t",header = T,
                           quote = "",stringsAsFactors=FALSE)
     #colnames(krakenres) <- c("coverage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
@@ -190,7 +191,7 @@ has.header=NULL,add.level.columns=FALSE) {
     colnames(krakenres)[colnames(krakenres)=="tax"] <- "taxonid"
 
   } else {
-  krakenres <- read.table(file,sep="\t",header = F,
+  krakenres <- read_table(file,sep="\t",header = F,
                           col.names = c("coverage","reads","reads_stay","level","taxonid","name"),
                           quote = "",stringsAsFactors=FALSE)
   }
@@ -202,37 +203,37 @@ has.header=NULL,add.level.columns=FALSE) {
 
   ## Only stop at certain levels
   ## filter taxon and further up the tree if 'filter_taxon' is defined
-  kraken.tree <- build.kraken.tree(krakenres)
-  krakenres <- collapse.levels(kraken.tree,keep.levels=keep.levels,filter_taxon=filter_taxon)
+  kraken.tree <- build_kraken_tree(krakenres)
+  krakenres <- collapse.levels(kraken.tree,keep_levels=keep_levels,filter_taxon=filter_taxon)
 
   ## Add a metaphlan-style taxon string
-	if (add.level.columns) {
-		krakenres[,keep.levels] <- NA
+	if (add_level_columns) {
+		krakenres[,keep_levels] <- NA
 	}
   krakenres$taxonstring = krakenres$name
-  rows.to.consider <- rep(FALSE,nrow(krakenres))
+  rows_to_consider <- rep(FALSE,nrow(krakenres))
 
   for (i in seq_len(nrow(krakenres))) {
       ## depth > 2 correspond to levels below 'D'
       if (i > 1 && krakenres[i,"depth"] > min.depth) {
         ## find the maximal index of a row below the current depth
-        idx <- krakenres$depth < krakenres[i,"depth"] & rows.to.consider
+        idx <- krakenres$depth < krakenres[i,"depth"] & rows_to_consider
         if (!any(idx)) { next() }
 
 				current.level <- krakenres[i,'level']
-        my.row <- max(which(idx))
-        krakenres[i,'taxonstring'] <- paste(krakenres[my.row,'taxonstring'],krakenres[i,'taxonstring'],sep="|")
+        my_row <- max(which(idx))
+        krakenres[i,'taxonstring'] <- paste(krakenres[my_row,'taxonstring'],krakenres[i,'taxonstring'],sep="|")
 
-				if (add.level.columns) {
-					if (krakenres[my.row,'level'] %in% keep.levels) {
-						levels.cp <- keep.levels[seq(from=1,to=which(keep.levels == krakenres[my.row,'level']))]
-						krakenres[i,levels.cp] <- krakenres[my.row,levels.cp]
+				if (add_level_columns) {
+					if (krakenres[my_row,'level'] %in% keep_levels) {
+						levels.cp <- keep_levels[seq(from=1,to=which(keep_levels == krakenres[my_row,'level']))]
+						krakenres[i,levels.cp] <- krakenres[my_row,levels.cp]
 					}
 
 				  krakenres[i,krakenres[i,'level']] <- krakenres[i,'name']
 				}
     }
-    rows.to.consider[i] <- TRUE
+    rows_to_consider[i] <- TRUE
   }
 
   krakenres <- krakenres[krakenres$depth >= min.depth,]
@@ -262,12 +263,12 @@ has.header=NULL,add.level.columns=FALSE) {
 #' @export
 #'
 #' @examples
-#' \donotrun{
+#'\donotrun{
 #'   filter_taxon(krakenres, 's_Homo sapiens')
-#' }
+#'}
 filter_taxon <- function(krakenres,filter_taxon, do_message=TRUE) {
-    taxon.depth <- NULL
-    taxon.reads <- 0
+    taxon_depth <- NULL
+    taxon_reads <- 0
 
     pos.taxon <- which(krakenres$name == filter_taxon)
     if (length(pos.taxon) == 0) {
@@ -276,17 +277,17 @@ filter_taxon <- function(krakenres,filter_taxon, do_message=TRUE) {
       stop("More than one position matches to ",filter_taxon)
     }
 
-    taxon.depth <- krakenres[pos.taxon,"depth"]
-    taxon.reads <- krakenres[pos.taxon,"reads"]
-    del.taxon <- filter_taxon
+    taxon_depth <- krakenres[pos.taxon,"depth"]
+    taxon_reads <- krakenres[pos.taxon,"reads"]
+    del_taxon <- filter_taxon
 
     sseq <- seq(from=1,to=nrow(krakenres))
 
-    rows.to.delete <- c(pos.taxon)
+    rows_to_delete <- c(pos.taxon)
     if (pos.taxon < nrow(krakenres)) {
       for (i in seq(from=pos.taxon+1,to=nrow(krakenres))) {
-         if (krakenres[i,"depth"] > taxon.depth) {
-           rows.to.delete <- c(rows.to.delete,i)
+         if (krakenres[i,"depth"] > taxon_depth) {
+           rows_to_delete <- c(rows_to_delete,i)
          } else {
            break()
          }
@@ -295,35 +296,35 @@ filter_taxon <- function(krakenres,filter_taxon, do_message=TRUE) {
 
     ## go to the top in the data.frame and update reads
     if (pos.taxon > 1) {
-    delete.no.more.rows <- FALSE
+    delete.no.more_rows <- FALSE
     for (i in seq(from=(pos.taxon-1),to=1)) {
 
         ##   and the depth is higher than the delete depth
-        if (krakenres[i,'depth'] >= taxon.depth) {
-          delete.no.more.rows <- TRUE
+        if (krakenres[i,'depth'] >= taxon_depth) {
+          delete.no.more_rows <- TRUE
           next()
         }
 
-        if (krakenres[i,'reads'] > (taxon.reads + krakenres[i,'reads_stay'])) {
+        if (krakenres[i,'reads'] > (taxon_reads + krakenres[i,'reads_stay'])) {
           ## just update the read count of the current row,
           ##   if not all reads can be accounted for by the deleted levels (plus those that stay)
-          krakenres[i,'reads'] <- krakenres[i,'reads'] - taxon.reads
+          krakenres[i,'reads'] <- krakenres[i,'reads'] - taxon_reads
 
           if (krakenres[i,'depth'] == 0)
             break
 
-        } else if (!delete.no.more.rows && krakenres[i,'reads'] == (taxon.reads + krakenres[i,'reads_stay'])) {
+        } else if (!delete.no.more_rows && krakenres[i,'reads'] == (taxon_reads + krakenres[i,'reads_stay'])) {
           ## if all reads can be accounted for by the deleted levels, plus those that stay, delete this level
-          del.taxon <- krakenres[i,'name']
-          taxon.depth <- krakenres[i,'depth']
-          taxon.reads <- krakenres[i,'reads']
-          rows.to.delete <- c(rows.to.delete,i)
+          del_taxon <- krakenres[i,'name']
+          taxon_depth <- krakenres[i,'depth']
+          taxon_reads <- krakenres[i,'reads']
+          rows_to_delete <- c(rows_to_delete,i)
         }
       }
     }
-    krakenres <- krakenres[-rows.to.delete,]
+    krakenres <- krakenres[-rows_to_delete,]
     if (do_message)
-      message(sprintf("Deleted %10s reads, %s rows from %s up to %s",taxon.reads,length(rows.to.delete),filter_taxon,del.taxon))
+      message(sprintf("Deleted %10s reads, %s rows from %s up to %s",taxon_reads,length(rows_to_delete),filter_taxon,del_taxon))
     krakenres
 }
 
