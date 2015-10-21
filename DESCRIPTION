@@ -5,6 +5,11 @@ Version: 0.1
 Date: 2015-10-18
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
 Description: R package to visualize and analyse metagenomics data created by Kraken, metaphlan, and centrifuge.
-Imports: shiny, sparkline, htmlwidgets, sunburstR, DT
+Imports: shiny (>= 0.1.12), 
+         sparkline (>= 1.0), 
+         htmlwidgets (>= 0.5.1), 
+         sunburstR (>= 0.1), 
+         DT (>= 0.1.39), 
+         d3heatmap (>= 0.6.1)
 License: GPL-3
 LazyData: TRUE
