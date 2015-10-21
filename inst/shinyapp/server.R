@@ -171,6 +171,9 @@ shinyServer(function(input, output, clientData, session) {
     for (c in input$contaminant_selector2)
       my_report <- filter_taxon(my_report, c)
 
+    if (input$remove_root_hits)
+      my_report <- my_report[my_report$name!="-_root",]
+
     my_report
   })
 
@@ -178,8 +181,12 @@ shinyServer(function(input, output, clientData, session) {
   ## Sample viewer outputs
   output$sunburst <- sunburstR::renderSunburst({
 
-    # get reports with rows as selected in the table
-    my_report <- sample_view_report()[sort(input$sample_view_rows_all),]
+    my_report <- sample_view_report()
+
+    # filter report with rows as selected in the table
+    if (input$synchonize_sampleview_table_and_sunburst)
+      my_report <- my_report[sort(input$sample_view_rows_all),]
+
 
     # update reads_stay - which is used to display the sunburst values, if the node is a leaf node
     end.nodes <- my_report[,"depth"] >= c(my_report[,"depth"][-1],0)

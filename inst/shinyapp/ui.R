@@ -35,11 +35,11 @@ shinyUI(navbarPage("Metagenomics results viewer",
       }
       div[id=samples_overview]>div>table>thead>tr> th:first-child,
       div[id=samples_overview]>div>table>tbody>tr> td:first-child {
-        min-width: 250px;
+        /*min-width: 250px;*/
       }
       div[id=samples_comparison]>div>table>thead>tr> th:first-child,
       div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
-        min-width: 225px;
+        /*min-width: 225px;*/
       }
     "))
   ),
@@ -84,7 +84,12 @@ shinyUI(navbarPage("Metagenomics results viewer",
          style="font-size:80%"),
       sunburstR::sunburstOutput("sunburst",width="90%")
       ),
-      column(3,selectizeInput('contaminant_selector2', label="Filter contaminants",
+      column(3,
+             checkboxInput("synchonize_sampleview_table_and_sunburst",
+                           label="Synchonize table and sunburst", value=FALSE),
+             checkboxInput("remove_root_hits",
+                           label="Remove root hits", value=FALSE),
+             selectizeInput('contaminant_selector2', label="Filter contaminants",
                     allcontaminants, selected=commoncontaminants,
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
                     width="80%")
