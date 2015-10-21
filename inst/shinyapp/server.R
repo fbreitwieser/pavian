@@ -182,15 +182,13 @@ shinyServer(function(input, output, clientData, session) {
   output$sunburst <- sunburstR::renderSunburst({
 
     my_report <- sample_view_report()
+	if (length(my_report) == 0)
+		return()
 
     # filter report with rows as selected in the table
-    if (input$synchonize_sampleview_table_and_sunburst)
+    if (input$synchonize_sampleview_table_and_sunburst &&
+		length(input$sample_view_rows_all) > 0)
       my_report <- my_report[sort(input$sample_view_rows_all),]
-
-
-    # update reads_stay - which is used to display the sunburst values, if the node is a leaf node
-    end.nodes <- my_report[,"depth"] >= c(my_report[,"depth"][-1],0)
-    my_report[end.nodes,"reads_stay"] <- my_report[end.nodes,"reads"]
 
     kraken_sunburst(my_report)
   })
@@ -209,9 +207,12 @@ shinyServer(function(input, output, clientData, session) {
   ##-------------------------
   ## Samples overview output
   output$samples_overview <- DT::renderDataTable({
+	my_reports <- kraken_reports()
+	if (length(my_reports) == 0)
+		return()
 
     # TODO: Display sample names as a column such that they can be sorted or filtered (not as row names)
-    samples_summary <- do.call(rbind,lapply(kraken_reports(), summarize_kraken_report))
+    samples_summary <- do.call(rbind,lapply(my_reports, summarize_kraken_report))
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
 
@@ -223,6 +224,8 @@ shinyServer(function(input, output, clientData, session) {
   output$samples_comparison <- DT::renderDataTable({
 
     summarized_report <- get_summarized_report(input$classification_level, input$contaminant_selector3, input$numeric_display)
+	if (length(summarized_report) == 0)
+		return()
 
     ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
     sparklineColumnDefs <- list(
