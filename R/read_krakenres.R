@@ -52,7 +52,7 @@ collapse.levels <- function(krakenlist,keep_levels=LETTERS,filter_taxon=NULL) {
   all.child_rows <- c()
 
   if (is.null(parent_row)) {
-    return(do_call(rbind,lapply(krakenlist,collapse.levels,keep_levels=keep_levels,filter_taxon=filter_taxon)))
+    return(do.call(rbind,lapply(krakenlist,collapse.levels,keep_levels=keep_levels,filter_taxon=filter_taxon)))
   }
 
   ## rm.reads captures the number of reads that are deleted.
@@ -173,7 +173,7 @@ has_header=NULL,add_level_columns=FALSE) {
 	}
 
   if (has_header) {
-  krakenres <- read_table(file,sep="\t",header = T,
+  krakenres <- read.table(file,sep="\t",header = T,
                           quote = "",stringsAsFactors=FALSE)
     #colnames(krakenres) <- c("coverage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
@@ -191,7 +191,7 @@ has_header=NULL,add_level_columns=FALSE) {
     colnames(krakenres)[colnames(krakenres)=="tax"] <- "taxonid"
 
   } else {
-  krakenres <- read_table(file,sep="\t",header = F,
+  krakenres <- read.table(file,sep="\t",header = F,
                           col.names = c("coverage","reads","reads_stay","level","taxonid","name"),
                           quote = "",stringsAsFactors=FALSE)
   }

@@ -33,7 +33,7 @@ summarize_kraken_report <- function(my_report) {
 
   #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"reads"])
   #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"reads"])
-  eupath_reads <- my_report["d_Eukaryota","reads"] - my_report["d_Eukaryota","reads_stay"] - my_report["-_Opisthokonta","reads"]
+  #eupath_reads <- my_report["d_Eukaryota","reads"] - my_report["d_Eukaryota","reads_stay"] - my_report["-_Opisthokonta","reads"]
 
   data.frame(
     number_of_raw_reads=unidentified_reads+identified_reads,
@@ -45,7 +45,7 @@ summarize_kraken_report <- function(my_report) {
     viral_reads=my_report["d_Viruses","reads"],
     fungal_reads=my_report["k_Fungi","reads"],
     s_cerevisia_reads=s_cerevisiae_reads,
-    eupath_reads=eupath_reads,
+    #eupath_reads=eupath_reads,
     #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],
     #o_kinetoplastida_reads=my_report["o_Kinetoplastida","reads"],
     #Amoebozoa_reads=my_report["-_Amoebozoa","reads"],

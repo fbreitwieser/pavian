@@ -4,7 +4,7 @@
 #' @param cache_dir Directory to save temporary files
 #'
 #' @export
-runCentrifuger <- function(cache_dir = "cache") {
+runApp <- function(cache_dir = "cache") {
   appDir <- system.file("shinyapp", package = "centrifugeR")
   if (appDir == "") {
     stop("Could not find example directory. Try re-installing `centrifugeR`.", call. = FALSE)

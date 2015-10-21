@@ -54,12 +54,24 @@ shinyUI(navbarPage("Metagenomics results viewer",
                   '.report'
                 )
       ),
-      textInput("data_dir", "Data directory on server", value =
-                  system.file("data",package = "centrifugeR"), width="80%"),
+      selectizeInput("data_dir", "Data directory on server",
+                     choices=c(system.file("data","brain-biopsies",package = "centrifugeR"),
+                               system.file("data","bellybutton-swaps",package = "centrifugeR")),
+                     selected=system.file("data","brain-biopsies",package = "centrifugeR"), multiple=FALSE,width="80%"),
       textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
-                value = "%s-*.report", width="80%"),
+                value = "%s.report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
-                value = "([^-]*)-.*.report", width="80%")
+                value = "(.*).report", width="80%")
+    )
+  ),
+  tabPanel("Samples overview",
+    fluidRow(
+        div(
+          selectizeInput('sample_selector2',
+                         label="No sample directory selected - please update it on the 'Data' tab",
+                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
+         style="font-size:80%"),
+        DT::dataTableOutput('samples_overview')
     )
   ),
   tabPanel("Sample viewer",
@@ -80,16 +92,6 @@ shinyUI(navbarPage("Metagenomics results viewer",
     fluidRow(DT::dataTableOutput('sample_view'))
 
   ),
-  tabPanel("Samples overview",
-    fluidRow(
-        div(
-          selectizeInput('sample_selector2',
-                         label="No sample directory selected - please update it on the 'Data' tab",
-                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
-         style="font-size:80%"),
-        DT::dataTableOutput('samples_overview')
-    )
-  ),
   tabPanel("Sample comparison",
     fluidRow(
       column(5,
@@ -102,14 +104,23 @@ shinyUI(navbarPage("Metagenomics results viewer",
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
                     width="100%"))
       ),
-      column(1, radioButtons("numeric_display",label=NULL, c("reads","percentage","rank"), "reads" )),
+      column(1, radioButtons("numeric_display",label=NULL, c("reads","percentage"), "reads" )),
       column(1, radioButtons("input",label=NULL, c("kraken","centrifuge","blastx-lca","metaphlan"), "kraken" )),
       column(1, radioButtons("classification_level",label=NULL,c("S","G","F","O","C","P","D"),"S")),
-      column(1, checkboxInput("update_pubmed", 'Update Pubmed counts', value = FALSE))
+      #column(1, checkboxInput("update_pubmed", 'Update Pubmed counts', value = FALSE)),
+      column(2, checkboxInput("display_heatmap", 'Display Heatmap', value = FALSE),
+                radioButtons("heatmap_scale", 'Scale',
+                            c("none","row","column"),selected="none",inline=TRUE),
+                checkboxGroupInput("heatmap_cluster", "Cluster",
+                                   choices=c('row','column'), inline = TRUE))
 
     ),
     fluidRow(
       DT::dataTableOutput('samples_comparison')
+    ),
+    fluidRow(
+      column(1),
+      d3heatmap::d3heatmapOutput('samples_comparison_heatmap',width="100%")
     )
   )
 ))

@@ -35,6 +35,7 @@ shinyServer(function(input, output, clientData, session) {
              }, basename(x), cache_dir = getOption("centrifugeR.cache_dir"))
            })
     names(my_kraken_reports) <- sub(paste0(input$data_dir,"/"),"",kraken_files,fixed=TRUE)
+	  names(my_kraken_reports) <- sub(".report$","",names(my_kraken_reports))
     info_message("Kraken report names: ",paste(names(my_kraken_reports),collapse="\n\t"))
     my_kraken_reports
   })
@@ -50,6 +51,7 @@ shinyServer(function(input, output, clientData, session) {
       }
     } else {
       kraken_files <- sub(paste0(input$data_dir,"/"),"",list_kraken_files(input$data_dir, input$file_glob_pattern),fixed=TRUE)
+	    kraken_files <- padded_sort(sub(".report$","",kraken_files))
       my_samples <- get_sample_name(kraken_files,input$regex_pattern)
       info_message("Found ",length(kraken_files)," files: \n\t",paste0(kraken_files," [sample ",my_samples,"]",collapse="\n\t"))
       updateTextInput(session, 'data_dir',
@@ -84,6 +86,76 @@ shinyServer(function(input, output, clientData, session) {
   beautify_colnames <- function(x) {
     colnames(x) <- beautify_string(colnames(x))
     x
+  }
+
+
+  ## helper function that sets NAs to zeros in a supplied data.frame
+  zero_if_na <- function(df) { df[is.na(df)] <- 0; df; }
+
+  ##
+
+  get_summarized_report <- function(classification_level, filter_contaminants, numeric_display, as_matrix=FALSE) {
+    ## generate data.frame which has a name column (species name) and a further reads column for each sample
+    id_cols <- c("name","taxonid")
+    numeric_col <- c("reads")
+
+    my_reports <- kraken_reports()
+    my_reports <- lapply(names(my_reports),function(report_name) {
+      ## subset report to the requested level
+      report <- my_reports[[report_name]][my_reports[[report_name]]$level==classification_level,
+                                          c(id_cols,numeric_col)]
+
+      ## set the basename of the report file as name for the numeric column
+      idx_of_numeric_col <- length(id_cols)+1
+      colnames(report)[idx_of_numeric_col] <- sub(".*/(.*)(-PT.*)?.report","\\1",report_name)
+      report
+    })
+
+
+    ## merge all the data.frames in the my_reports list, and add additional info (sparkline and mean)
+    summarized_report <- Reduce(function(x,y) merge(x,y,all=TRUE,by=id_cols), my_reports)
+
+    ## filter contaminants if defined
+    if (length(filter_contaminants) > 0 ) {
+      summarized_report <- summarized_report[!summarized_report[,"name"] %in% filter_contaminants,]
+    }
+
+    ## transform to percent
+    data_portion <- summarized_report[,seq(from=length(id_cols)+1, to=ncol(summarized_report))]
+
+    if (numeric_display == "percentage") {
+      data_portion <- round(100*t(t(data_portion)/colSums(data_portion,na.rm=T)),3)
+    }
+
+    if (as_matrix) {
+      row_names <- summarized_report[,1]
+      summarized_report <- as.matrix(data_portion)
+      row.names(summarized_report) <- row_names
+    } else {
+      round_digits <- ifelse(numeric_display == "percentage", 3, 1)
+      summarized_report <- cbind(beautify_colnames(summarized_report[,id_cols,drop=FALSE]),
+                                 Overview=apply(round(zero_if_na(data_portion),round_digits),1,paste0,collapse=","),
+                                 Mean=round(rowMeans(data_portion,na.rm=TRUE),round_digits),
+                                 data_portion)
+
+      ## that's the last column before the data, and the one which we sort for
+      mean_column <- which(colnames(summarized_report)=="Mean")
+      stopifnot(length(mean_column) == 1)
+      data_columns <- seq(from=mean_column+1,
+                       to=ncol(summarized_report))
+
+      ## make a link to NCBI genome browser in the taxonID column
+      taxonid_column <- which(colnames(summarized_report)=="Taxonid")
+      summarized_report[,taxonid_column] <- gsub("^  *","",summarized_report[,taxonid_column])
+      stopifnot(length(taxonid_column) == 1)
+
+      ## remove s_, g_, etc
+      summarized_report[,1] <- gsub("^[a-z-]_","",summarized_report[,1])
+      attr(summarized_report,"mean_column") <- mean_column
+      attr(summarized_report,"taxonid_column") <- taxonid_column
+      attr(summarized_report,"data_columns") <- data_columns
+    }
+    summarized_report
   }
 
 
@@ -132,7 +204,7 @@ shinyServer(function(input, output, clientData, session) {
   output$samples_overview <- DT::renderDataTable({
 
     # TODO: Display sample names as a column such that they can be sorted or filtered (not as row names)
-    samples_summary <- do.call(rbind,lapply(kraken_reports(), summarize.kraken.report))
+    samples_summary <- do.call(rbind,lapply(kraken_reports(), summarize_kraken_report))
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
 
@@ -143,58 +215,7 @@ shinyServer(function(input, output, clientData, session) {
   ## Samples comparison output
   output$samples_comparison <- DT::renderDataTable({
 
-    ## generate data.frame which has a name column (species name) and a further reads column for each sample
-    id_cols <- c("name","taxonid")
-    numeric_col <- c("reads")
-
-    my_reports <- kraken_reports()
-    my_reports <- lapply(names(my_reports),function(report_name) {
-      ## subset report to the requested level
-      report <- my_reports[[report_name]][my_reports[[report_name]]$level==input$classification_level,
-                                          c(id_cols,numeric_col)]
-
-      ## set the basename of the report file as name for the numeric column
-      idx_of_numeric_col <- length(id_cols)+1
-      colnames(report)[idx_of_numeric_col] <- sub(".*/(.*)(-PT.*)?.report","\\1",report_name)
-      report
-    })
-
-    ## helper function that sets NAs to zeros in a supplied data.frame
-    zero_if_na <- function(df) { df[is.na(df)] <- 0; df; }
-
-    ## merge all the data.frames in the my_reports list, and add additional info (sparkline and mean)
-    summarized_report <- Reduce(function(x,y) merge(x,y,all=TRUE,by=id_cols), my_reports)
-
-    ## filter contaminants if defined
-    if (length(input$contaminant_selector3) > 0 ) {
-      summarized_report <- summarized_report[!summarized_report[,id_cols[1]] %in% input$contaminant_selector3,]
-    }
-
-    ## transform to percent
-    data_portion <- summarized_report[,seq(from=length(id_cols)+1, to=ncol(summarized_report))]
-    if (input$numeric_display == "percentage") {
-      data_portion <- round(100*t(t(data_portion)/colSums(data_portion,na.rm=T)),3)
-    }
-
-    round_digits <- ifelse(input$numeric_display == "percentage", 3, 1)
-    summarized_report <- cbind(beautify_colnames(summarized_report[,id_cols,drop=FALSE]),
-                               Overview=apply(round(zero_if_na(data_portion),round_digits),1,paste0,collapse=","),
-                               Mean=round(rowMeans(data_portion,na.rm=TRUE),round_digits),
-                               data_portion)
-
-    ## that's the last column before the data, and the one which we sort for
-    mean.column <- which(colnames(summarized_report)=="Mean")
-    stopifnot(length(mean.column) == 1)
-    data_cols <- seq(from=mean.column+1,
-                     to=ncol(summarized_report))
-
-    ## make a link to NCBI genome browser in the taxonID column
-    taxonid.column <- which(colnames(summarized_report)=="Taxonid")
-    summarized_report[,taxonid.column] <- gsub("^  *","",summarized_report[,taxonid.column])
-    stopifnot(length(taxonid.column) == 1)
-
-    ## remove s_, g_, etc
-    summarized_report[,1] <- gsub("^[a-z-]_","",summarized_report[,1])
+    summarized_report <- get_summarized_report(input$classification_level, input$contaminant_selector3, input$numeric_display)
 
     ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
     sparklineColumnDefs <- list(
@@ -203,11 +224,11 @@ shinyServer(function(input, output, clientData, session) {
                            "function(data, type, full){ return '<i>'+data+'</i>'; }",  ## layout species names in italic
                            "function(data, type, full){ return data; }"
                            ))),
-      list(targets = taxonid.column-1,
+      list(targets = attr(summarized_report,'taxonid_column')-1,
            render = htmlwidgets::JS("function(data, type, full){
               return '<a href=\"http://www.ncbi.nlm.nih.gov/genome/?term=txid'+data+'[Organism:exp]\" target=\"_blank\">' + data + '</a>'
             }")),
-      list(targets = data_cols-1, searchable=FALSE),
+      list(targets = attr(summarized_report,'data_columns')-1, searchable=FALSE),
       list(targets = which(colnames(summarized_report)=="Overview")-1,searchable=FALSE,
            render = htmlwidgets::JS("function(data, type, full){
               return '<span class=spark>' + data + '</span>'
@@ -229,7 +250,7 @@ shinyServer(function(input, output, clientData, session) {
     dt <- DT::datatable(summarized_report, options=list(
       columnDefs = sparklineColumnDefs,
       drawCallback = sparklineDrawCallback,
-      order = list(mean.column-1,"desc"),
+      order = list(attr(summarized_report,'mean_column')-1,"desc"),
       filter = "top",
       selection = "none",
       search = list(regex = TRUE, caseInsensitive = FALSE)   ## add regular expression search
@@ -241,6 +262,25 @@ shinyServer(function(input, output, clientData, session) {
     dt$dependencies <- append(dt$dependencies, htmlwidgets:::getDependency('sparkline'))
 
     dt
+  })
+
+  output$samples_comparison_heatmap <- d3heatmap::renderD3heatmap({
+    if (input$display_heatmap) {
+      library(d3heatmap)
+      report_mat <- get_summarized_report(input$classification_level,input$contaminant_selector3, input$numeric_display, as_matrix = TRUE)
+      report_mat <- zero_if_na(report_mat[input$samples_comparison_rows_current,])
+      report_mat[report_mat < 0] <- 0
+      print(input$heatmap_cluster)
+      d3heatmap::d3heatmap(report_mat,
+                           Rowv="row" %in% input$heatmap_cluster,
+                           Colv="column" %in% input$heatmap_cluster, # No Column reordering
+                           scale=input$heatmap_scale,
+                           yaxis_width = 400,
+                           xaxis_height = 200,
+                           colors=colorRampPalette(c("blue", "white", "red"))(100)
+                           #colors=colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name ="RdYlBu")))(100)
+                           )
+    }
   })
 
 })
