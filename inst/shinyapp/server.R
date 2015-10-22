@@ -74,10 +74,11 @@ shinyServer(function(input, output, clientData, session) {
     }
   })
 
-  ## keep sample_selector2 and sample_selector3 synced
-  observeEvent(input$sample_selector2, {
-    updateSelectizeInput(session,"sample_selector3",selected=input$sample_selector2)
-  })
+  ## keep sample_selector2 and sample_selector3 synced - seems to cause loops when I use both
+  #observeEvent(input$sample_selector2, {
+  #  updateSelectizeInput(session,"sample_selector3",selected=input$sample_selector2)
+  #})
+  
   observeEvent(input$sample_selector3, {
     updateSelectizeInput(session,"sample_selector2",selected=input$sample_selector3)
   })
@@ -106,24 +107,25 @@ shinyServer(function(input, output, clientData, session) {
 
     my_reports <- kraken_reports()
     my_reports <- lapply(names(my_reports),function(report_name) {
+
+      my_report <- my_reports[[report_name]]
+      ## filter contaminants if defined
+      for (c in filter_contaminants)
+        my_report <- filter_taxon(my_report, c)
+
       ## subset report to the requested level
-      report <- my_reports[[report_name]][my_reports[[report_name]]$level==classification_level,
+      my_report <- my_report[my_report$level==classification_level,
                                           c(id_cols,numeric_col)]
 
       ## set the basename of the report file as name for the numeric column
       idx_of_numeric_col <- length(id_cols)+1
-      colnames(report)[idx_of_numeric_col] <- sub(".*/(.*)(-PT.*)?.report","\\1",report_name)
-      report
+      colnames(my_report)[idx_of_numeric_col] <- sub(".*/(.*)(-PT.*)?.report","\\1",report_name)
+      my_report
     })
 
 
     ## merge all the data.frames in the my_reports list, and add additional info (sparkline and mean)
     summarized_report <- Reduce(function(x,y) merge(x,y,all=TRUE,by=id_cols), my_reports)
-
-    ## filter contaminants if defined
-    if (length(filter_contaminants) > 0 ) {
-      summarized_report <- summarized_report[!summarized_report[,"name"] %in% filter_contaminants,]
-    }
 
     ## transform to percent
     data_portion <- summarized_report[,seq(from=length(id_cols)+1, to=ncol(summarized_report))]

@@ -37,11 +37,11 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       }
       div[id=samples_overview]>div>table>thead>tr> th:first-child,
       div[id=samples_overview]>div>table>tbody>tr> td:first-child {
-        /*min-width: 250px;*/
+        min-width: 125px;
       }
       div[id=samples_comparison]>div>table>thead>tr> th:first-child,
       div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
-        /*min-width: 225px;*/
+        min-width: 125px;
       }
     "))
   ),
@@ -115,8 +115,8 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                     width="100%"))
       ),
       column(1, radioButtons("numeric_display",label=NULL, c("reads","percentage"), "reads" )),
-      column(1, radioButtons("input",label=NULL, c("kraken","centrifuge","blastx-lca","metaphlan"), "kraken" )),
-      column(1, radioButtons("classification_level",label=NULL,c("S","G","F","O","C","P","D"),"S")),
+      #column(1, radioButtons("input",label=NULL, c("kraken","centrifuge","blastx-lca","metaphlan"), "kraken" )),
+      column(1, radioButtons("classification_level",label=NULL,c("S","G","F","O","C","P","D"),"D"),inline=TRUE),
       #column(1, checkboxInput("update_pubmed", 'Update Pubmed counts', value = FALSE)),
       column(4, checkboxInput("display_heatmap", 'Display Heatmap', value = FALSE),
                 radioButtons("heatmap_scale", 'Scale',
