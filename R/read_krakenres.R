@@ -175,11 +175,11 @@ has_header=NULL,add_level_columns=FALSE) {
   if (has_header) {
   krakenres <- read.table(file,sep="\t",header = T,
                           quote = "",stringsAsFactors=FALSE)
-    #colnames(krakenres) <- c("coverage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
+    #colnames(krakenres) <- c("percentage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
-    colnames(krakenres)[colnames(krakenres)=="clade_perc"] <- "coverage"
-    colnames(krakenres)[colnames(krakenres)=="perc"] <- "coverage"
+    colnames(krakenres)[colnames(krakenres)=="clade_perc"] <- "percentage"
+    colnames(krakenres)[colnames(krakenres)=="perc"] <- "percentage"
 
     colnames(krakenres)[colnames(krakenres)=="n_reads_clade"] <- "reads"
     colnames(krakenres)[colnames(krakenres)=="n.clade"] <- "reads"
@@ -192,7 +192,7 @@ has_header=NULL,add_level_columns=FALSE) {
 
   } else {
   krakenres <- read.table(file,sep="\t",header = F,
-                          col.names = c("coverage","reads","reads_stay","level","taxonid","name"),
+                          col.names = c("percentage","reads","reads_stay","level","taxonid","name"),
                           quote = "",stringsAsFactors=FALSE)
   }
 
@@ -238,9 +238,9 @@ has_header=NULL,add_level_columns=FALSE) {
 
   krakenres <- krakenres[krakenres$depth >= min.depth,]
 
-  krakenres$coverage <- round(krakenres$reads/sum(krakenres$reads_stay),6) * 100
+  krakenres$percentage <- round(krakenres$reads/sum(krakenres$reads_stay),6) * 100
   if ('n_unique_kmers'  %in% colnames(krakenres))
-    krakenres$kmercoverage <- round(krakenres$n_unique_kmers/sum(krakenres$n_unique_kmers,na.rm=T),6) * 100
+    krakenres$kmerpercentage <- round(krakenres$n_unique_kmers/sum(krakenres$n_unique_kmers,na.rm=T),6) * 100
   krakenres$rankperc <- 100/rank(krakenres$reads)
 
   rownames(krakenres) <- NULL
