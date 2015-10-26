@@ -6,7 +6,6 @@ commoncontaminants1=c('s_Homo sapiens','s_synthetic construct','u_unclassified',
 allcontaminants=c(commoncontaminants1,'s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae', 's_Ralstonia pickettii')
 commoncontaminants <- c()  ## this vector is initially filtered
 
-
 shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
   #theme = "bootstrap.css",
   tags$head(
@@ -56,10 +55,11 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                   '.report'
                 )
       ),
-      selectizeInput("data_dir", "Data directory on server",
+      selectizeInput("data_dir", "Reports directory",
                      choices=c(system.file("shinyapp/example-data","brain-biopsies",package = "centrifugeR"),
-                               system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifugeR")),
-                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifugeR"), multiple=FALSE,width="80%"),
+                               system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifugeR"),
+                               "/home/fbreitwieser/projects/centrifuger/cp2"),
+                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifugeR"), multiple=FALSE,width="80%", options(create=TRUE)),
       textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "%s.report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
@@ -118,7 +118,8 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       #column(1, radioButtons("input",label=NULL, c("kraken","centrifuge","blastx-lca","metaphlan"), "kraken" )),
       column(1, radioButtons("classification_level",label=NULL,c("S","G","F","O","C","P","D"),"D"),inline=TRUE),
       #column(1, checkboxInput("update_pubmed", 'Update Pubmed counts', value = FALSE)),
-      column(4, checkboxInput("display_heatmap", 'Display Heatmap', value = FALSE),
+      column(4, #checkboxInput("display_table", 'Display table', value = TRUE),
+                checkboxInput("display_heatmap", 'Display heatmap', value = FALSE),
                 radioButtons("heatmap_scale", 'Scale',
                             c("none","row","column"),selected="none",inline=TRUE),
                 checkboxGroupInput("heatmap_cluster", "Cluster",

@@ -28,14 +28,23 @@ shinyServer(function(input, output, clientData, session) {
   ## load kraken_reports based on input$data_dir and input$sample_selector2
   kraken_reports <- reactive({
     kraken_files <- list_kraken_files(input$data_dir, input$file_glob_pattern, input$sample_selector2)
-    my_kraken_reports <- lapply(kraken_files,
-           function(x) {
-             load_or_create(function() {
-               read_krakenres(x)
-             }, sprintf("%s.rds",basename(x)), cache_dir = getOption("centrifugeR.cache_dir"))
-           })
+    n_reports <- length(kraken_files)
+    my_kraken_reports <-
+      withProgress(message = paste("Loading",n_reports,"sample reports"),
+                   detail = 'This may take a while...',
+                   value = 0, min = 0,max = length(kraken_files), {
+       lapply(seq_along(kraken_files),
+             function(i) {
+               kraken_file <- kraken_files[i]
+               setProgress(value=i, detail = paste(n_reports-i, "left ..."))
+               load_or_create(function() read_krakenres(kraken_file),
+                              sprintf("%s.rds",basename(kraken_file)),
+                              cache_dir = getOption("centrifugeR.cache_dir"))
+             })
+    })
+
     names(my_kraken_reports) <- sub(paste0(input$data_dir,"/"),"",kraken_files,fixed=TRUE)
-	  names(my_kraken_reports) <- sub(".report$","",names(my_kraken_reports))
+    names(my_kraken_reports) <- sub(".report$","",names(my_kraken_reports))
     info_message("Kraken report names: ",paste(names(my_kraken_reports),collapse="\n\t"))
     my_kraken_reports
   })
@@ -78,7 +87,7 @@ shinyServer(function(input, output, clientData, session) {
   #observeEvent(input$sample_selector2, {
   #  updateSelectizeInput(session,"sample_selector3",selected=input$sample_selector2)
   #})
-  
+
   observeEvent(input$sample_selector3, {
     updateSelectizeInput(session,"sample_selector2",selected=input$sample_selector3)
   })
@@ -278,6 +287,8 @@ shinyServer(function(input, output, clientData, session) {
   ##---------------------------
   ## Samples comparison output
   output$samples_comparison <- DT::renderDataTable({
+    #if (!isTRUE(input$display_table))
+    #  return()
 
     summarized_report <- get_summarized_report(input$classification_level, input$contaminant_selector3, input$numeric_display)
 	  if (length(summarized_report) == 0)
@@ -353,9 +364,12 @@ shinyServer(function(input, output, clientData, session) {
 	  if (length(my_reports) == 0)
 		  return()
 
-	  all.s.reads <- reshape(get_level_reads(my_reports,level=="S",min.perc=0)[,c(".id","name","reads")],
-	                         timevar=".id",
-	                         idvar="name",
+      #idvar=".id"; timevar="name"
+      idvar="name"; timevar=".id"
+
+	  all.s.reads <- reshape(get_level_reads(my_reports,level=="S",min.perc=0.01)[,c(idvar,timevar,"reads")],
+	                         timevar=timevar,
+	                         idvar=idvar,
 	                         direction="wide")
 	  rownames(all.s.reads) <- all.s.reads$NAME
 	  all.s.reads$name <- NULL
