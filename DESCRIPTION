@@ -1,4 +1,4 @@
-Package: centrifugeR
+Package: centrifuger
 Type: Package
 Title: Analyze and dispaly metagenomics data in R
 Version: 0.1

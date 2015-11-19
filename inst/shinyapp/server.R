@@ -105,7 +105,7 @@ shinyServer(function(input, output, clientData, session) {
 
 
   ## helper function that sets NAs to zeros in a supplied data.frame
-  zero_if_na <- function(df) { df[is.na(df)] <- 0; df; }
+  zero_if_na <- function(df) { df[is.na(df) | df < 0] <- 0; df; }
 
   ##
 
@@ -150,8 +150,8 @@ shinyServer(function(input, output, clientData, session) {
     } else {
       round_digits <- ifelse(numeric_display == "percentage", 3, 1)
       summarized_report <- cbind(beautify_colnames(summarized_report[,id_cols,drop=FALSE]),
-                                 Overview=apply(round(zero_if_na(data_portion),round_digits),1,paste0,collapse=","),
-                                 Mean=round(rowMeans(data_portion,na.rm=TRUE),round_digits),
+                                 Overview=apply(round(zero_if_na(log10(10*data_portion)),round_digits),1,paste0,collapse=","),
+                                 Mean=round(rowSums(data_portion,na.rm=TRUE)/ncol(data_portion),round_digits),
                                  data_portion)
 
       ## that's the last column before the data, and the one which we sort for
@@ -263,8 +263,11 @@ shinyServer(function(input, output, clientData, session) {
     samples_summary <- do.call(rbind,lapply(my_reports, summarize_kraken_report))
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
+	if (isTRUE(input$samples_overview_percent == "percentage")) {
+		samples_summary[,2:ncol(samples_summary)] <- round(100*sweep(samples_summary[,2:ncol(samples_summary)],1,samples_summary[,1],`/`),5)
+	}
 
-    DT::datatable(samples_summary,selection='single')
+    DT::datatable(samples_summary,selection='single', options=list(pagelength=25))
   })
 
 
@@ -305,6 +308,7 @@ shinyServer(function(input, output, clientData, session) {
            render = htmlwidgets::JS("function(data, type, full){
               return '<a href=\"http://www.ncbi.nlm.nih.gov/genome/?term=txid'+data+'[Organism:exp]\" target=\"_blank\">' + data + '</a>'
             }")),
+      list(targets = attr(summarized_report,'mean_column')-1,width="80px"),
       list(targets = attr(summarized_report,'data_columns')-1, searchable=FALSE),
       list(targets = which(colnames(summarized_report)=="Overview")-1,searchable=FALSE,
            render = htmlwidgets::JS("function(data, type, full){
@@ -323,6 +327,8 @@ shinyServer(function(input, output, clientData, session) {
     ## TODO: Consider adding more information in child rows: https://rstudio.github.io/DT/002-rowdetails.html
     ##  For example: taxonomy ID, links to assemblies (e.g. www.ncbi.nlm.nih.gov/assembly/organism/821)
     ##   and organism overview http://www.ncbi.nlm.nih.gov/genome/?term=txid821[Organism:noexp]
+
+	#colnames(summarized_report) <- gsub("_","_<wbr>",colnames(summarized_report))
 
     dt <- DT::datatable(summarized_report, options=list(
       columnDefs = sparklineColumnDefs,

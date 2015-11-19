@@ -1,5 +1,5 @@
 library(shiny)
-library(centrifugeR)
+library(centrifuger)
 
 # identifications that are considered contaminants and may be filtered by default
 commoncontaminants1=c('s_Homo sapiens','s_synthetic construct','u_unclassified','s_Enterobacteria phage phiX174 sensu lato')
@@ -26,6 +26,10 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       table.dataTable thead th, table.dataTable thead td {
         padding: 2px 18px 2px 10px !important;
       }
+
+	  table.dataTable th.dt-right, table.dataTable td.dt-right {
+		  word-break: break-all;
+	  }
 
       /* tooltip for sparkline rendered with bootstrap
          see https://github.com/htmlwidgets/sparkline/issues/4 */
@@ -56,10 +60,12 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                 )
       ),
       selectizeInput("data_dir", "Reports directory",
-                     choices=c(system.file("shinyapp/example-data","brain-biopsies",package = "centrifugeR"),
-                               system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifugeR"),
-                               "/home/fbreitwieser/projects/centrifuger/cp2"),
-                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifugeR"), multiple=FALSE,width="80%", options(create=TRUE)),
+                     choices=c(system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
+                               system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifuger"),
+                               "/home/fbreitwieser/projects/centrifuger/cp2",
+							   "/home/fbreitwieser/analysis-projects/salzberg-et-al-brain-biome/refseq-reports"),
+                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"), 
+					 multiple=FALSE,width="80%", options=list(create=TRUE)),
       textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "%s.report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
@@ -73,6 +79,7 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                          label="No sample directory selected - please update it on the 'Data' tab",
                          choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
          style="font-size:80%"),
+		radioButtons("samples_overview_percent",label=NULL, c("reads","percentage"), "reads" ),
         DT::dataTableOutput('samples_overview'),
         uiOutput("view_in_sample_viewer")
     )
