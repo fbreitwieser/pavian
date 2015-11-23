@@ -1,7 +1,7 @@
 Package: centrifuger
 Type: Package
 Title: Analyze and dispaly metagenomics data in R
-Version: 0.1
+Version: 0.1.1
 Date: 2015-10-18
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
 Description: R package to visualize and analyse metagenomics data created by Kraken, metaphlan, and centrifuge.
