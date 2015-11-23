@@ -11,6 +11,7 @@ Imports: shiny (>= 0.1.12),
          sunburstR (>= 0.1),
          DT (>= 0.1.39),
          d3heatmap (>= 0.6.1),
+         networkD3 (>= 0.2.6),
          gapmap(>= 0.0.2),
          ggplot2(>= 1.0.1)
 License: GPL-3
