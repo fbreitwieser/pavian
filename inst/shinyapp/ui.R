@@ -27,9 +27,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
         padding: 2px 18px 2px 10px !important;
       }
 
-	  table.dataTable th.dt-right, table.dataTable td.dt-right {
-		  word-break: break-all;
-	  }
+      /*table.dataTable th.dt-right, table.dataTable td.dt-right {
+          word-break: break-all;
+      }*/
 
       /* tooltip for sparkline rendered with bootstrap
          see https://github.com/htmlwidgets/sparkline/issues/4 */
@@ -48,6 +48,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       }
     "))
   ),
+  #############################################################################
+  ##  DATA PANEL
+  #############################################################################
   tabPanel("Data",
     fluidRow(
       fileInput('file1', 'Choose file to upload',
@@ -63,15 +66,18 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                      choices=c(system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
                                system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifuger"),
                                "/home/fbreitwieser/projects/centrifuger/cp2",
-							   "/home/fbreitwieser/analysis-projects/salzberg-et-al-brain-biome/refseq-reports"),
+                               "/home/fbreitwieser/analysis-projects/salzberg-et-al-brain-biome/refseq-reports"),
                      selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"), 
-					 multiple=FALSE,width="80%", options=list(create=TRUE)),
+                     multiple=FALSE,width="80%", options=list(create=TRUE)),
       textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "%s.report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "(.*).report", width="80%")
     )
   ),
+  #############################################################################
+  ##  SAMPLES OVERVIEW
+  #############################################################################
   tabPanel("Samples overview",
     fluidRow(
         div(
@@ -79,11 +85,14 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                          label="No sample directory selected - please update it on the 'Data' tab",
                          choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
          style="font-size:80%"),
-		radioButtons("samples_overview_percent",label=NULL, c("reads","percentage"), "reads" ),
+        radioButtons("samples_overview_percent",label=NULL, c("reads","percentage"), "reads" ),
         DT::dataTableOutput('samples_overview'),
         uiOutput("view_in_sample_viewer")
     )
   ),
+  #############################################################################
+  ##  SAMPLE VIEWER
+  #############################################################################
   tabPanel("Sample viewer",
     fluidRow(
       column(9,
@@ -92,13 +101,15 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                          label="No sample directory selected - please update it on the 'Data' tab",
                          choices=NULL, multiple=FALSE,width='100%'),
          style="font-size:80%"),
-      sunburstR::sunburstOutput("sunburst",width="90%")
+         conditionalPanel("input.sample_view_ui == 'sunburst'",sunburstR::sunburstOutput("sample_view_sunburst",width="90%")),
+         conditionalPanel("input.sample_view_ui == 'sankey'",networkD3::sankeyNetworkOutput("sample_view_sankey",width="90%"))
       ),
       column(3,
+             radioButtons("sample_view_ui",label="Display",choices=c("sunburst","sankey")),
              checkboxInput("synchonize_sampleview_table_and_sunburst",
-                           label="Synchonize table and sunburst", value=FALSE),
+                           label="Synchonize table", value=FALSE),
              checkboxInput("remove_root_hits",
-                           label="Remove root hits", value=FALSE),
+                           label="Hide root hits", value=FALSE),
              selectizeInput('contaminant_selector2', label="Filter contaminants",
                     allcontaminants, selected=commoncontaminants,
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
@@ -108,6 +119,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
     fluidRow(uiOutput("view_in_samples_comparison"))
 
   ),
+  #############################################################################
+  ##  SAMPLES COMPARISON
+  #############################################################################
   tabPanel("Samples comparison",
     fluidRow(
       column(5,
@@ -141,6 +155,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       d3heatmap::d3heatmapOutput('samples_comparison_heatmap',width="100%")
     )
   ), ## end tabPanel samples_comparison
+  #############################################################################
+  ##  SAMPLES CLUSTERING
+  #############################################################################
   tabPanel("Clustering",
     fluidRow(
       shiny::plotOutput("cluster_plot")

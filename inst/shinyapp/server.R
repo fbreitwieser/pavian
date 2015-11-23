@@ -1,29 +1,12 @@
 library(shiny)
-library(centrifugeR)
-
-info_message <- function(...) {
-  message("INFO [",format(Sys.time(), "%m/%d %H:%M"),"]: ",...)
-}
+library(centrifuger)
 
 shinyServer(function(input, output, clientData, session) {
 
-  if (is.null(getOption("centrifugeR.cache_dir")))
-    options(centrifugeR.cache_dir="cache")
+  if (is.null(getOption("centrifuger.cache_dir")))
+    options(centrifuger.cache_dir="cache")
 
-  info_message("cache dir: ",getOption("centrifugeR.cache_dir"))
-
-  ## helper functions for loading the files reactively
-  ##   file_glob_pattern contains %s, which is to be replaced by the sample names
-  list_kraken_files <- function(data_dir,file_glob_pattern,sample_name="*") {
-    #sample_file_globs <- sapply(sample_name,function(my_sample_name) gsub("\\([^(]*\\)",my_sample_name,file_glob_pattern))
-    sample_file_globs <- sapply(sample_name,function(my_sample_name) gsub("%s",my_sample_name,file_glob_pattern))
-    info_message("Looking for files with pattern(s) ",paste(sample_file_globs,collapse=","))
-    Sys.glob(paste0(data_dir,"/",sample_file_globs))
-  }
-
-  get_sample_name <- function(file_names, regex_pattern) {
-    sapply(file_names, function(file_name) sub(regex_pattern,"\\1",file_name))
-  }
+  info_message("cache dir: ",getOption("centrifuger.cache_dir"))
 
   ## load kraken_reports based on input$data_dir and input$sample_selector2
   kraken_reports <- reactive({
@@ -39,7 +22,7 @@ shinyServer(function(input, output, clientData, session) {
                setProgress(value=i, detail = paste(n_reports-i, "left ..."))
                load_or_create(function() read_krakenres(kraken_file),
                               sprintf("%s.rds",basename(kraken_file)),
-                              cache_dir = getOption("centrifugeR.cache_dir"))
+                              cache_dir = getOption("centrifuger.cache_dir"))
              })
     })
 
@@ -48,12 +31,6 @@ shinyServer(function(input, output, clientData, session) {
     info_message("Kraken report names: ",paste(names(my_kraken_reports),collapse="\n\t"))
     my_kraken_reports
   })
-
-  sorted_kraken_files <- function() {
-    kraken_files <- sub(paste0(input$data_dir,"/"),"",list_kraken_files(input$data_dir, input$file_glob_pattern),fixed=TRUE)
-    #padded_sort(sub(".report$","",kraken_files))
-    sort(sub(".report$","",kraken_files))
-  }
 
   ## Observe the directory textInput to update sample selectors when it changed
   observe( {
@@ -65,7 +42,7 @@ shinyServer(function(input, output, clientData, session) {
         updateSelectizeInput(session, sample_selector, label = "No valid directory", choices = c(), selected = c())
       }
     } else {
-      kraken_files <- sorted_kraken_files()
+      kraken_files <- sorted_kraken_files(input$data_dir, input$file_glob_pattern)
       my_samples <- get_sample_name(kraken_files,input$regex_pattern)
       info_message("Found ",length(kraken_files)," files: \n\t",paste0(kraken_files," [sample ",my_samples,"]",collapse="\n\t"))
       updateTextInput(session, 'data_dir',
@@ -91,23 +68,6 @@ shinyServer(function(input, output, clientData, session) {
   observeEvent(input$sample_selector3, {
     updateSelectizeInput(session,"sample_selector2",selected=input$sample_selector3)
   })
-
-  ## Helper function to upper-case column names
-  beautify_string <- function(x) {
-    x <- gsub("[\\._]"," ",x)
-    x <- sub("^([[:alpha:]])", "\\U\\1", x, perl=TRUE)
-    x
-  }
-  beautify_colnames <- function(x) {
-    colnames(x) <- beautify_string(colnames(x))
-    x
-  }
-
-
-  ## helper function that sets NAs to zeros in a supplied data.frame
-  zero_if_na <- function(df) { df[is.na(df) | df < 0] <- 0; df; }
-
-  ##
 
   get_summarized_report <- function(classification_level, filter_contaminants, numeric_display, as_matrix=FALSE) {
     ## generate data.frame which has a name column (species name) and a further reads column for each sample
@@ -175,8 +135,9 @@ shinyServer(function(input, output, clientData, session) {
   }
 
 
-  ##------------------------------------------------------------------------------------------------
-  ## OUTPUTS
+  #############################################################################
+  ##  OUTPUTS
+  #############################################################################
 
   sample_view_report <- reactive({
     my_report <- kraken_reports()[[input$sample_selector]]
@@ -193,9 +154,11 @@ shinyServer(function(input, output, clientData, session) {
     my_report
   })
 
-  ##----------------------
-  ## Sample viewer outputs
-  output$sunburst <- sunburstR::renderSunburst({
+  #############################################################################
+  ##  Sample viewer outputs
+  #############################################################################
+
+  output$sample_view_sunburst <- sunburstR::renderSunburst({
 
     my_report <- sample_view_report()
 	if (length(my_report) == 0)
@@ -207,6 +170,39 @@ shinyServer(function(input, output, clientData, session) {
       my_report <- my_report[sort(input$sample_view_rows_all),]
 
     kraken_sunburst(my_report)
+  })
+
+  output$sample_view_sankey <- networkD3::renderSankeyNetwork({
+    my_report <- sample_view_report()
+	if (length(my_report) == 0)
+		return()
+
+    # filter report with rows as selected in the table
+    if (input$synchonize_sampleview_table_and_sunburst &&
+		length(input$sample_view_rows_all) > 0)
+      my_report <- my_report[sort(input$sample_view_rows_all),]
+
+    print(head(my_report))
+    my_report <- my_report[,c("depth","reads","name")]
+    #my_report$name <- sub("^._","",my_report$name)
+    eng <- get.nodes.and.links(my_report,10)
+    print(eng)
+    nodes <- eng[[1]]
+    links <- eng[[2]]
+    max.reads <- max(links[,"value"])
+    #print(links)
+
+    #output$maxReads <- renderUI({
+    #  helpText(sprintf("max.reads: %s",max.reads))
+    #})
+
+    #updateSliderInput(session,inputId = "min.reads",min = 1,max = min(1000,max.reads))
+
+    if (!is.null(links))
+    networkD3::sankeyNetwork(Links = links, Nodes = nodes,
+                  Source = "source", Target = "target",
+                  Value = "value", NodeID = "name",
+                  fontSize = 14, margin=0, height=800)
   })
 
   output$sample_view <- DT::renderDataTable({
@@ -277,12 +273,12 @@ shinyServer(function(input, output, clientData, session) {
     if (length(selected_row) != 1)
       return()
 
-    selected_sample <- sorted_kraken_files()[input$samples_overview_rows_selected]
+    selected_sample <- sorted_kraken_files(input$data_dir, input$file_glob_pattern)[input$samples_overview_rows_selected]
     actionButton("view_selected_in_sample_viewer",paste("--> View details of sample",selected_sample))
   })
 
   observeEvent(input$view_selected_in_sample_viewer,{
-    selected_sample <- sorted_kraken_files()[input$samples_overview_rows_selected]
+    selected_sample <- sorted_kraken_files(input$data_dir, input$file_glob_pattern)[input$samples_overview_rows_selected]
     updateSelectInput(session,'sample_selector',selected=selected_sample)
     updateTabsetPanel(session,"main_page",selected="Sample viewer")
   }, ignoreNULL = TRUE)

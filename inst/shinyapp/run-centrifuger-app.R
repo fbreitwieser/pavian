@@ -1,3 +1,3 @@
 #!/usr/bin/Rscript
 
-centrifugeR::runApp()
+centrifuger::runApp()
