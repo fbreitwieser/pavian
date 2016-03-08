@@ -46,6 +46,11 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
         min-width: 125px;
       }
+      .glyphicon glyphicon-remove-circle form-control-feedback {
+        position: relative !important;
+        width: unset !important;
+        height: unset !important;
+      }
     "))
   ),
   #############################################################################
@@ -67,7 +72,7 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                                system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifuger"),
                                "/home/fbreitwieser/projects/centrifuger/cp2",
                                "/home/fbreitwieser/analysis-projects/salzberg-et-al-brain-biome/refseq-reports"),
-                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"), 
+                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
                      multiple=FALSE,width="80%", options=list(create=TRUE)),
       textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "%s.report", width="80%"),

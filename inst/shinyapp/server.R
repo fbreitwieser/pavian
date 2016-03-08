@@ -161,12 +161,12 @@ shinyServer(function(input, output, clientData, session) {
   output$sample_view_sunburst <- sunburstR::renderSunburst({
 
     my_report <- sample_view_report()
-	if (length(my_report) == 0)
-		return()
+    if (length(my_report) == 0)
+        return()
 
     # filter report with rows as selected in the table
     if (input$synchonize_sampleview_table_and_sunburst &&
-		length(input$sample_view_rows_all) > 0)
+        length(input$sample_view_rows_all) > 0)
       my_report <- my_report[sort(input$sample_view_rows_all),]
 
     kraken_sunburst(my_report)
@@ -174,19 +174,18 @@ shinyServer(function(input, output, clientData, session) {
 
   output$sample_view_sankey <- networkD3::renderSankeyNetwork({
     my_report <- sample_view_report()
-	if (length(my_report) == 0)
-		return()
+    if (length(my_report) == 0)
+          return()
 
     # filter report with rows as selected in the table
     if (input$synchonize_sampleview_table_and_sunburst &&
-		length(input$sample_view_rows_all) > 0)
+        length(input$sample_view_rows_all) > 0)
       my_report <- my_report[sort(input$sample_view_rows_all),]
 
     print(head(my_report))
     my_report <- my_report[,c("depth","reads","name")]
     #my_report$name <- sub("^._","",my_report$name)
-    eng <- get.nodes.and.links(my_report,10)
-    print(eng)
+    eng <- get_nodes_and_links(my_report,10)
     nodes <- eng[[1]]
     links <- eng[[2]]
     max.reads <- max(links[,"value"])
@@ -197,12 +196,15 @@ shinyServer(function(input, output, clientData, session) {
     #})
 
     #updateSliderInput(session,inputId = "min.reads",min = 1,max = min(1000,max.reads))
+    links$source_name <- nodes$name[links$source+1]
+
 
     if (!is.null(links))
     networkD3::sankeyNetwork(Links = links, Nodes = nodes,
                   Source = "source", Target = "target",
                   Value = "value", NodeID = "name",
-                  fontSize = 14, margin=0, height=800)
+                  nodeWidth = 3, LinkGroup = "source_name",
+                  fontSize = 12, moveNodesRight = FALSE)
   })
 
   output$sample_view <- DT::renderDataTable({
@@ -251,17 +253,17 @@ shinyServer(function(input, output, clientData, session) {
   ##-------------------------
   ## Samples overview output
   output$samples_overview <- DT::renderDataTable({
-	my_reports <- kraken_reports()
-	if (length(my_reports) == 0)
-		return()
+    my_reports <- kraken_reports()
+    if (length(my_reports) == 0)
+        return()
 
     # TODO: Display sample names as a column such that they can be sorted or filtered (not as row names)
     samples_summary <- do.call(rbind,lapply(my_reports, summarize_kraken_report))
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
-	if (isTRUE(input$samples_overview_percent == "percentage")) {
-		samples_summary[,2:ncol(samples_summary)] <- round(100*sweep(samples_summary[,2:ncol(samples_summary)],1,samples_summary[,1],`/`),5)
-	}
+    if (isTRUE(input$samples_overview_percent == "percentage")) {
+        samples_summary[,2:ncol(samples_summary)] <- round(100*sweep(samples_summary[,2:ncol(samples_summary)],1,samples_summary[,1],`/`),5)
+    }
 
     DT::datatable(samples_summary,selection='single', options=list(pagelength=25))
   })
@@ -290,8 +292,8 @@ shinyServer(function(input, output, clientData, session) {
     #  return()
 
     summarized_report <- get_summarized_report(input$classification_level, input$contaminant_selector3, input$numeric_display)
-	  if (length(summarized_report) == 0)
-		  return()
+      if (length(summarized_report) == 0)
+          return()
 
     ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
     sparklineColumnDefs <- list(
@@ -324,7 +326,7 @@ shinyServer(function(input, output, clientData, session) {
     ##  For example: taxonomy ID, links to assemblies (e.g. www.ncbi.nlm.nih.gov/assembly/organism/821)
     ##   and organism overview http://www.ncbi.nlm.nih.gov/genome/?term=txid821[Organism:noexp]
 
-	#colnames(summarized_report) <- gsub("_","_<wbr>",colnames(summarized_report))
+    #colnames(summarized_report) <- gsub("_","_<wbr>",colnames(summarized_report))
 
     dt <- DT::datatable(summarized_report, options=list(
       columnDefs = sparklineColumnDefs,
@@ -362,27 +364,27 @@ shinyServer(function(input, output, clientData, session) {
   })
 
   output$cluster_plot <- renderPlot({
-	  my_reports <- kraken_reports()
-	  if (length(my_reports) == 0)
-		  return()
+      my_reports <- kraken_reports()
+      if (length(my_reports) == 0)
+          return()
 
       #idvar=".id"; timevar="name"
       idvar="name"; timevar=".id"
 
-	  all.s.reads <- reshape(get_level_reads(my_reports,level=="S",min.perc=0.01)[,c(idvar,timevar,"reads")],
-	                         timevar=timevar,
-	                         idvar=idvar,
-	                         direction="wide")
-	  rownames(all.s.reads) <- all.s.reads$NAME
-	  all.s.reads$name <- NULL
-	  colnames(all.s.reads) <- sub("reads.(.*)","\\1",colnames(all.s.reads))
+      all.s.reads <- reshape(get_level_reads(my_reports,level=="S",min.perc=0.01)[,c(idvar,timevar,"reads")],
+                             timevar=timevar,
+                             idvar=idvar,
+                             direction="wide")
+      rownames(all.s.reads) <- all.s.reads$NAME
+      all.s.reads$name <- NULL
+      colnames(all.s.reads) <- sub("reads.(.*)","\\1",colnames(all.s.reads))
 
-	  eucl.dist <- dist(t(all.s.reads))
-	  hc <- hclust(eucl.dist)
-	  dend <- as.dendrogram(hc)
+      eucl.dist <- dist(t(all.s.reads))
+      hc <- hclust(eucl.dist)
+      dend <- as.dendrogram(hc)
 
-	  gapmap::gapmap(m = as.matrix(eucl.dist), d_row= rev(dend), d_col=dend,
-	                 h_ratio=c(0.2,0.5,0.3),v_ratio=c(0.2,0.5,0.3))
+      gapmap::gapmap(m = as.matrix(eucl.dist), d_row= rev(dend), d_col=dend,
+                     h_ratio=c(0.2,0.5,0.3),v_ratio=c(0.2,0.5,0.3))
   })
 
 })
