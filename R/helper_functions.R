@@ -6,11 +6,14 @@ info_message <- function(...) {
 ## helper functions for loading the files reactively
 ##   file_glob_pattern contains %s, which is to be replaced by the sample names
 #' @export
-list_kraken_files <- function(data_dir,file_glob_pattern,sample_name="*") {
+list_kraken_files <- function(data_dir,file_glob_pattern,sample_name="*",...) {
   #sample_file_globs <- sapply(sample_name,function(my_sample_name) gsub("\\([^(]*\\)",my_sample_name,file_glob_pattern))
-  sample_file_globs <- sapply(sample_name,function(my_sample_name) gsub("%s",my_sample_name,file_glob_pattern))
+  sample_file_globs <- sapply(sample_name,
+                              function(my_sample_name) gsub("%s",my_sample_name,file_glob_pattern)
+                              )
+  if (is.null(sample_file_globs))
   info_message("Looking for files with pattern(s) ",paste(sample_file_globs,collapse=","))
-  Sys.glob(paste0(data_dir,"/",sample_file_globs))
+  list.files(data_dir,pattern=sample_file_globs,...)
 }
 
 #' @export
@@ -41,7 +44,10 @@ beautify_colnames <- function(x) {
 
 ## helper function that sets NAs to zeros in a supplied data.frame
 #' @export
-zero_if_na <- function(df) { df[is.na(df) | df < 0] <- 0; df; }
+zero_if_na <- function(df) {
+  df[is.na(df) | df < 0] <- 0
+  return(df)
+}
 
 
 

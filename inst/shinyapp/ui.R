@@ -1,13 +1,17 @@
 library(shiny)
 library(centrifuger)
+library(shinyTree)
 
 # identifications that are considered contaminants and may be filtered by default
-commoncontaminants1=c('s_Homo sapiens','s_synthetic construct','u_unclassified','s_Enterobacteria phage phiX174 sensu lato')
-allcontaminants=c(commoncontaminants1,'s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae', 's_Ralstonia pickettii')
+host_contaminants=c('s_Homo sapiens')
+seq_contaminants=c('s_synthetic construct','u_unclassified','s_Enterobacteria phage phiX174 sensu lato')
+microbe_contaminants=c('s_Propionibacterium acnes','s_Escherichia coli','s_Saccharomyces cerevisiae', 's_Ralstonia pickettii')
 commoncontaminants <- c()  ## this vector is initially filtered
+allcontaminants <- list(Host=host_contaminants,Artificial=seq_contaminants,Microbes=microbe_contaminants)
+allcontaminants <- as.character(allcontaminants)
 
 shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
-  #theme = "bootstrap.css",
+  theme = "bootstrap.css",
   tags$head(
     tags$style(HTML("
       .has-feedback .form-control {
@@ -67,17 +71,23 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                   '.report'
                 )
       ),
-      selectizeInput("data_dir", "Reports directory",
+      selectizeInput("cbo_data_dir", "Reports directory",
                      choices=c(system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
                                system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifuger"),
                                "/home/fbreitwieser/projects/centrifuger/cp2",
                                "/home/fbreitwieser/analysis-projects/salzberg-et-al-brain-biome/refseq-reports"),
                      selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
                      multiple=FALSE,width="80%", options=list(create=TRUE)),
+      ## require config file (tab-separated) in reports directory. Links to fasta/fastq files
+      ## or require certain directory structure (as I have)?
+      ## report/
+      ## kraken/
+      ## fastq/
       textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "%s.report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "(.*).report", width="80%")
+
     )
   ),
   #############################################################################
@@ -153,7 +163,14 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
 
     ),
     fluidRow(
-      DT::dataTableOutput('samples_comparison')
+      DT::dataTableOutput('dt_samples_comparison')
+    ),
+    fluidRow(
+      actionButton("btn_sc_filter","Filter"),
+      actionButton("btn_sc_gointo","Go Into")
+    ),
+    fluidRow(
+      shiny::htmlOutput("txt_samples_comparison")
     ),
     fluidRow(
       column(1),
@@ -166,6 +183,23 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
   tabPanel("Clustering",
     fluidRow(
       shiny::plotOutput("cluster_plot")
+    )
+  ), ## end tabPanel Clustering
+  #############################################################################
+  ##  ALIGN OF A MICROBE TO ONE SAMPLE
+  #############################################################################
+  tabPanel("OneMicrobe",
+    fluidRow(
+      shiny::checkboxInput("align_loess","Show smoothed LOESS curve"),
+      shiny::checkboxInput("align_moving_avg","Show moving average",value = TRUE),
+      shiny::actionButton("get_alignment","Load alignment"),
+      shiny::textInput("bam_file","Bam File"),
+      shinyTree::shinyTree("files_tree"),
+      shiny::selectizeInput("cbo_assemblies",choices=NULL,label="RefSeq Assemblies"),
+      shiny::actionButton("btn_load_assembly_info","Load RefSeq assemblies"),
+      DT::dataTableOutput("dt_assembly_info"),
+      shiny::plotOutput("sample_align", brush = brushOpts("align_brush", direction = "x"),),
+      shiny::htmlOutput("txt_align_brush")
     )
   )
 ))

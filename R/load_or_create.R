@@ -20,7 +20,10 @@ load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
     cache_dir <- "cache"
 
   if (!dir.exists(cache_dir)) {
-    dir.create(cache_dir)
+    dir.create(cache_dir, recursive = TRUE)
+    if (!dir.exists(cache_dir)) {
+      stop(1)
+    }
   }
   sav_file <- sprintf("%s/%s",cache_dir, name)
   if (!file.exists(sav_file) || isTRUE(recreate)) {
