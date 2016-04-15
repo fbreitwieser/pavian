@@ -11,6 +11,9 @@ shinyServer(function(input, output, clientData, session) {
   ## load kraken_reports based on input$cbo_data_dir and input$sample_selector2
   kraken_reports <- reactive({
     kraken_files <- list_kraken_files(input$cbo_data_dir, input$file_glob_pattern, input$sample_selector2, recursive=TRUE)
+    if (length(kraken_files) == 0) {
+      return()
+    }
     n_reports <- length(kraken_files)
     my_kraken_reports <-
       withProgress(message = paste("Loading",n_reports,"sample reports"),
@@ -77,6 +80,9 @@ shinyServer(function(input, output, clientData, session) {
     id_cols <- c(id_cols_before,id_cols_after)
 
     my_reports <- kraken_reports()
+    if (is.null(my_reports)) {
+      return(NULL)
+    }
     my_reports <- lapply(names(my_reports),function(report_name) {
 
       my_report <- my_reports[[report_name]]
@@ -457,7 +463,7 @@ Lineage: %s
 
   #############################################################################
   ## Alignment output
-  pileup <- eventReactive(input$get_alignment, {
+  pileup <- eventReactive(input$btn_get_alignment, {
     library(Rsamtools)
 
     req(input$bam_file)
@@ -524,7 +530,9 @@ Lineage: %s
   })
 
   output$sample_align <- renderPlot({
+    pileup <- pileup()
     req(input$bam_file)
+    req(pileup)
 
     p2 <- Rsamtools::ScanBamParam(what=c("rname", "strand", "pos", "qwidth"))
     bam <- Rsamtools::scanBam(input$bam_file, param = p2)
@@ -533,7 +541,6 @@ Lineage: %s
 
     seq_lengths <- seq_lengths()
 
-    pileup <- pileup()
 
     seq_info_df <- ddply(pileup,c("seqnames"), function(x) {
       data.frame(seqnames=x$seqnames[1],
