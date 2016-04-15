@@ -53,6 +53,17 @@ zero_if_na <- function(df) {
 }
 
 
+# get directory listing for shinyTree
+get_directory_listing <- function(my_dir) {
+      all_dirs <- list.dirs(my_dir, recursive = FALSE, full.names=TRUE)
+      all_dirs_short <- sub(".*/","",all_dirs)
+      all_files <- list.files(my_dir)
+      all_files <- all_files[!all_files %in% all_dirs_short]
+      if (length(all_files) == 0 && length(all_dirs) == 0)
+          return(structure(''))
 
+      c(setNames(lapply(all_dirs,get_directory_listing),all_dirs_short),
+        setNames(rep(structure('',sticon='file'),length(all_files)),all_files))
+}
 
 

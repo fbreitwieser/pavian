@@ -518,15 +518,7 @@ Lineage: %s
   })
 
   output$files_tree <- shinyTree::renderTree({
-    get_files <- function(my_dir) {
-      all_dirs <- list.dirs(my_dir,recursive = FALSE,full.names=TRUE)
-      all_dirs_short <- sub(".*/","",all_dirs)
-      all_files <- list.files(my_dir)
-      all_files <- all_files[!all_files%in%all_dirs_short]
-      c(setNames(lapply(all_dirs,get_files),all_dirs_short),
-        setNames(rep(structure('',sticon='file'),length(all_files)),all_files))
-    }
-    get_files(input$cbo_data_dir)
+    centrifuger:::get_directory_listing(input$cbo_data_dir)
   })
 
   output$sample_align <- renderPlot({
