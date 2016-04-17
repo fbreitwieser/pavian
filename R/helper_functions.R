@@ -6,10 +6,9 @@ info_message <- function(...) {
 ## helper functions for loading the files reactively
 ##   file_glob_pattern contains %s, which is to be replaced by the sample names
 #' @export
-list_kraken_files <- function(data_dir,file_glob_pattern,sample_name="*",...) {
-  #sample_file_globs <- sapply(sample_name,
-  #                            function(my_sample_name)
-  #                              gsub("\\([^(]*\\)",my_sample_name,file_glob_pattern))
+list_kraken_files <- function(data_dir, file_names,file_extension,sample_name=NULL) {
+
+  file_paths <- paste0(data_dir, "/", file_names)
   sample_file_globs <- sapply(sample_name,
                               function(my_sample_name) gsub("%s",my_sample_name,file_glob_pattern)
                               )
@@ -25,7 +24,7 @@ get_sample_name <- function(file_names, regex_pattern) {
 }
 
 #' @export
-sorted_kraken_files <- function(data_dir,file_glob_pattern) {
+sorted_kraken_files <- function(data_dir, file_glob_pattern) {
   kraken_files <- sub(paste0(data_dir,"/"),"",list_kraken_files(data_dir, file_glob_pattern),fixed=TRUE)
   #padded_sort(sub(".report$","",kraken_files))
   sort(sub(".report$","",kraken_files))

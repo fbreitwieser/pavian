@@ -1,6 +1,6 @@
 library(shiny)
 library(centrifuger)
-library(shinyTree)
+library(shinyFileTree)
 
 # identifications that are considered contaminants and may be filtered by default
 host_contaminants=c('s_Homo sapiens')
@@ -69,16 +69,14 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                   'text/comma-separated-values',
                   'text/tab-separated-values',
                   'text/plain',
-                  '.report'
-                )
+                  '.csv','.report'
+                ),
+                multiple=TRUE
       ),
-      selectizeInput("cbo_data_dir", "Reports directory",
-                     choices=c(system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
-                               system.file("shinyapp/example-data","bellybutton-swaps",package = "centrifuger"),
-                               "/home/fbreitwieser/projects/centrifuger/cp2",
-                               "/home/fbreitwieser/analysis-projects/salzberg-et-al-brain-biome/refseq-reports"),
-                     selected=system.file("shinyapp/example-data","brain-biopsies",package = "centrifuger"),
-                     multiple=FALSE,width="80%", options=list(create=TRUE)),
+      textInput("cbo_data_dir", "Data directory",
+                value=system.file("shinyapp/example-data",package = "centrifuger"),
+                width="80%"),
+      shinyFileTreeOutput("files_tree"),
       ## TODO: Think about putting a file tree here
 
       ## require config file (tab-separated) in reports directory. Links to fasta/fastq files
@@ -86,8 +84,8 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       ## report/
       ## kraken/
       ## fastq/
-      textInput("file_glob_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
-                value = "%s.report", width="80%"),
+      textInput("txt_file_ext", "File extension",
+                value = ".report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "(.*).report", width="80%")
 
@@ -199,7 +197,6 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       shiny::actionButton("btn_create_alignment","Create alignment"),
       shiny::actionButton("btn_get_alignment","Load alignment"),
       shiny::textInput("bam_file","Bam File"),
-      shinyTree::shinyTree("files_tree"),
       shiny::selectizeInput("cbo_assemblies",choices=NULL,label="RefSeq Assemblies"),
       shiny::actionButton("btn_load_assembly_info","Load RefSeq assemblies"),
       DT::dataTableOutput("dt_assembly_info"),

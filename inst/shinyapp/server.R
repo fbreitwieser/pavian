@@ -1,6 +1,6 @@
 library(shiny)
 library(centrifuger)
-library(shinyTree)
+library(shinyFileTree)
 shinyServer(function(input, output, clientData, session) {
 
   #if (is.null(getOption("centrifuger.cache_dir")))
@@ -10,7 +10,7 @@ shinyServer(function(input, output, clientData, session) {
 
   ## load kraken_reports based on input$cbo_data_dir and input$sample_selector2
   kraken_reports <- reactive({
-    kraken_files <- list_kraken_files(input$cbo_data_dir, input$file_glob_pattern, input$sample_selector2, recursive=TRUE)
+    kraken_files <- report_files()
     if (length(kraken_files) == 0) {
       return()
     }
@@ -45,14 +45,13 @@ shinyServer(function(input, output, clientData, session) {
         updateSelectizeInput(session, sample_selector, label = "No valid directory", choices = c(), selected = c())
       }
     } else {
-      kraken_files <- sorted_kraken_files(input$cbo_data_dir, input$file_glob_pattern)
-      my_samples <- get_sample_name(kraken_files,input$regex_pattern)
-      info_message("Found ",length(kraken_files)," files: \n\t",paste0(kraken_files," [sample ",my_samples,"]",collapse="\n\t"))
+      my_samples <- get_sample_name(report_file_names(),input$regex_pattern)
+      info_message("Found ",length(report_file_names())," files: \n\t",paste0(report_file_names()," [sample ",my_samples,"]",collapse="\n\t"))
       updateTextInput(session, 'cbo_data_dir',
-                      label=paste0("Data directory on server (",length(my_samples)," samples in selected directory)"))
+                      label=paste0("Data directory on server (",length(my_samples)," result files selected)"))
       updateSelectInput(session, 'sample_selector',
-                           label=paste(length(kraken_files),"sample reports in directory",input$cbo_data_dir),
-                           choices=kraken_files, selected=kraken_files[1])
+                           label=paste(length(report_file_names()),"sample reports in directory",input$cbo_data_dir),
+                           choices=report_file_names(), selected=report_file_names()[1])
 
       ## update sample_selector2 (sample_selector3 gets updated by another observeEvent)
       for (sample_selector in c('sample_selector2','sample_selector3')) {
@@ -70,6 +69,27 @@ shinyServer(function(input, output, clientData, session) {
 
   observeEvent(input$sample_selector3, {
     updateSelectizeInput(session,"sample_selector2",selected=input$sample_selector3)
+  })
+
+  report_files <- reactive({
+    all_files <- paste0(input$cbo_data_dir, "/", input$files_tree_selected)
+    sel_report_files <- grepl(paste0(input$txt_file_ext,"$"), all_files) &
+      file.exists(all_files) & !dir.exists(all_files)
+    all_files[sel_report_files]
+  })
+
+  report_file_names <- reactive({
+    # strip base directory name
+    report_files_no_dir <- sub(paste0(input$cbo_data_dir,"/"), "", report_files(), fixed = TRUE)
+
+    # strip extension
+    report_files_basename <- sub(paste0(input$txt_file_ext,"$"), "", report_files_no_dir)
+
+    return(report_files_basename)
+  })
+
+  selected_report_files <- reactive({
+
   })
 
   get_summarized_report <- function(classification_level, filter_contaminants, numeric_display, as_matrix=FALSE) {
@@ -189,6 +209,7 @@ shinyServer(function(input, output, clientData, session) {
         length(input$sample_view_rows_all) > 0)
       my_report <- my_report[sort(input$sample_view_rows_all),]
 
+    #my_report$name <- sub("._", "", my_report$name)
     print(head(my_report))
     my_report <- my_report[,c("depth","reads","name")]
     #my_report$name <- sub("^._","",my_report$name)
@@ -196,6 +217,7 @@ shinyServer(function(input, output, clientData, session) {
     nodes <- eng[[1]]
     links <- eng[[2]]
     max.reads <- max(links[,"value"])
+
     #print(links)
 
     #output$maxReads <- renderUI({
@@ -281,12 +303,12 @@ shinyServer(function(input, output, clientData, session) {
       return()
 
     message(input$samples_overview_rows_selected)
-    selected_sample <- sorted_kraken_files(input$cbo_data_dir, input$file_glob_pattern)[input$samples_overview_rows_selected]
+    selected_sample <- report_file_names()[input$samples_overview_rows_selected]
     actionButton("btn_view_selected_in_sample_viewer",paste("--> View details of sample",selected_sample))
   })
 
   observeEvent(input$btn_view_selected_in_sample_viewer,{
-    selected_sample <- sorted_kraken_files(input$cbo_data_dir, input$file_glob_pattern)[input$samples_overview_rows_selected]
+    selected_sample <- report_file_names()[input$samples_overview_rows_selected]
     updateSelectInput(session,'sample_selector',selected=selected_sample)
     updateTabsetPanel(session,"main_page",selected="Sample viewer")
   }, ignoreNULL = TRUE)
@@ -517,8 +539,9 @@ Lineage: %s
     bamHeader[[1]][["targets"]]
   })
 
-  output$files_tree <- shinyTree::renderTree({
-    centrifuger:::get_directory_listing(input$cbo_data_dir)
+  output$files_tree <- shinyFileTree::renderShinyFileTree({
+    print(shinyFileTree::get_list_from_directory(input$cbo_data_dir))
+    shinyFileTree(shinyFileTree::get_list_from_directory(input$cbo_data_dir),plugins = c("checkbox","types"))
   })
 
   output$sample_align <- renderPlot({

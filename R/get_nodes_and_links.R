@@ -28,10 +28,6 @@ get_nodes_and_links <- function(krakenres,max_per_level=10) {
     }
     current_depth = current_depth + 1
   }
-  message("OIDA")
-  print(krakenres)
-  message("YA!")
-
 
   nodes_n_links <- create_links(krakenres,NA,current_depth=0,max_depth=15)
   nodes_n_links <- unique(nodes_n_links)

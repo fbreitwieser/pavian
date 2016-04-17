@@ -29,6 +29,7 @@ kraken_sunburst <- function(krakenres) {
   kk <- krakenres[krakenres$reads_stay>=1,]
 
   ## update taxonstring to be parseable by sunburst.js
+  kk$taxonstring <- gsub("\\|._", "|", kk$taxonstring)
   kk$taxonstring <- gsub("-_root|","",kk$taxonstring, fixed=TRUE)
   kk$taxonstring <- gsub("-","_",kk$taxonstring)
   kk$taxonstring <- gsub("|","-",kk$taxonstring,fixed = TRUE)
