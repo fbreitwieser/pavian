@@ -38,19 +38,20 @@ summarize_kraken_report <- function(my_report) {
   data.frame(
     number_of_raw_reads=unidentified_reads+identified_reads,
     classified_reads=identified_reads,
-    unclassified_reads=unidentified_reads,
     human_reads=human_reads,
     artificial_reads=artificial_reads,
+    unclassified_reads=unidentified_reads,
+    microbial_reads=identified_reads-human_reads-artificial_reads,
     bacterial_reads=my_report["d_Bacteria","reads"],
     viral_reads=my_report["d_Viruses","reads"],
-    fungal_reads=my_report["k_Fungi","reads"],
-    s_cerevisia_reads=s_cerevisiae_reads,
+    fungal_reads=my_report["k_Fungi","reads"]
+    #s_cerevisia_reads=s_cerevisiae_reads,
     #eupath_reads=eupath_reads,
     #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],
     #o_kinetoplastida_reads=my_report["o_Kinetoplastida","reads"],
     #Amoebozoa_reads=my_report["-_Amoebozoa","reads"],
     #Heterolobosea_reads=my_report["c_Heterolobosea","reads"],
     #Fornicata_reads=my_report["-_Fornicata","reads"],
-    nonhuman_reads_at_species_level=sum(my_report$reads[my_report$level=="S"])-my_report["s_Homo sapiens","reads"]-artificial_reads
+    #nonhuman_reads_at_species_level=sum(my_report$reads[my_report$level=="S"])-my_report["s_Homo sapiens","reads"]-artificial_reads
   )
 }

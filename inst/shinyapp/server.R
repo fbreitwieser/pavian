@@ -1,6 +1,9 @@
 library(shiny)
+library(shinydashboard)
 library(centrifuger)
 library(shinyFileTree)
+library(magrittr)
+library(DT)
 shinyServer(function(input, output, clientData, session) {
 
   #if (is.null(getOption("centrifuger.cache_dir")))
@@ -48,15 +51,15 @@ shinyServer(function(input, output, clientData, session) {
       my_samples <- get_sample_name(report_file_names(),input$regex_pattern)
       info_message("Found ",length(report_file_names())," files: \n\t",paste0(report_file_names()," [sample ",my_samples,"]",collapse="\n\t"))
       updateTextInput(session, 'cbo_data_dir',
-                      label=paste0("Data directory on server (",length(my_samples)," result files selected)"))
+                      label=sprintf("Select files from server (%s selected)",length(my_samples)))
       updateSelectInput(session, 'sample_selector',
-                           label=paste(length(report_file_names()),"sample reports in directory",input$cbo_data_dir),
+                           #label=paste(length(report_file_names()),"sample reports in directory",input$cbo_data_dir),
                            choices=report_file_names(), selected=report_file_names()[1])
 
       ## update sample_selector2 (sample_selector3 gets updated by another observeEvent)
       for (sample_selector in c('sample_selector2','sample_selector3')) {
         updateSelectizeInput(session, sample_selector,
-                             label=paste(length(my_samples),"samples in directory",input$cbo_data_dir),
+                             #label=paste(length(my_samples),"samples in directory",input$cbo_data_dir),
                              choices=my_samples, selected=my_samples)
       }
     }
@@ -128,7 +131,7 @@ shinyServer(function(input, output, clientData, session) {
     data_portion <- summarized_report[,seq(from=length(id_cols)+1, to=ncol(summarized_report))]
 
     if (numeric_display == "percentage") {
-      data_portion <- round(100*t(t(data_portion)/colSums(data_portion,na.rm=T)),3)
+      data_portion <- signif(100*t(t(data_portion)/colSums(data_portion,na.rm=T)),3)
     }
 
     if (as_matrix) {
@@ -288,11 +291,40 @@ shinyServer(function(input, output, clientData, session) {
     samples_summary <- do.call(rbind,lapply(my_reports, summarize_kraken_report))
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
-    if (isTRUE(input$samples_overview_percent == "percentage")) {
-        samples_summary[,2:ncol(samples_summary)] <- round(100*sweep(samples_summary[,2:ncol(samples_summary)],1,samples_summary[,1],`/`),5)
+
+    number_range <-  c(0,max(samples_summary[,1]))
+    start_color_bar_at <- 1
+
+    if (isTRUE(input$opt_samples_overview_percent)) {
+      start_color_bar_at <- 2
+      number_range <- c(0,100)
+        samples_summary[,2:ncol(samples_summary)] <- 100*signif(sweep(samples_summary[,2:ncol(samples_summary)],1,samples_summary[,1],`/`),2)
     }
 
-    DT::datatable(samples_summary,selection='single', options=list(pagelength=25))
+    dt <- DT::datatable(samples_summary,selection='single',
+                  options=list(pagelength=25)) %>%
+      DT::formatStyle(colnames(samples_summary)[start_color_bar_at:5],
+                  background = DT::styleColorBar(number_range, 'lightblue')) %>%
+      DT::formatStyle(colnames(samples_summary)[6:ncol(samples_summary)],
+                      background = DT::styleColorBar(range(samples_summary[,6]), 'lightgreen'))
+
+    #formatString <- function(table, columns, before="", after="") {
+    #  DT:::formatColumns(table, columns, function(col, before, after)
+    #    sprintf("$(this.api().cell(row, %s).node()).html((%s + data[%d]) + %s);  ",col, before, col, after),
+    #    before, after
+    #  )
+    #}
+
+    if (isTRUE(input$opt_samples_overview_percent)) {
+      dt <- dt %>%
+        formatCurrency(1,currency='',digits = 0) %>%
+        formatString(2:ncol(samples_summary), string_after='%', string_before = '')  ## TODO: display as percent
+        ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
+        ## with signif.
+    } else {
+      dt <- dt %>% formatCurrency(1:ncol(samples_summary),currency='',digits = 0)
+    }
+    dt
   })
 
 
@@ -326,6 +358,9 @@ shinyServer(function(input, output, clientData, session) {
 
     summarized_report <- summarized_report()
     req(summarized_report)
+
+    idx_data_columns <- attr(summarized_report,'data_columns')
+    colnames(summarized_report)[idx_data_columns] <- sub(".*/","",colnames(summarized_report)[idx_data_columns])
 
     ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
     sparklineColumnDefs <- list(
@@ -373,6 +408,14 @@ shinyServer(function(input, output, clientData, session) {
       search = list(search=ifelse("search" %in% names(query), query['search'],""),
                     regex = TRUE, caseInsensitive = FALSE)   ## add regular expression search
       ),rownames=FALSE, selection='single')
+
+    if (input$numeric_display != "percentage") {
+      dt <- dt %>% formatCurrency(attr(summarized_report,'mean_column'),currency='',digits=1) %>%
+                   formatCurrency(attr(summarized_report,'data_columns'),currency='',digits=0)
+    } else {
+      dt <- dt %>% formatString(attr(summarized_report,'mean_column'),string_after='%') %>%
+                   formatString(attr(summarized_report,'data_columns'),string_after='%')
+    }
 
     ## use the sparkline package and the getDependencies function in htmlwidgets to get the
     ## dependencies required for constructing sparklines and then inject it into the dependencies
@@ -540,7 +583,7 @@ Lineage: %s
   })
 
   output$files_tree <- shinyFileTree::renderShinyFileTree({
-    print(shinyFileTree::get_list_from_directory(input$cbo_data_dir))
+    ## TODO: Consider pre-selecting brain-biospies directory when application is first loaded
     shinyFileTree(shinyFileTree::get_list_from_directory(input$cbo_data_dir),plugins = c("checkbox","types"))
   })
 

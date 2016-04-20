@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(centrifuger)
 library(shinyFileTree)
 
@@ -11,59 +12,17 @@ allcontaminants <- list(Host=host_contaminants,Artificial=seq_contaminants,Micro
 allcontaminants <- unlist(allcontaminants)
 names(allcontaminants) <- NULL
 
-shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
-  theme = "bootstrap.css",
-  tags$head(
-    tags$style(HTML("
-      .has-feedback .form-control {
-        padding-right: 2px;
-      }
-      .form-control {
-        padding: 2px;
-        padding-left: 4px;
-        height: 25px;
-        line-height: 25px;
-      }
-      .form-control-feedback {
-        line-height: 25px;
-      }
-      table.dataTable tbody th, table.dataTable tbody td,
-      table.dataTable thead th, table.dataTable thead td {
-        padding: 2px 18px 2px 10px !important;
-      }
-
-      /*table.dataTable th.dt-right, table.dataTable td.dt-right {
-          word-break: break-all;
-      }*/
-
-      /* tooltip for sparkline rendered with bootstrap
-         see https://github.com/htmlwidgets/sparkline/issues/4 */
-      .jqstooltip {
-        -webkit-box-sizing: content-box;
-        -moz-box-sizing: content-box;
-        box-sizing: content-box;
-      }
-      div[id=samples_overview]>div>table>thead>tr> th:first-child,
-      div[id=samples_overview]>div>table>tbody>tr> td:first-child {
-        min-width: 125px;
-      }
-      div[id=samples_comparison]>div>table>thead>tr> th:first-child,
-      div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
-        min-width: 125px;
-      }
-      .glyphicon glyphicon-remove-circle form-control-feedback {
-        position: relative !important;
-        width: unset !important;
-        height: unset !important;
-      }
-    "))
-  ),
-  #############################################################################
-  ##  DATA PANEL
-  #############################################################################
-  tabPanel("Data",
-    fluidRow(
-      fileInput('file1', 'Choose file to upload',
+shinyUI(dashboardPage(
+  dashboardHeader(title="Metagenomics results viewer"),
+  #includeCSS("style.css"),
+  #########################################################  SIDEBAR
+  dashboardSidebar(
+    sidebarSearchForm(textId = "txt_sidebarSearch", buttonId = "btn_sidebarSearch", label = "Search ..."),
+      textInput("cbo_data_dir", "Files from server",
+                value=system.file("shinyapp/example-data",package = "centrifuger"),
+                width="80%"),
+      shinyFileTreeOutput("files_tree"),
+      fileInput('upload_file', 'Choose file to upload',
                 accept = c(
                   'text/csv',
                   'text/comma-separated-values',
@@ -73,37 +32,36 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                 ),
                 multiple=TRUE
       ),
-      textInput("cbo_data_dir", "Data directory",
-                value=system.file("shinyapp/example-data",package = "centrifuger"),
-                width="80%"),
-      shinyFileTreeOutput("files_tree"),
-      ## TODO: Think about putting a file tree here
 
-      ## require config file (tab-separated) in reports directory. Links to fasta/fastq files
-      ## or require certain directory structure (as I have)?
-      ## report/
-      ## kraken/
-      ## fastq/
       textInput("txt_file_ext", "File extension",
                 value = ".report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "(.*).report", width="80%")
 
-    )
   ),
-  #############################################################################
-  ##  SAMPLES OVERVIEW
-  #############################################################################
+  ######################################################### DASHBOARD BODY
+  dashboardBody(
+  tabsetPanel(
+  ###############################################  SAMPLES OVERVIEW
   tabPanel("Samples overview",
     fluidRow(
-        div(
+      box(
           selectizeInput('sample_selector2',
-                         label="No sample directory selected - please update it on the 'Data' tab",
-                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
-         style="font-size:80%"),
-        radioButtons("samples_overview_percent",label=NULL, c("reads","percentage"), "reads" ),
-        DT::dataTableOutput('samples_overview'),
-        uiOutput("view_in_sample_viewer")
+                         label="Select samples",
+                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE, plugins = list('drag_drop')),width='100%'),
+        width = 8
+      ),
+      box(
+        checkboxInput("opt_samples_overview_percent",label="Show percentages instead of number of reads"),
+        width = 4
+        )
+    ),
+    fluidRow(
+        box(
+          div(style='overflow-x: scroll',DT::dataTableOutput('samples_overview')),
+          uiOutput("view_in_sample_viewer"),
+          width = 12
+        )
     )
   ),
   #############################################################################
@@ -114,9 +72,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       column(9,
       div(
           selectInput('sample_selector',
-                         label="No sample directory selected - please update it on the 'Data' tab",
+                         label="",
                          choices=NULL, multiple=FALSE,width='100%'),
-         style="font-size:80%"),
+         style="font-size:100%"),
          conditionalPanel("input.sample_view_ui == 'sunburst'",sunburstR::sunburstOutput("sample_view_sunburst",width="90%")),
          conditionalPanel("input.sample_view_ui == 'sankey'",networkD3::sankeyNetworkOutput("sample_view_sankey",width="90%"))
       ),
@@ -131,7 +89,8 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
                     width="80%")
       )),
-    fluidRow(DT::dataTableOutput('sample_view')),
+    fluidRow(
+      div(style='overflow-x: scroll',DT::dataTableOutput('sample_view'))),
     fluidRow(uiOutput("view_in_samples_comparison"))
 
   ),
@@ -143,9 +102,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       column(5,
         div(
           selectizeInput('sample_selector3',
-                         label="No sample directory selected - please update it on the 'Data' tab",
+                         label="",
                          choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
-         style="font-size:80%"),
+         style="font-size:100%"),
         div(selectizeInput('contaminant_selector3', label="Filter contaminants",
                     allcontaminants, selected=commoncontaminants,
                     multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
@@ -164,7 +123,7 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
 
     ),
     fluidRow(
-      DT::dataTableOutput('dt_samples_comparison')
+      div(style='overflow-x: scroll',DT::dataTableOutput('dt_samples_comparison'))
     ),
     fluidRow(
       actionButton("btn_sc_filter","Filter"),
@@ -199,9 +158,9 @@ shinyUI(navbarPage("Metagenomics results viewer",id="main_page",
       shiny::textInput("bam_file","Bam File"),
       shiny::selectizeInput("cbo_assemblies",choices=NULL,label="RefSeq Assemblies"),
       shiny::actionButton("btn_load_assembly_info","Load RefSeq assemblies"),
-      DT::dataTableOutput("dt_assembly_info"),
+      div(style='overflow-x: scroll',DT::dataTableOutput("dt_assembly_info")),
       shiny::plotOutput("sample_align", brush = brushOpts("align_brush", direction = "x"),),
       shiny::htmlOutput("txt_align_brush")
     )
-  )
+  )))
 ))
