@@ -1,0 +1,41 @@
+      .has-feedback .form-control {
+        padding-right: 2px;
+      }
+      .form-control {
+        padding: 2px;
+        padding-left: 4px;
+        height: 25px;
+        line-height: 25px;
+      }
+      .form-control-feedback {
+        line-height: 25px;
+      }
+      table.dataTable tbody th, table.dataTable tbody td,
+      table.dataTable thead th, table.dataTable thead td {
+        padding: 2px 18px 2px 10px !important;
+      }
+
+      /*table.dataTable th.dt-right, table.dataTable td.dt-right {
+          word-break: break-all;
+      }*/
+
+      /* tooltip for sparkline rendered with bootstrap
+         see https://github.com/htmlwidgets/sparkline/issues/4 */
+      .jqstooltip {
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
+        box-sizing: content-box;
+      }
+      div[id=samples_overview]>div>table>thead>tr> th:first-child,
+      div[id=samples_overview]>div>table>tbody>tr> td:first-child {
+        min-width: 125px;
+      }
+      div[id=samples_comparison]>div>table>thead>tr> th:first-child,
+      div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
+        min-width: 125px;
+      }
+      .glyphicon glyphicon-remove-circle form-control-feedback {
+        position: relative !important;
+        width: unset !important;
+        height: unset !important;
+      }
