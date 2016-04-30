@@ -1,0 +1,5 @@
+      ## require config file (tab-separated) in reports directory. Links to fasta/fastq files
+      ## or require certain directory structure (as I have)?
+      ## report/
+      ## kraken/
+      ## fastq/

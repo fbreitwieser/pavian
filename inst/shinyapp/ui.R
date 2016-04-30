@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(shinyjs)
 library(centrifuger)
 library(shinyFileTree)
 
@@ -13,15 +14,26 @@ allcontaminants <- unlist(allcontaminants)
 names(allcontaminants) <- NULL
 
 shinyUI(dashboardPage(
-  dashboardHeader(title="Metagenomics results viewer"),
-  #includeCSS("style.css"),
+  dashboardHeader(title="Metagenomics results viewer",
+                  dropdownMenu(type="notifications",
+                               notificationItem(text="Successfully loaded X reports", status="success"),
+                               notificationItem(text="Currently aligning X to Y ...", status="info")
+                               )
+  ),
   #########################################################  SIDEBAR
   dashboardSidebar(
     sidebarSearchForm(textId = "txt_sidebarSearch", buttonId = "btn_sidebarSearch", label = "Search ..."),
-      textInput("cbo_data_dir", "Files from server",
+      textInput("cbo_data_dir", "Select reports",
                 value=system.file("shinyapp/example-data",package = "centrifuger"),
-                width="80%"),
+                width="100%"),
+      actionButton("btn_set_data_dir","Load directory content"),
       shinyFileTreeOutput("files_tree"),
+      selectizeInput('contaminant_selector', label="Filter contaminants",
+                    allcontaminants, selected=commoncontaminants,
+                    multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
+                    width="100%"),
+      checkboxInput("opt_remove_root_hits",
+                    label="Remove root hits", value=FALSE),
       fileInput('upload_file', 'Choose file to upload',
                 accept = c(
                   'text/csv',
@@ -37,39 +49,27 @@ shinyUI(dashboardPage(
                 value = ".report", width="80%"),
       textInput("regex_pattern", "Pattern to find files - use * as wildcard, and capture the sample name with paranthesis",
                 value = "(.*).report", width="80%")
-
   ),
   ######################################################### DASHBOARD BODY
   dashboardBody(
+  	           includeCSS("style.css"),
+  useShinyjs(),
   tabsetPanel(
   ###############################################  SAMPLES OVERVIEW
   tabPanel("Samples overview",
     fluidRow(
-      box(
-          selectizeInput('sample_selector2',
-                         label="Select samples",
-                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE, plugins = list('drag_drop')),width='100%'),
-        width = 8
-      ),
-      box(
-        checkboxInput("opt_samples_overview_percent",label="Show percentages instead of number of reads"),
-        width = 4
-        )
-    ),
-    fluidRow(
         box(
-          div(style='overflow-x: scroll',DT::dataTableOutput('samples_overview')),
+          checkboxInput("opt_samples_overview_percent",label="Show percentages instead of number of reads"),
+          div(style='overflow-x: scroll',DT::dataTableOutput('dt_samples_overview')),
           uiOutput("view_in_sample_viewer"),
           width = 12
         )
     )
   ),
-  #############################################################################
-  ##  SAMPLE VIEWER
-  #############################################################################
+  ###############################################  SAMPLE VIEWER
   tabPanel("Sample viewer",
     fluidRow(
-      column(9,
+      box(width=9,
       div(
           selectInput('sample_selector',
                          label="",
@@ -78,89 +78,72 @@ shinyUI(dashboardPage(
          conditionalPanel("input.sample_view_ui == 'sunburst'",sunburstR::sunburstOutput("sample_view_sunburst",width="90%")),
          conditionalPanel("input.sample_view_ui == 'sankey'",networkD3::sankeyNetworkOutput("sample_view_sankey",width="90%"))
       ),
-      column(3,
+      box(width=3,
              radioButtons("sample_view_ui",label="Display",choices=c("sunburst","sankey")),
              checkboxInput("synchonize_sampleview_table_and_sunburst",
-                           label="Synchonize table", value=FALSE),
-             checkboxInput("remove_root_hits",
-                           label="Hide root hits", value=FALSE),
-             selectizeInput('contaminant_selector2', label="Filter contaminants",
-                    allcontaminants, selected=commoncontaminants,
-                    multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
-                    width="80%")
+                           label="Synchonize table", value=FALSE)
       )),
-    fluidRow(
-      div(style='overflow-x: scroll',DT::dataTableOutput('sample_view'))),
-    fluidRow(uiOutput("view_in_samples_comparison"))
-
+    fluidRow(box(width=12,
+      div(style='overflow-x: scroll',DT::dataTableOutput('dt_sample_view'))),
+      uiOutput("view_in_samples_comparison"))
   ),
-  #############################################################################
-  ##  SAMPLES COMPARISON
-  #############################################################################
+  ###############################################  SAMPLES COMPARISON
   tabPanel("Samples comparison",
     fluidRow(
-      column(5,
-        div(
-          selectizeInput('sample_selector3',
-                         label="",
-                         choices=NULL, multiple=TRUE,options=list(maxItems=1500, create=TRUE),width='100%'),
-         style="font-size:100%"),
-        div(selectizeInput('contaminant_selector3', label="Filter contaminants",
-                    allcontaminants, selected=commoncontaminants,
-                    multiple=TRUE,options=list(maxItems=25, create=TRUE, placeholder='filter contaminants'),
-                    width="100%"))
-      ),
-      column(1, radioButtons("numeric_display",label=NULL, c("reads","percentage"), "reads" )),
+      box(width=4, selectizeInput("opt_classification_level",label="Taxon level",
+          choices=c("Any"="-","Species"="S","Genus"="G","Family"="F","Order"="O","Class"="C","Phylum"="P","Domain"="D"),selected="-")),
+      box(width=4,
+		  checkboxInput("opt_display_percentage",label="Normalize by total number of reads per sample", value=FALSE),
+		  radioButtons("opt_show_reads_stay",label="Display",
+choices=c("Number of reads that stay"="reads_stay","Number of reads at level or lower"="reads","both"))
+      )
       #column(1, radioButtons("input",label=NULL, c("kraken","centrifuge","blastx-lca","metaphlan"), "kraken" )),
-      column(1, radioButtons("classification_level",label=NULL,c("S","G","F","O","C","P","D"),"D"),inline=TRUE),
       #column(1, checkboxInput("update_pubmed", 'Update Pubmed counts', value = FALSE)),
-      column(4, #checkboxInput("display_table", 'Display table', value = TRUE),
-                checkboxInput("display_heatmap", 'Display heatmap', value = FALSE),
+    ),
+    tabBox(width=12,
+      tabPanel("Table",
+        div(style='overflow-x: scroll',DT::dataTableOutput('dt_samples_comparison')),
+        actionButton("btn_sc_filter","Filter"),
+        actionButton("btn_sc_gointo","Go Into"),
+        shiny::htmlOutput("txt_samples_comparison")
+      ),
+      tabPanel("Heatmap",
+        fluidRow(
+        column(width=8,uiOutput("d3heatmap_samples_comparison")),
+        column(width=4,
                 radioButtons("heatmap_scale", 'Scale',
                             c("none","row","column"),selected="none",inline=TRUE),
                 checkboxGroupInput("heatmap_cluster", "Cluster",
-                                   choices=c('row','column'), inline = TRUE))
-
-    ),
-    fluidRow(
-      div(style='overflow-x: scroll',DT::dataTableOutput('dt_samples_comparison'))
-    ),
-    fluidRow(
-      actionButton("btn_sc_filter","Filter"),
-      actionButton("btn_sc_gointo","Go Into")
-    ),
-    fluidRow(
-      shiny::htmlOutput("txt_samples_comparison")
-    ),
-    fluidRow(
-      column(1),
-      d3heatmap::d3heatmapOutput('samples_comparison_heatmap',width="100%")
+                                   choices=c('row','column'), inline = TRUE)))
+      ),
+      tabPanel("Samples Clustering",
+        fluidRow(shiny::plotOutput("cluster_plot"))
+      ) ## end tabPanel Clustering
     )
-  ), ## end tabPanel samples_comparison
-  #############################################################################
-  ##  SAMPLES CLUSTERING
-  #############################################################################
-  tabPanel("Clustering",
-    fluidRow(
-      shiny::plotOutput("cluster_plot")
+  ),
+  ###############################################  ALIGNMENTS
+  tabPanel("Alignments",
+    tabBox(width=12,
+      tabPanel(title="View alignment",
+        shiny::textInput("bam_file","Bam File"),
+        shiny::actionButton("btn_get_alignment","Load alignment"),
+        shiny::checkboxInput("align_loess","Show smoothed LOESS curve"),
+        shiny::checkboxInput("align_moving_avg","Show moving average",value = TRUE),
+        collapsible=TRUE
+      ),
+      tabPanel(title="Create alignment",
+        shiny::actionButton("btn_create_alignment","Create alignment"),
+        shiny::selectizeInput("cbo_assemblies",choices=NULL,label="RefSeq Assemblies"),
+        shiny::actionButton("btn_load_assembly_info","Load RefSeq assemblies"),
+        div(style='overflow-x: scroll',DT::dataTableOutput("dt_assembly_info")),
+        shiny::actionButton("btn_get_reads","Get reads"),
+        shiny::plotOutput("sample_align", brush = brushOpts("align_brush", direction = "x")),
+        shiny::htmlOutput("txt_align_brush"),
+        collapsible=TRUE
+      )
     )
-  ), ## end tabPanel Clustering
-  #############################################################################
-  ##  ALIGN OF A MICROBE TO ONE SAMPLE
-  #############################################################################
-  tabPanel("OneMicrobe",
-    fluidRow(
-      shiny::checkboxInput("align_loess","Show smoothed LOESS curve"),
-      shiny::checkboxInput("align_moving_avg","Show moving average",value = TRUE),
-      shiny::actionButton("btn_get_reads","Get reads"),
-      shiny::actionButton("btn_create_alignment","Create alignment"),
-      shiny::actionButton("btn_get_alignment","Load alignment"),
-      shiny::textInput("bam_file","Bam File"),
-      shiny::selectizeInput("cbo_assemblies",choices=NULL,label="RefSeq Assemblies"),
-      shiny::actionButton("btn_load_assembly_info","Load RefSeq assemblies"),
-      div(style='overflow-x: scroll',DT::dataTableOutput("dt_assembly_info")),
-      shiny::plotOutput("sample_align", brush = brushOpts("align_brush", direction = "x"),),
-      shiny::htmlOutput("txt_align_brush")
-    )
-  )))
+  ),
+  ###############################################  SEARCH PAGE
+  tabPanel("Search page")
+  ))
 ))

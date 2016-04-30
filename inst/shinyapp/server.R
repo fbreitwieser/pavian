@@ -11,7 +11,6 @@ shinyServer(function(input, output, clientData, session) {
 
   info_message("cache dir: ",getOption("centrifuger.cache_dir"))
 
-  ## load kraken_reports based on input$cbo_data_dir and input$sample_selector2
   kraken_reports <- reactive({
     kraken_files <- report_files()
     if (length(kraken_files) == 0) {
@@ -39,42 +38,26 @@ shinyServer(function(input, output, clientData, session) {
   })
 
   ## Observe the directory textInput to update sample selectors when it changed
-  observe( {
+  observeEvent(input$btn_set_data_dir,  {
     info_message("data_dir set to ",input$cbo_data_dir)
     if (length(input$cbo_data_dir) == 0 || !dir.exists(input$cbo_data_dir)) {
       updateTextInput(session, 'cbo_data_dir', label = "Choose a valid directory")
       updateSelectInput(session, 'sample_selector', label = "No valid directory", choices = c(), selected = c())
-      for (sample_selector in c('sample_selector2','sample_selector3')) {
-        updateSelectizeInput(session, sample_selector, label = "No valid directory", choices = c(), selected = c())
-      }
     } else {
       my_samples <- get_sample_name(report_file_names(),input$regex_pattern)
       info_message("Found ",length(report_file_names())," files: \n\t",paste0(report_file_names()," [sample ",my_samples,"]",collapse="\n\t"))
       updateTextInput(session, 'cbo_data_dir',
-                      label=sprintf("Select files from server (%s selected)",length(my_samples)))
+                      label=sprintf("Select reports (%s selected)",length(my_samples)))
       updateSelectInput(session, 'sample_selector',
                            #label=paste(length(report_file_names()),"sample reports in directory",input$cbo_data_dir),
                            choices=report_file_names(), selected=report_file_names()[1])
-
-      ## update sample_selector2 (sample_selector3 gets updated by another observeEvent)
-      for (sample_selector in c('sample_selector2','sample_selector3')) {
-        updateSelectizeInput(session, sample_selector,
-                             #label=paste(length(my_samples),"samples in directory",input$cbo_data_dir),
-                             choices=my_samples, selected=my_samples)
-      }
     }
   })
 
-  ## keep sample_selector2 and sample_selector3 synced - seems to cause loops when I use both
-  #observeEvent(input$sample_selector2, {
-  #  updateSelectizeInput(session,"sample_selector3",selected=input$sample_selector2)
-  #})
-
-  observeEvent(input$sample_selector3, {
-    updateSelectizeInput(session,"sample_selector2",selected=input$sample_selector3)
-  })
-
   report_files <- reactive({
+    validate(need(input$cbo_data_dir,message="No report directory selected", label="Report directory"))
+    validate(need(input$files_tree_selected,message="Please select at least on report file.", label="Report files"))
+
     all_files <- paste0(input$cbo_data_dir, "/", input$files_tree_selected)
     sel_report_files <- grepl(paste0(input$txt_file_ext,"$"), all_files) &
       file.exists(all_files) & !dir.exists(all_files)
@@ -95,10 +78,10 @@ shinyServer(function(input, output, clientData, session) {
 
   })
 
-  get_summarized_report <- function(classification_level, filter_contaminants, numeric_display, as_matrix=FALSE) {
+  get_summarized_report <- function(filter_contaminants, display_percentage, show_reads_stay, classification_level=NULL, as_matrix=FALSE) {
     ## generate data.frame which has a name column (species name) and a further reads column for each sample
-    id_cols_before <- c("name","taxonid")
-    numeric_col <- c("reads")
+    id_cols_before <- c("name","level","taxonid")
+    numeric_col <- c("reads","reads_stay")
     id_cols_after <- c("taxonstring")
     id_cols <- c(id_cols_before,id_cols_after)
 
@@ -114,15 +97,23 @@ shinyServer(function(input, output, clientData, session) {
         my_report <- filter_taxon(my_report, c)
 
       ## subset report to the requested level
-      my_report <- my_report[my_report$level==classification_level,
-                                          c(id_cols,numeric_col)]
+      if (!is.null(classification_level) && !(any(classification_level == "-"))) {
+        my_report <- my_report[my_report$level==classification_level,]
+      }
+      my_report <- my_report[,c(id_cols,numeric_col)]
+
+    if (input$opt_remove_root_hits)
+      my_report <- my_report[my_report$name!="-_root",]
+
 
       ## set the basename of the report file as name for the numeric column
-      idx_of_numeric_col <- length(id_cols)+1
+      idx_of_numeric_col <- seq(from=length(id_cols)+1,ncol(my_report))
       colnames(my_report)[idx_of_numeric_col] <- sub(".*/(.*)(-PT.*)?.report","\\1",report_name)
+      if (length(numeric_col) > 1) {
+        colnames(my_report)[idx_of_numeric_col] <- paste(colnames(my_report)[idx_of_numeric_col],numeric_col,sep="\n")
+      }
       my_report
     })
-
 
     ## merge all the data.frames in the my_reports list, and add additional info (sparkline and mean)
     summarized_report <- Reduce(function(x,y) merge(x,y,all=TRUE,by=id_cols), my_reports)
@@ -130,19 +121,40 @@ shinyServer(function(input, output, clientData, session) {
     ## transform to percent
     data_portion <- summarized_report[,seq(from=length(id_cols)+1, to=ncol(summarized_report))]
 
-    if (numeric_display == "percentage") {
-      data_portion <- signif(100*t(t(data_portion)/colSums(data_portion,na.rm=T)),3)
+    reads_idx <- seq(from=1,to=ncol(data_portion)-1, by=2)
+    reads_stay_idx <- seq(from=2,to=ncol(data_portion), by=2)
+
+    if (isTRUE(display_percentage)) {
+      sum_reads <- colSums(data_portion[,reads_stay_idx],na.rm=T)
+    }
+    if (show_reads_stay == "reads") {
+      data_portion <- data_portion[,reads_idx]
+      colnames(data_portion) <- sub("\nreads","",colnames(data_portion))
+    } else if (show_reads_stay == "reads_stay") {
+      data_portion <- data_portion[,reads_stay_idx]
+      colnames(data_portion) <- sub("\nreads_stay","",colnames(data_portion))
+    }
+
+    if (isTRUE(display_percentage)) {
+      if (show_reads_stay == "both")
+        sum_reads <- rep(sum_reads, each=2)
+      data_portion <- signif(100*t(t(data_portion)/sum_reads),3)
     }
 
     if (as_matrix) {
       row_names <- summarized_report[,1]
       summarized_report <- as.matrix(data_portion)
-      row.names(summarized_report) <- gsub("^[a-z-]_","",row_names)
+      rownames(summarized_report) <- gsub("^[a-z-]_","",row_names)
     } else {
-      round_digits <- ifelse(numeric_display == "percentage", 3, 1)
+      if (isTRUE(display_percentage)) {
+        mean_column <- signif(rowSums(data_portion,na.rm=TRUE)/ncol(data_portion),3)
+      } else {
+        mean_column <- signif(rowSums(data_portion,na.rm=TRUE)/ncol(data_portion),3)
+      }
+      round_digits <- ifelse(isTRUE(display_percentage), 3, 1)
       summarized_report <- cbind(beautify_colnames(summarized_report[,id_cols_before,drop=FALSE]),
                                  Overview=apply(round(zero_if_na(log10(10*data_portion)),round_digits),1,paste0,collapse=","),
-                                 Mean=round(rowSums(data_portion,na.rm=TRUE)/ncol(data_portion),round_digits),
+                                 Mean=mean_column,
                                  data_portion,
                                  beautify_colnames(summarized_report[,id_cols_after,drop=FALSE]))
 
@@ -176,10 +188,10 @@ shinyServer(function(input, output, clientData, session) {
       stop("No sample with that name")
 
     ## filter contaminants
-    for (c in input$contaminant_selector2)
+    for (c in input$contaminant_selector)
       my_report <- filter_taxon(my_report, c)
 
-    if (input$remove_root_hits)
+    if (input$opt_remove_root_hits)
       my_report <- my_report[my_report$name!="-_root",]
 
     my_report
@@ -239,15 +251,22 @@ shinyServer(function(input, output, clientData, session) {
                   fontSize = 12, moveNodesRight = FALSE)
   })
 
-  output$sample_view <- DT::renderDataTable({
+  output$dt_sample_view <- DT::renderDataTable({
     my_report <- sample_view_report()
 
+    my_report$name <- sub("[a-z-]_","",my_report$name)
     my_report$taxonstring <- gsub("[a-z-]_","",my_report$taxonstring)
     my_report$taxonstring <- gsub("|",">",my_report$taxonstring,fixed=TRUE)
     my_report$level <- as.factor(my_report$level)
+    my_report$Percent <- 100*signif(my_report$reads/sum(my_report$reads_stay,na.rm = TRUE), 3)
+    my_report$coverage <- NULL
+    my_report$rankperc <- NULL
 
     colnames(my_report) <- beautify_string(colnames(my_report))
-    DT::datatable(my_report, filter='top',selection='single')
+    DT::datatable(my_report, filter='top',selection='single') %>%
+      formatString("Percent", string_after = "%") %>%
+      formatCurrency(c("Reads","Reads stay"),digits=0,currency="")
+
   }, server=TRUE)
 
   ## When a row (i.e. a taxonomical entry) gets selected in the sample view table, an action button appears to view the species in the overview
@@ -282,7 +301,7 @@ shinyServer(function(input, output, clientData, session) {
 
   #############################################################################
   ## Samples overview output
-  output$samples_overview <- DT::renderDataTable({
+  output$dt_samples_overview <- DT::renderDataTable({
     my_reports <- kraken_reports()
     if (length(my_reports) == 0)
         return()
@@ -292,7 +311,7 @@ shinyServer(function(input, output, clientData, session) {
     rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
 
-    number_range <-  c(0,max(samples_summary[,1]))
+    number_range <-  c(0,max(samples_summary[,1], na.rm=TRUE))
     start_color_bar_at <- 1
 
     if (isTRUE(input$opt_samples_overview_percent)) {
@@ -306,7 +325,7 @@ shinyServer(function(input, output, clientData, session) {
       DT::formatStyle(colnames(samples_summary)[start_color_bar_at:5],
                   background = DT::styleColorBar(number_range, 'lightblue')) %>%
       DT::formatStyle(colnames(samples_summary)[6:ncol(samples_summary)],
-                      background = DT::styleColorBar(range(samples_summary[,6]), 'lightgreen'))
+                      background = DT::styleColorBar(c(0,max(samples_summary[,6], na.rm=TRUE)), 'lightgreen'))
 
     #formatString <- function(table, columns, before="", after="") {
     #  DT:::formatColumns(table, columns, function(col, before, after)
@@ -330,17 +349,17 @@ shinyServer(function(input, output, clientData, session) {
 
   ## When a row (i.e. a sample gets selected in the samples) an action button appears to view in the sample viewer
   output$view_in_sample_viewer <- renderUI({
-    selected_row <- input$samples_overview_rows_selected[length(input$samples_overview_rows_selected)]
+    selected_row <- input$dt_samples_overview_rows_selected[length(input$dt_samples_overview_rows_selected)]
     if (length(selected_row) < 1)
       return()
 
-    message(input$samples_overview_rows_selected)
-    selected_sample <- report_file_names()[input$samples_overview_rows_selected]
+    message(input$dt_samples_overview_rows_selected)
+    selected_sample <- report_file_names()[input$dt_samples_overview_rows_selected]
     actionButton("btn_view_selected_in_sample_viewer",paste("--> View details of sample",selected_sample))
   })
 
   observeEvent(input$btn_view_selected_in_sample_viewer,{
-    selected_sample <- report_file_names()[input$samples_overview_rows_selected]
+    selected_sample <- report_file_names()[input$dt_samples_overview_rows_selected]
     updateSelectInput(session,'sample_selector',selected=selected_sample)
     updateTabsetPanel(session,"main_page",selected="Sample viewer")
   }, ignoreNULL = TRUE)
@@ -349,7 +368,7 @@ shinyServer(function(input, output, clientData, session) {
   ## Samples comparison output
 
   summarized_report <- reactive({
-    get_summarized_report(input$classification_level, input$contaminant_selector3, input$numeric_display)
+    get_summarized_report(input$contaminant_selector, input$opt_display_percentage, input$opt_show_reads_stay, input$opt_classification_level)
   })
 
   output$dt_samples_comparison <- DT::renderDataTable({
@@ -364,11 +383,11 @@ shinyServer(function(input, output, clientData, session) {
 
     ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
     sparklineColumnDefs <- list(
-      list(targets = 0, searchable=TRUE,
-           render = htmlwidgets::JS(ifelse(input$classification_level=="S",
-                           "function(data, type, full){ return '<i>'+data+'</i>'; }",  ## layout species names in italic
-                           "function(data, type, full){ return data; }"
-                           ))),
+      #list(targets = 0, searchable=TRUE,
+      #     render = htmlwidgets::JS(ifelse(input$opt_classification_level=="S",
+      #                     "function(data, type, full){ return '<i>'+data+'</i>'; }",  ## layout species names in italic
+      #                     "function(data, type, full){ return data; }"
+      #                     ))),
       list(targets = attr(summarized_report,'taxonid_column')-1,
            render = htmlwidgets::JS("function(data, type, full){
               return '<a href=\"http://www.ncbi.nlm.nih.gov/genome/?term=txid'+data+'[Organism:exp]\" target=\"_blank\">' + data + '</a>'
@@ -398,18 +417,17 @@ shinyServer(function(input, output, clientData, session) {
     query <- parseQueryString(session$clientData$url_search)
 
     # Return a string with key-value pairs
-    message()
 
-    dt <- DT::datatable(summarized_report, options=list(
+    dt <- DT::datatable(summarized_report,
+      filter = "top",options=list(
       columnDefs = sparklineColumnDefs,
       drawCallback = sparklineDrawCallback,
       order = list(attr(summarized_report,'mean_column')-1,"desc"),
-      filter = "top",
       search = list(search=ifelse("search" %in% names(query), query['search'],""),
                     regex = TRUE, caseInsensitive = FALSE)   ## add regular expression search
       ),rownames=FALSE, selection='single')
 
-    if (input$numeric_display != "percentage") {
+    if (!isTRUE(input$opt_display_percentage)) {
       dt <- dt %>% formatCurrency(attr(summarized_report,'mean_column'),currency='',digits=1) %>%
                    formatCurrency(attr(summarized_report,'data_columns'),currency='',digits=0)
     } else {
@@ -425,29 +443,32 @@ shinyServer(function(input, output, clientData, session) {
     dt
   })
 
-  output$samples_comparison_heatmap <- d3heatmap::renderD3heatmap({
-    req(input$samples_comparison_rows_current)
-    if (input$display_heatmap) {
-      message("Displaying ",length(input$samples_comparison_rows_current)," rows shown in DT datatable: ",
-              paste(input$samples_comparison_rows_current, collapse=","))
-      library(d3heatmap)
-      report_mat <- get_summarized_report(input$classification_level,input$contaminant_selector3, input$numeric_display, as_matrix = TRUE)
-      str(report_mat)
+  output$d3heatmap_samples_comparison <- renderUI({
+    req(input$dt_samples_comparison_rows_current)
+    d3heatmap::d3heatmapOutput('my_d3heatmap',width="100%",
+                               height=paste0(200+length(input$dt_samples_comparison_rows_current)*15,"px"))
+  })
 
-      report_mat <- zero_if_na(report_mat[input$samples_comparison_rows_current,])
-      report_mat[report_mat < 0] <- 0
-      print(input$heatmap_cluster)
-      print(report_mat)
-      d3heatmap::d3heatmap(report_mat,
-                           Rowv="row" %in% input$heatmap_cluster,
-                           Colv="column" %in% input$heatmap_cluster, # No Column reordering
-                           scale=input$heatmap_scale,
-                           yaxis_width = 400,
-                           xaxis_height = 200,
-                           colors=colorRampPalette(c("blue", "white", "red"))(100)
-                           #colors=colorRampPalette(rev(RColorBrewer::brewer.pal(n = 7, name ="RdYlBu")))(100)
-                           )
-    }
+  output$my_d3heatmap <- d3heatmap::renderD3heatmap({
+    req(input$dt_samples_comparison_rows_current)
+
+    sr <- summarized_report()
+    report_mat <- as.matrix(sr[,attr(sr,"data_columns")])
+    rownames(report_mat) <- gsub("^[a-z-]_","",sr[,1])
+
+
+    report_mat <- zero_if_na(report_mat[input$dt_samples_comparison_rows_current,])
+    report_mat[report_mat < 0] <- 0
+    d3heatmap::d3heatmap(report_mat,
+                         Rowv="row" %in% input$heatmap_cluster,
+                         Colv="column" %in% input$heatmap_cluster, # No Column reordering
+                         scale=input$heatmap_scale,
+                         yaxis_width =300,
+                         xaxis_height = 200,
+                         xaxis_font_size = "10pt",
+                         yaxis_font_size = "10pt",
+                         colors=colorRampPalette(c("blue", "white", "red"))(100)
+                         )
   })
 
   output$cluster_plot <- renderPlot({
@@ -478,8 +499,8 @@ shinyServer(function(input, output, clientData, session) {
     req(input$dt_samples_comparison_rows_selected)
     selected_row <- zero_if_na(summarized_report()[input$dt_samples_comparison_rows_selected,])
     str(selected_row)
-    is_species <- input$classification_level == "S"
-    is_domain <- input$classification_level == "D"
+    #is_domain <- input$opt_classification_level == "D"
+    is_domain <- FALSE
     data_columns <- attr(selected_row,"data_columns")
     taxid <- selected_row[,"Taxonid"]
     sprintf("
@@ -490,7 +511,12 @@ NCBI links: <a href='http://www.ncbi.nlm.nih.gov/genome/?term=txid%s[Organism:no
 Lineage: %s
 </br>
 <p>
-<table>%s</table>
+<table>
+<thead>
+<tr>Sample<th></th><th>Number of reads</th></tr>
+</thead>
+%s
+</table>
 </p>
             ",selected_row$Name,
             taxid,taxid,taxid,
@@ -512,8 +538,8 @@ Lineage: %s
     selected_name <- selected_path[length(selected_path)]
     message("filtering ", selected_path[length(selected_path)])
 
-    updateSelectizeInput(session,"contaminant_selector3",
-                         selected = unique(c(input$contaminant_selector3,selected_name)),
+    updateSelectizeInput(session,"contaminant_selector",
+                         selected = unique(c(input$contaminant_selector,selected_name)),
                          choices = unique(c(allcontaminants,selected_name)))
   })
 
@@ -529,57 +555,12 @@ Lineage: %s
   #############################################################################
   ## Alignment output
   pileup <- eventReactive(input$btn_get_alignment, {
-    library(Rsamtools)
-
     req(input$bam_file)
-
-    pileup <- Rsamtools::pileup(input$bam_file)
-
-    library(ggplot2)
-    best_seqs <- tail(sort(tapply(pileup$count,pileup$seqnames,sum,na.rm=TRUE)),20)
-    pileup <- subset(pileup,seqnames %in% names(best_seqs))
-    pileup <- droplevels(pileup)
-
-    nwin <- 1000
-    library(plyr)
-
-    seq_lengths <- seq_lengths()
-    if (input$align_moving_avg) {
-    pileup <- ddply(pileup,c("seqnames","strand"), function(x) {
-      genome_length <- seq_lengths[x$seqnames[1]]
-      win_size <- genome_length / nwin
-      while (win_size < 1) {
-        nwin <- nwin / 10
-        win_size <- genome_length / nwin
-      }
-
-      data.frame(seqnames=x$seqnames[1],
-                 pos=c(1,(win_size)*((1:nwin)-1)+win_size/2,genome_length),
-                 strand=x$strand[1],
-                 nucleotide=NA,
-                 count=c(ifelse(1 %in% x$pos,x$count[x$pos==1],0),
-                         sapply(1:nwin,
-                                  function(i) sum(x$count[x$pos > (i-1)*win_size & x$pos < i*win_size])/win_size),
-                         ifelse(genome_length %in% x$pos,x$count[x$pos==genome_length],0)))
-    })
-    } else {
-
-    pileup <- ddply(pileup,c("seqnames","strand"), function(x) {
-      genome_length <- seq_lengths[x$seqnames[1]]
-      poss <- x$pos + 1
-      pos_to_set_zero <- poss[!poss %in% x$pos & poss < genome_length]
-      rbind(x,data.frame(seqnames=x$seqnames[1],pos=poss,strand=x$strand[1],
-                 nucleotide=NA,
-                 count=0))
-      })
-
-    }
-    pileup
+    get_pileup(input$bam_file,input$align_moving_avg)
   })
 
   seq_lengths <- reactive({
-    bamHeader <- Rsamtools::scanBamHeader(input$bam_file)
-    bamHeader[[1]][["targets"]]
+    get_seq_lengths(input$bam_file)
   })
 
   output$files_tree <- shinyFileTree::renderShinyFileTree({
@@ -587,48 +568,14 @@ Lineage: %s
     shinyFileTree(shinyFileTree::get_list_from_directory(input$cbo_data_dir),plugins = c("checkbox","types"))
   })
 
+  nreads <- reactive({
+    get_n_reads(input$bam_file)
+  })
+
   output$sample_align <- renderPlot({
-    pileup <- pileup()
     req(input$bam_file)
-    req(pileup)
 
-    p2 <- Rsamtools::ScanBamParam(what=c("rname", "strand", "pos", "qwidth"))
-    bam <- Rsamtools::scanBam(input$bam_file, param = p2)
-    nreads <- table(bam[[1]]$rname)
-    rm(bam)
-
-    seq_lengths <- seq_lengths()
-
-
-    seq_info_df <- ddply(pileup,c("seqnames"), function(x) {
-      data.frame(seqnames=x$seqnames[1],
-                 genome_size=seq_lengths[x$seqnames[1]],
-                 avg_coverage=sum(x$count)/seq_lengths[x$seqnames[1]],
-                 covered_bp=length(x$pos),
-                 n_reads = nreads[x$seqnames[1]])
-    })
-    seq_info_df$perc_covered = seq_info_df$covered_bp / seq_info_df$genome_size
-
-
-    g <- ggplot(pileup, aes(x=pos,y=count)) +
-      geom_step(aes(color=strand))
-
-    if (input$align_loess)
-      g <- g + geom_smooth(aes(color=strand),n=nwin,span=.1,method="loess")
-
-    g <- g +
-      scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      xlab("Position") + ylab("Coverage") +
-      facet_wrap(~seqnames)
-
-
-    g + geom_text(aes(label=sprintf("genome: %sp\navg cov: %.f%%\ncovered bp: %s\n # of reads: %s",
-                                    sub("B","b",gdata::humanReadable(genome_size,"auto",standard="SI")),
-                                    signif(100*avg_coverage,2),
-                                    covered_bp,
-                                    n_reads)),
-                  x=Inf,y=Inf,vjust="inward",hjust="inward",data=seq_info_df)
+    plot_pileup(pileup(), nreads())
 
   })
 

@@ -9,6 +9,7 @@
       }
       .form-control-feedback {
         line-height: 25px;
+        width: inherit !important;
       }
       table.dataTable tbody th, table.dataTable tbody td,
       table.dataTable thead th, table.dataTable thead td {
