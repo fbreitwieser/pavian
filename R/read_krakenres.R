@@ -241,7 +241,7 @@ has_header=NULL,add_level_columns=FALSE) {
   krakenres$percentage <- round(krakenres$reads/sum(krakenres$reads_stay),6) * 100
   if ('n_unique_kmers'  %in% colnames(krakenres))
     krakenres$kmerpercentage <- round(krakenres$n_unique_kmers/sum(krakenres$n_unique_kmers,na.rm=T),6) * 100
-  krakenres$rankperc <- 100/rank(krakenres$reads)
+  #krakenres$rankperc <- 100/rank(krakenres$reads)
 
   rownames(krakenres) <- NULL
 
