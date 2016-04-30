@@ -30,6 +30,7 @@ summarize_kraken_report <- function(my_report) {
   artificial_reads <- my_report["s_synthetic construct","reads"]
   s_cerevisiae_reads <- my_report["s_Saccharomyces cerevisiae","reads"]
   human_reads <- my_report["s_Homo sapiens","reads"]
+  mammal_reads <- my_report["c_Mammalia","reads"]
 
   #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"reads"])
   #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"reads"])
@@ -38,10 +39,10 @@ summarize_kraken_report <- function(my_report) {
   data.frame(
     number_of_raw_reads=unidentified_reads+identified_reads,
     classified_reads=identified_reads,
-    human_reads=human_reads,
+    mammal_reads=mammal_reads,
     artificial_reads=artificial_reads,
     unclassified_reads=unidentified_reads,
-    microbial_reads=identified_reads-human_reads-artificial_reads,
+    microbial_reads=identified_reads-mammal_reads-artificial_reads,
     bacterial_reads=my_report["d_Bacteria","reads"],
     viral_reads=my_report["d_Viruses","reads"],
     fungal_reads=my_report["k_Fungi","reads"]
