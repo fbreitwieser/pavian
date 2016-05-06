@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_size = 10) {
+plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_size = 4) {
   require(Rsamtools)
   require(plyr)
   require(ggplot2)

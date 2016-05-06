@@ -1,3 +1,9 @@
+      .main-header .logo {
+        font-family: "Georgia", serif;
+        font-weight: "bold";
+        font-size: 24px;
+      }
+
       .has-feedback .form-control {
         padding-right: 2px;
       }
