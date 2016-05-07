@@ -11,7 +11,7 @@ extract_from_report <- function(my_report,name,level=NULL) {
 }
 
 
-#' Summarize the result of a kraken report
+#' Summarize the result of a metagenomics report
 #'
 #' @param my_report kraken report
 #'
@@ -22,7 +22,7 @@ extract_from_report <- function(my_report,name,level=NULL) {
 #'\donotrun{
 #'   summarize_kraken_report(krakenres)
 #'}
-summarize_kraken_report <- function(my_report) {
+summarize_report <- function(my_report) {
   my_report <- my_report[!duplicated(my_report$name),]
   row.names(my_report) <- my_report[["name"]]
   unidentified_reads <- my_report["u_unclassified","reads"]

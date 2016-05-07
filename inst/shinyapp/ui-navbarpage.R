@@ -4,9 +4,9 @@ library(shinyjs)
 library(centrifuger)
 library(shinyFileTree)
 
-convertMenuItem <- function(mi,tabName) {
+convertMenuItem <- function(mi,title) {
   mi$children[[1]]$attribs['data-toggle']="tab"
-  mi$children[[1]]$attribs['data-value'] = tabName
+  mi$children[[1]]$attribs['data-value'] = title
   mi
 }
 
@@ -32,51 +32,19 @@ allcontaminants <-
 allcontaminants <- unlist(allcontaminants)
 names(allcontaminants) <- NULL
 
-shinyUI(dashboardPage(
-  skin = "black",
-  dashboardHeader(
-    title = "Metagenomics results viewer",
-    dropdownMenu(
-      type = "notifications",
-      notificationItem(text = "Successfully loaded X reports", status =
-                         "success"),
-      notificationItem(text = "Currently aligning X to Y ...", status =
-                         "info")
-    )
-  ),
+shinyUI(navbarPage(
+  windowTitle="centrifuger metagenomics results viewer",
   #########################################################  SIDEBAR
-  dashboardSidebar(
-    sidebarSearchForm(
-      textId = "txt_sidebarSearch",
-      buttonId = "btn_sidebarSearch",
-      label = "Search ..."
-    ),
-    sidebarMenu(
-      menuItem("Home", tabName = "tab_home", icon = icon("home")),
-      menuItem("Data", tabName = "tab_data", icon = icon("folder-o")),
-      menuItem("Analysis",
-               tabName = "tab_metagenomes",
-               icon = icon("bar-chart"))#,
-      #menuItem("Alignment", tabName = "tab_alignment", icon = icon("asterisk"))
-    )
-  ),
-  ######################################################### DASHBOARD BODY
-  dashboardBody(
-  	           includeCSS("style.css"),
-  useShinyjs(),
-  tabsetPanel(
-  ###############################################  SAMPLES OVERVIEW
-  tabPanel("Samples overview",
-    fluidRow(
-        box(
-          checkboxInput("opt_samples_overview_percent",label="Show percentages instead of number of reads"),
-          div(style='overflow-x: scroll',DT::dataTableOutput('dt_samples_overview')),
-          uiOutput("view_in_sample_viewer"),
-          width = 12
-        )
-      ),
-      tabItem(
-        tabName = "tab_data",
+    #includeCSS("style.css"),
+    useShinyjs(),
+      tabPanel(
+        title = "Data",
+        fluidRow(
+          column(width = 8, includeMarkdown("intro_data.md")),
+          column(width = 4, includeHTML("intro_logo.html"))
+        ),
+        br(),
+
         box(
           width = 9,
           textInput(
@@ -108,8 +76,8 @@ shinyUI(dashboardPage(
         )),
         valueBoxOutput("valuebox_reports_selected", width = 3)
       ),
-      tabItem(
-        tabName = "tab_metagenomes",
+      tabPanel(
+        title = "tab_metagenomes",
         tabsetPanel(selected="Samples comparison",
                     ###############################################  SAMPLES OVERVIEW
                     tabPanel("Samples overview",
@@ -281,7 +249,7 @@ shinyUI(dashboardPage(
                     )
         )
       ),
-      tabItem(tabName = "tab_alignment",
+      tabPanel(title = "tab_alignment",
               ###############################################  ALIGNMENTS
               tabsetPanel(
                   tabPanel(
@@ -309,7 +277,5 @@ shinyUI(dashboardPage(
                 )
               )
 
-      )
-    )
   )
 ))

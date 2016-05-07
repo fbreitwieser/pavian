@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_size = 10) {
+plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_size = 4) {
   require(Rsamtools)
   require(plyr)
   require(ggplot2)
@@ -59,7 +59,7 @@ plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_siz
   bp_formatter <- function(x) {
     if (length(x) == 0 || is.null(x))
       return(x)
-    x[!is.na(x)] <- sub("B","",gdata::humanReadable(x[!is.na(x)], "auto", standard = "SI"))
+    x[!is.na(x)] <- humanreadable(x[!is.na(x)])
     x
   }
 
