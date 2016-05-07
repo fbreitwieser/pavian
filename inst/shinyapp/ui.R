@@ -54,7 +54,7 @@ shinyUI(dashboardPage(
   dashboardBody(
   	           includeCSS("style.css"),
   useShinyjs(),
-  tabsetPanel(
+  tabsetPanel(id="tabsetPanel_main",
   ###############################################  SAMPLES OVERVIEW
   tabPanel("Samples overview",
     fluidRow(

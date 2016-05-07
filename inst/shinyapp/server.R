@@ -264,7 +264,7 @@ shinyServer(function(input, output, clientData, session) {
 
     colnames(my_report) <- beautify_string(colnames(my_report))
     DT::datatable(my_report, filter='top',selection='single') %>%
-      formatString("Percent", string_after = "%") %>%
+      formatString("Percent", suffix = "%") %>%
       formatCurrency(c("Reads","Reads stay"),digits=0,currency="")
 
   }, server=TRUE)
@@ -337,7 +337,7 @@ shinyServer(function(input, output, clientData, session) {
     if (isTRUE(input$opt_samples_overview_percent)) {
       dt <- dt %>%
         formatCurrency(1,currency='',digits = 0) %>%
-        formatString(2:ncol(samples_summary), string_after='%', string_before = '')  ## TODO: display as percent
+        formatString(2:ncol(samples_summary), suffix='%', prefix = '')  ## TODO: display as percent
         ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
         ## with signif.
     } else {
@@ -361,7 +361,7 @@ shinyServer(function(input, output, clientData, session) {
   observeEvent(input$btn_view_selected_in_sample_viewer,{
     selected_sample <- report_file_names()[input$dt_samples_overview_rows_selected]
     updateSelectInput(session,'sample_selector',selected=selected_sample)
-    updateTabsetPanel(session,"main_page",selected="Sample viewer")
+    updateTabsetPanel(session,"tabsetPanel_main",selected="Sample viewer")
   }, ignoreNULL = TRUE)
 
   #############################################################################
@@ -431,8 +431,8 @@ shinyServer(function(input, output, clientData, session) {
       dt <- dt %>% formatCurrency(attr(summarized_report,'mean_column'),currency='',digits=1) %>%
                    formatCurrency(attr(summarized_report,'data_columns'),currency='',digits=0)
     } else {
-      dt <- dt %>% formatString(attr(summarized_report,'mean_column'),string_after='%') %>%
-                   formatString(attr(summarized_report,'data_columns'),string_after='%')
+      dt <- dt %>% formatString(attr(summarized_report,'mean_column'),postfix='%') %>%
+                   formatString(attr(summarized_report,'data_columns'),postfix='%')
     }
 
     ## use the sparkline package and the getDependencies function in htmlwidgets to get the
