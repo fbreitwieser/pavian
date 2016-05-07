@@ -1,0 +1,21 @@
+Name;Class;Engine;ReportFile
+BBM101;patient;kraken;BBM101.report
+BBM119;patient;kraken;BBM119.report
+BBM123;patient;kraken;BBM123.report
+BBM128;patient;kraken;BBM128.report
+BBM142;patient;kraken;BBM142.report
+BBM155;patient;kraken;BBM155.report
+BBM166;patient;kraken;BBM166.report
+BBM186;patient;kraken;BBM186.report
+BBM187;patient;kraken;BBM187.report
+BBM196;patient;kraken;BBM196.report
+BBM199;patient;kraken;BBM199.report
+BBM209;patient;kraken;BBM209.report
+BBM216;patient;kraken;BBM216.report
+BBM219;patient;kraken;BBM219.report
+BBM221;patient;kraken;BBM221.report
+BBM_Neg;negative control;kraken;BBM_Neg.report
+Mixture-Sample_20150814;mixture;kraken;Mixture-Sample_20150814.report
+Test-Subject-2_Fz10;scraping test;kraken;Test-Subject-2_Fz10.report
+Test-Subject-2_Fz1;scraping test;kraken;Test-Subject-2_Fz1.report
+Test-Subject-2_Neg;scraping test;kraken;Test-Subject-2_Neg.report
