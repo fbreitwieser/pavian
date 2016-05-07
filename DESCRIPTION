@@ -4,23 +4,26 @@ Title: Analyze and dispaly metagenomics data in R
 Version: 0.1.4
 Date: 2016-05-07
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
-Description: R package to visualize and analyse metagenomics data created by Kraken, metaphlan, and centrifuge.
-Imports: shiny (>= 0.1.12),
-         shinydashboard,
-         shinyjs,
-         sparkline (>= 1.0),
-         htmlwidgets (>= 0.5.1),
-         sunburstR (>= 0.1),
-         DT (>= 0.1.56),
-         d3heatmap (>= 0.6.1),
-         networkD3 (>= 0.2.6),
-         gapmap(>= 0.0.2),
-         ggplot2(>= 1.0.1),
-         shinyFileTree
+Description: R package to visualize and analyse metagenomics data created by
+    Kraken, metaphlan, and centrifuge.
+Imports:
+    shiny (>= 0.1.12),
+    shinydashboard,
+    shinyjs,
+    sparkline (>= 1.0),
+    htmlwidgets (>= 0.5.1),
+    sunburstR (>= 0.1),
+    DT (>= 0.1.56),
+    d3heatmap (>= 0.6.1),
+    networkD3 (>= 0.2.6),
+    gapmap(>= 0.0.2),
+    ggplot2(>= 1.0.1),
+    shinyFileTree,
+    rhandsontable
 Depends:
-         DT (>= 0.1.56)
-Remotes:
-  github::fbreitwieser/shinyFileTree,
-  github::rstudio/DT
+    DT (>= 0.1.56)
+Remotes: github::fbreitwieser/shinyFileTree,
+    github::rstudio/DT
 License: GPL-3
 LazyData: TRUE
+RoxygenNote: 5.0.1

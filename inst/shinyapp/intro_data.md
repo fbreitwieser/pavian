@@ -1,4 +1,4 @@
-Pavian Metagenomics Data Explorer
+Metagenomics Data Explorer
 =====================================
 
 Explore and visualize metagenomics data from Kraken and Centrifuge classifiers.

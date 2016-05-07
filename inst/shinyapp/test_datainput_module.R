@@ -2,7 +2,6 @@ library(shiny)
 library(centrifuger)
 library(rhandsontable)
 library(magrittr)
-library(shinythemes)
 
 common_datatable_opts <- list(saveState = TRUE)
 

@@ -100,8 +100,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
       dt <- dt %>%
         formatCurrency(1, currency = '', digits = 0) %>%
         formatString(2:ncol(samples_summary),
-                     string_after = '%',
-                     string_before = '')  ## TODO: display as percent
+                     suffix = '%')  ## TODO: display as percent
       ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
       ## with signif.
     } else {

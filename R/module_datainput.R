@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(rhandsontable)
 
 #' Title
@@ -12,17 +13,21 @@ library(rhandsontable)
 dataInputModuleUI <- function(id) {
   ns <- NS(id)
   shiny::tagList(
-    textInput(ns("txt_data_dir"),label="",
-              value = system.file("shinyapp/example-data", package = "centrifuger"),
-              width = "80%"),
-    actionButton(ns("btn_set_data_dir"), "Reload directory"),
-    shinyFileTree::shinyFileTreeOutput(ns("files_tree")),
+    shinydashboard::box(width=12,
+                        textInput(ns("txt_data_dir"),label="",
+                                  value = system.file("shinyapp/example-data", package = "centrifuger"),
+                                  width = "80%"),
+                        actionButton(ns("btn_set_data_dir"), "Reload directory"),
+                        shinyFileTree::shinyFileTreeOutput(ns("files_tree")),
+                        br(),
+                        actionButton(ns("btn_check_files"), "Check files")
+    ),
     br(),
-    actionButton(ns("btn_check_files"), "Check files"),
-    br(),
-    htmlOutput(ns("info_samples")),
-    br(),
-    rHandsontableOutput(ns("table"))
+    shinydashboard::box(width=12,
+                        htmlOutput(ns("info_samples")),
+                        br(),
+                        rHandsontableOutput(ns("table"))
+    )
   )
 }
 
