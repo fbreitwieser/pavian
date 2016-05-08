@@ -2,8 +2,8 @@
 
 export(beautify_colnames)
 export(beautify_string)
-export(comparisionModule)
-export(comparisionModuleUI)
+export(comparisonModule)
+export(comparisonModuleUI)
 export(dataInputModule)
 export(dataInputModuleUI)
 export(filter_taxon)
