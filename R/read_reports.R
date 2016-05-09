@@ -39,9 +39,9 @@ read_reports <- function(report_files, report_names) {
 
   names(my_reports) <- report_names
   lapply(my_reports, function(my_report) {
-    my_report$name <- sub("[a-z-]_", "", my_report$name)
-    my_report$taxonstring <-
-      gsub("[a-z-]_", "", my_report$taxonstring)
+    #my_report$name <- sub("[a-z-]_", "", my_report$name)
+    #my_report$taxonstring <-
+    #  gsub("[a-z-]_", "", my_report$taxonstring)
     my_report
   })
 }

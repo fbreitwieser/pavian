@@ -29,7 +29,8 @@ ui <- dashboardPage(
                menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
       ),
       menuItem("Sample", tabName="Sample", icon = icon("sun-o")),
-      #menuItem("Alignment", tabName = "tab_alignment", icon = icon("asterisk"))
+      menuItem("Alignment (beta)", tabName = "Alignment", icon = icon("asterisk")),
+      menuItem("CDC ID (beta)", tabName = "CDC", icon = icon("asterisk")),
       menuItem("About", tabName = "About")
     )
   ),
@@ -50,7 +51,8 @@ ui <- dashboardPage(
       tabItem("Viruses", comparisonModuleUI("viruses")),
       tabItem("Fungi_and_Protists", comparisonModuleUI("fungi")),
       tabItem("Sample", sampleModuleUI("sample")),
-      tabItem(
+      tabItem("Alignment", alignmentModuleUI("alignment")),
+            tabItem(
         "About",
         #id = "tabs_about",
         intro,
@@ -84,6 +86,7 @@ server <- function(input, output, session) {
 
   callModule(sampleModule, "sample", samples_df, reports, common_datatable_opts)
 
+  callModule(alignmentModule, "alignment", samples_df)
 }
 
 shinyApp(ui, server)

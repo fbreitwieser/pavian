@@ -26,14 +26,8 @@ comparisonModuleUI <- function(id) {
   ns <- NS(id)
   shiny::tagList(
     fluidRow(
-      shinydashboard::box(
-        #title = "Options",
-        status = "warning",
-        #collapsible = TRUE,
-        #collapsed = TRUE,
-        width = 12,
-        fluidRow(
-          column(3,
+      box(width=6, background = "green",
+          column(6,
                  selectizeInput(
                    ns("opt_classification_level"),
                    label = "Taxon level",
@@ -43,7 +37,7 @@ comparisonModuleUI <- function(id) {
                  checkboxInput(ns("opt_display_percentage"),
                                label = "Show percentages",
                                value = FALSE)),
-          column(3,
+          column(6,
                  radioButtons(
                    ns("opt_show_reads_stay"),
                    label = "",
@@ -53,25 +47,23 @@ comparisonModuleUI <- function(id) {
                      "both"
                    )
                  )
-          ),
-          column(
-            width = 6,
-            selectizeInput(
-              ns('contaminant_selector'),
-              label = "",
-              allcontaminants,
-              selected = commoncontaminants,
-              multiple = TRUE,
-              options = list(
-                maxItems = 25,
-                create = TRUE,
-                placeholder = 'Filter clade'
-              ),
-              width = "100%"
-            )
           )
+      ),
+      box(
+        width = 6,
+        selectizeInput(
+          ns('contaminant_selector'),
+          label = "",
+          allcontaminants,
+          selected = commoncontaminants,
+          multiple = TRUE,
+          options = list(
+            maxItems = 25,
+            create = TRUE,
+            placeholder = 'Filter clade'
+          ),
+          width = "100%"
         )
-
       )
     ),
     tabBox(

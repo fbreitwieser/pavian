@@ -17,7 +17,7 @@ sampleModuleUI <- function(id) {
           choices = NULL, multiple = FALSE,
           width = '100%'
         )),
-      box(width=6, title = "Filter",
+      box(width=6,
           selectizeInput(
             ns('contaminant_selector'), label = "",
             allcontaminants, selected = commoncontaminants,
