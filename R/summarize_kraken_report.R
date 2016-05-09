@@ -25,12 +25,12 @@ extract_from_report <- function(my_report,name,level=NULL) {
 summarize_report <- function(my_report) {
   my_report <- my_report[!duplicated(my_report$name),]
   row.names(my_report) <- my_report[["name"]]
-  unidentified_reads <- my_report["u_unclassified","reads"]
-  identified_reads <- my_report["-_root","reads"]
-  artificial_reads <- my_report["s_synthetic construct","reads"]
-  s_cerevisiae_reads <- my_report["s_Saccharomyces cerevisiae","reads"]
-  human_reads <- my_report["s_Homo sapiens","reads"]
-  mammal_reads <- my_report["c_Mammalia","reads"]
+  unidentified_reads <- my_report["unclassified","reads"]
+  identified_reads <- my_report["root","reads"]
+  artificial_reads <- my_report["synthetic construct","reads"]
+  s_cerevisiae_reads <- my_report["Saccharomyces cerevisiae","reads"]
+  human_reads <- my_report["Homo sapiens","reads"]
+  mammal_reads <- my_report["Mammalia","reads"]
 
   #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"reads"])
   #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"reads"])
@@ -43,9 +43,9 @@ summarize_report <- function(my_report) {
     artificial_reads=artificial_reads,
     unclassified_reads=unidentified_reads,
     microbial_reads=identified_reads-mammal_reads-artificial_reads,
-    bacterial_reads=my_report["d_Bacteria","reads"],
-    viral_reads=my_report["d_Viruses","reads"],
-    fungal_reads=my_report["k_Fungi","reads"]
+    bacterial_reads=my_report["Bacteria","reads"],
+    viral_reads=my_report["Viruses","reads"],
+    fungal_reads=my_report["Fungi","reads"]
     #s_cerevisia_reads=s_cerevisiae_reads,
     #eupath_reads=eupath_reads,
     #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],

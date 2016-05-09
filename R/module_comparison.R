@@ -31,7 +31,7 @@ comparisonModuleUI <- function(id) {
         status = "warning",
         #collapsible = TRUE,
         #collapsed = TRUE,
-        width = 8,
+        width = 12,
         fluidRow(
           column(3,
                  selectizeInput(
@@ -129,7 +129,6 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
   summarized_report <- reactive({
     my_reports <- reports()
-    str(my_reports[[1]])
     if (!is.null(filter_func)) {
       my_reports <- lapply(my_reports, filter_func)
     }
@@ -284,19 +283,26 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     dt
   })
 
+  ns <- session$ns
+
   output$d3heatmap_samples_comparison <- renderUI({
-    str(input$dt_samples_comparison_rows_current)
-    req(input$dt_samples_comparison_rows_current)
-    d3heatmap::d3heatmapOutput('my_d3heatmap',
+    #req(input$dt_samples_comparison_rows_current)
+    selected_rows <- input$dt_samples_comparison_rows_current
+    #selected_rows <- 1:50
+    d3heatmap::d3heatmapOutput(ns('my_d3heatmap'),
                                width = "100%",
                                height = paste0(
-                                 200 + length(input$dt_samples_comparison_rows_current) * 15,
+                                 200 + length(selected_rows) * 15,
                                  "px"
                                ))
   })
 
+
   output$my_d3heatmap <- d3heatmap::renderD3heatmap({
-    req(input$dt_samples_comparison_rows_current)
+    #req(input$dt_samples_comparison_rows_current)
+    selected_rows <- input$dt_samples_comparison_rows_current
+
+    #selected_rows <- 1:50
 
     sr <- summarized_report()
     report_mat <- as.matrix(sr[, attr(sr, "data_columns")])
@@ -304,7 +310,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
 
     report_mat <-
-      zero_if_na(report_mat[input$dt_samples_comparison_rows_current, ])
+      zero_if_na(report_mat[selected_rows, ])
     report_mat[report_mat < 0] <- 0
     d3heatmap::d3heatmap(
       report_mat,

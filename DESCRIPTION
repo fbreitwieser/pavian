@@ -23,6 +23,7 @@ Imports:
 Depends:
     DT (>= 0.1.56)
 Remotes: github::fbreitwieser/shinyFileTree,
+    github::fbreitwieser/networkD3,
     github::rstudio/DT
 License: GPL-3
 LazyData: TRUE

@@ -32,8 +32,7 @@ dataInputModuleUI <- function(id) {
                  tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")
           )),
         fluidRow(shinyFileTree::shinyFileTreeOutput(ns("files_tree"))),
-        br(),
-
+        br()
     ),
     br(),
     box(width=12,

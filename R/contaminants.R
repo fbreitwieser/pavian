@@ -1,16 +1,16 @@
 
 # identifications that are considered contaminants and may be filtered by default
-host_contaminants = c('s_Homo sapiens')
+host_contaminants = c('Homo sapiens')
 seq_contaminants = c(
-  's_synthetic construct',
-  'u_unclassified',
-  's_Enterobacteria phage phiX174 sensu lato'
+  'synthetic construct',
+  'unclassified',
+  'Enterobacteria phage phiX174 sensu lato'
 )
 microbe_contaminants = c(
-  's_Propionibacterium acnes',
-  's_Escherichia coli',
-  's_Saccharomyces cerevisiae',
-  's_Ralstonia pickettii'
+  'Propionibacterium acnes',
+  'Escherichia coli',
+  'Saccharomyces cerevisiae',
+  'Ralstonia pickettii'
 )
 commoncontaminants <- c()  ## this vector is initially filtered
 allcontaminants <-

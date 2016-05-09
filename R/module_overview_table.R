@@ -58,23 +58,59 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     number_range <-  c(0, max(samples_summary[, 1], na.rm = TRUE))
     start_color_bar_at <- 1
 
+    columnDefs <- list()
+    rowCallback <- NULL
+
     if (isTRUE(input$opt_samples_overview_percent)) {
+      ## add a custom renderer.
       start_color_bar_at <- 2
       number_range <- c(0, 100)
       samples_summary[, 2:ncol(samples_summary)] <-
         100 * signif(sweep(samples_summary[, 2:ncol(samples_summary)], 1, samples_summary[, 1], `/`), 2)
+      columnDefs = list(list(
+        targets = 2:(ncol(samples_summary)),
+        render = JS(
+          "function(data, type, row, meta) {",
+          "value = (100 * data / row[1]).toPrecision(3)",
+          "backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
+          "return type === 'display' ?",
+          "'<span title=\"' + data + ' reads\">' + value + '</span>' : data;",
+          "}")))
+
+      rowCallback = JS(
+        "function(row, data) {",
+        sprintf(" for (i = 1; i < %s; i++) { ",ncol(samples_summary)-1),
+        " value = data[i]",
+        " perc = (100 * data / data[1]).toPrecision(3)",
+        " backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
+        " $('td', row).eq(i).css('background',backgroundValue); ",
+        " $('td', row).eq(i).css('background-repeat','no-repeat'); ",
+        " $('td', row).eq(i).css('background-position','center'); ",
+        " $('td', row).eq(i).css('background-size','98% 88%') }",
+        " var span = $('<span title=\"'+value+' reads\">some text</span>');",
+        " $('td', row).eq(i).html('ABC')",
+        #" $('td', row).eq(i).text('<span title=\"'+value+' reads\">' + perc + '</span>')",
+        "}"
+      )
+    }
+
+    styleColorBar2 = function(data, color, angle=90) {
+      rg = range(data, na.rm = TRUE, finite = TRUE)
+      r1 = rg[1]; r2 = rg[2]; r = r2 - r1
+      JS(sprintf(
+        "isNaN(parseFloat(value)) || value <= %s ? '' : 'linear-gradient(%sdeg, transparent ' + (%s - value)/%s * 100 + '%%, %s ' + (%s - value)/%s * 100 + '%%)'",
+        r1, angle, r2, r, color, r2, r
+      ))
     }
 
 
     dt <- DT::datatable(
       samples_summary,
       selection = 'single'
-      ,extensions = c('Responsive', 'Buttons')
-      ,
-      options = list(
+      ,extensions = c('Buttons')
+      , options = list(
         dom = 'Bfrtip'
         , buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy')
-        #, buttons = c('pageLength', 'colvis', 'excel', 'pdf')                             # pageLength / colvis / excel / pdf
         , lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All'))
         , pageLength = 25
         , options = c(datatable_opts, list(stateSave = TRUE))
@@ -82,12 +118,12 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     ) %>%
       DT::formatStyle(
         colnames(samples_summary)[start_color_bar_at:5],
-        background = DT::styleColorBar(number_range, 'lightblue')
+        background = styleColorBar2(number_range, 'lightblue')
       ) %>%
-      DT::formatStyle(colnames(samples_summary)[6:ncol(samples_summary)],
-                      background = DT::styleColorBar(c(0, max(
-                        samples_summary[, 6], na.rm = TRUE
-                      )), 'lightgreen'))
+       DT::formatStyle(colnames(samples_summary)[6:ncol(samples_summary)],
+                       background = DT::styleColorBar(c(0, max(
+                         samples_summary[, 6], na.rm = TRUE
+                     )), 'lightgreen'))
 
     #formatString <- function(table, columns, before="", after="") {
     #  DT:::formatColumns(table, columns, function(col, before, after)
@@ -96,19 +132,20 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     #  )
     #}
 
-    if (isTRUE(input$opt_samples_overview_percent)) {
-      dt <- dt %>%
-        formatCurrency(1, currency = '', digits = 0) %>%
-        formatString(2:ncol(samples_summary),
-                     suffix = '%')  ## TODO: display as percent
-      ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
-      ## with signif.
-    } else {
-      dt <-
-        dt %>% formatCurrency(1:ncol(samples_summary),
-                              currency = '',
-                              digits = 0)
-    }
+     if (isTRUE(input$opt_samples_overview_percent)) {
+       dt <- dt %>%
+          formatCurrency(1, currency = '', digits = 0) %>%
+         formatString(2:ncol(samples_summary),
+                      suffix = '%')  ## TODO: display as percent
+    #   ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
+    #   ## with signif.
+     } else {
+       dt <-
+         dt %>% formatCurrency(1:ncol(samples_summary),
+                               currency = '',
+                               digits = 0)
+     }
+
     dt
   })
 
