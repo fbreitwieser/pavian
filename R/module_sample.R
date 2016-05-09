@@ -62,17 +62,13 @@ sampleModuleUI <- function(id) {
 sampleModule <- function(input, output, session, samples_df, reports,
                          datatable_opts = NULL) {
   sample_view_report <- reactive({
-    str(input$sample_selector)
-    message("B4")
-    if (is.null(input$sample_selector) || input$sample_selector == "") {
-      message("UPDATE")
-      updateSelectInput(session, 'sample_selector',
+
+    validate(need(reports(),
+                  "No reports"))
+
+    updateSelectInput(session, 'sample_selector',
                         choices = names(reports()),
                         selected = names(reports())[1])
-
-    }
-    validate(need(input$sample_selector,
-                  "No samples in sample selector"))
 
     my_report <- reports()[[input$sample_selector]]
     if (is.null(my_report))
