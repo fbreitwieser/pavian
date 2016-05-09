@@ -13,20 +13,33 @@ library(rhandsontable)
 dataInputModuleUI <- function(id) {
   ns <- NS(id)
   shiny::tagList(
-    shinydashboard::box(width=12,
-                        textInput(ns("txt_data_dir"),label="",
-                                  value = system.file("shinyapp/example-data", package = "centrifuger"),
-                                  width = "80%"),
-                        actionButton(ns("btn_set_data_dir"), "Reload directory"),
-                        shinyFileTree::shinyFileTreeOutput(ns("files_tree")),
-                        br(),
-                        actionButton(ns("btn_check_files"), "Check files")
+    box(width=12,
+        title = "Data Input",
+        background = "green",
+        collapsible = TRUE,
+        collapse = TRUE,
+        fluidRow(
+          column(8,
+                 textInput(ns("txt_data_dir"),label="Directory (on server)",
+                           value = system.file("shinyapp/example-data", package = "centrifuger"),
+                           width = "100%"),
+                 tags$style(type="text/css", "#string { height: 50px; width: 100%; text-align:center; font-size: 30px; display: block;}")),
+          column(2,
+                 actionButton(ns("btn_set_data_dir"), "Set directory"),
+                 tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")),
+          column(2,
+                 actionButton(ns("btn_check_files"), "Check file"),
+                 tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")
+          )),
+        fluidRow(shinyFileTree::shinyFileTreeOutput(ns("files_tree"))),
+        br(),
+
     ),
     br(),
-    shinydashboard::box(width=12,
-                        htmlOutput(ns("info_samples")),
-                        br(),
-                        rHandsontableOutput(ns("table"))
+    box(width=12,
+        htmlOutput(ns("info_samples")),
+        br(),
+        rHandsontableOutput(ns("table"))
     )
   )
 }
@@ -49,7 +62,7 @@ dataInputModule <- function(input, output, session,
                             pattern = "defs.csv$", cache_tree = TRUE) {
   library(shinyFileTree)
 
-  data_dir <- eventReactive("btn_set_data_dir", {
+  data_dir <- eventReactive(input$btn_set_data_dir, {
     input$txt_data_dir
   })
 
@@ -104,10 +117,8 @@ dataInputModule <- function(input, output, session,
             sum(file.exists(report_files())))
   })
 
-
-  files_selected_in_tree <- reactive ({
+  files_selected_in_tree <- eventReactive (input$files_tree, {
     selected <- grep(pattern, input$files_tree, value = TRUE)
-
     validate(
       need(
         selected,

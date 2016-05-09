@@ -20,9 +20,8 @@ ui <- dashboardPage(
       label = "Search ..."
     ),
     sidebarMenu(
-      menuItem("Home", tabName="Home"), #, icon = icon("home")),
-      menuItem("Data", tabName="Data", icon = icon("table")),
-      menuItem("Results Overview", tabName="Overview", icon = icon("bar-chart")),
+      menuItem("Home", tabName="Data"),
+      menuItem("Results Overview", tabName="Overview", icon = icon("table")),
       menuItem("Comparison", icon = icon("line-chart"),
                menuSubItem("All data",tabName="Comparison"),
                menuSubItem("Bacteria",tabName="Bacteria"),
