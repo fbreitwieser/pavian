@@ -1,6 +1,6 @@
 #' @export
 
-get_nodes_and_links <- function(krakenres,max_per_level=10) {
+get_nodes_and_links <- function(krakenres,max_per_level=10, max_total=25) {
 
   max_per_level <- 10
   current_depth <- min(krakenres$depth)

@@ -35,5 +35,7 @@ kraken_sunburst <- function(krakenres) {
   kk$taxonstring <- gsub("|","-",kk$taxonstring,fixed = TRUE)
   kk <- kk[!is.na(kk$taxonstring),]
 
-  sunburstR::sunburst(data.frame(V1=kk$taxonstring,V2=kk$reads_stay),count=TRUE)
+  sunburstR::sunburst(data.frame(V1=kk$taxonstring,V2=kk$reads_stay),
+                      count=TRUE, breadcrumb=list(w=0, h=20,s=3,t=10)
+                      , legend=list(w=200, h=20, s=3, r=3))
 }

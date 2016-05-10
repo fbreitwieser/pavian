@@ -34,7 +34,8 @@ sampleModuleUI <- function(id) {
       box(width=12,
           tabsetPanel(
             tabPanel("Flow diagram",
-                     networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")
+                     sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 25, step = 1),
+                     div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "80%"))
             ),
             tabPanel("Sunburst",
                      sunburstR::sunburstOutput(ns("sample_view_sunburst"), width = "100%")
@@ -115,12 +116,26 @@ sampleModule <- function(input, output, session, samples_df, reports,
       my_report <- my_report[sort(input$sample_view_rows_all), ]
 
     #my_report$name <- sub("._", "", my_report$name)
-    my_report <- my_report[, c("depth", "reads", "name")]
+    #my_report <- my_report[, c("depth", "reads", "name")]
     #my_report$name <- sub("^._","",my_report$name)
-    eng <- get_nodes_and_links(my_report, 10)
-    nodes <- eng[[1]]
-    links <- eng[[2]]
-    max.reads <- max(links[, "value"])
+    #eng <- get_nodes_and_links(my_report, 10)
+
+    my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth")]
+    my_report <- my_report[tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), ]
+
+    my_report <- my_report[!my_report$name == '-_root', ]
+    splits <- strsplit(my_report$taxonstring, "\\|")
+    links <- data.frame(do.call(rbind, lapply(splits, tail, n=2)), stringsAsFactors = FALSE)
+    colnames(links) <- c("source","target")
+    links$value <- my_report$reads
+    nodes <- data.frame(name=unique(unlist(splits)),stringsAsFactors=FALSE)
+    names_id = setNames(seq_len(nrow(nodes)) - 1, nodes[,1])
+    links$source <- names_id[links$source]
+    links$target <- names_id[links$target]
+    links <- links[links$source != links$target, ]
+
+    nodes$name <- sub("^._","", nodes$name)
+    #max.reads <- max(links[, "value"])
 
     #print(links)
 
@@ -129,7 +144,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
     #})
 
     #updateSliderInput(session,inputId = "min.reads",min = 1,max = min(1000,max.reads))
-    links$source_name <- nodes$name[links$source + 1]
+    #links$source_name <- nodes$name[links$source + 1]
 
 
     if (!is.null(links))
@@ -141,9 +156,11 @@ sampleModule <- function(input, output, session, samples_df, reports,
         Value = "value",
         NodeID = "name",
         nodeWidth = 3,
-        LinkGroup = "source_name",
+        units = "reads",
+        #LinkGroup = "source_name",
         fontSize = 12,
-        moveNodesRight = FALSE
+        iterations = 250#,
+        #moveNodesRight = FALSE
       )
   })
 

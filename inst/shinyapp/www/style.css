@@ -48,13 +48,19 @@ div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
   height: unset !important;
 }
 
-
+.sunburst-sidebar {
+  position: absolute;
+  width: 20%;
+  left: 80%;
+  top: 40px;
+}
 
 .sunburst-legend {
   padding: 2px 0 0 3px;
 }
 
-.sunbrust-sequence text, .sunburst-legend text {
+.sunburst-sequence text, .sunburst-legend text {
+  font-weight: normal;
   fill: #fff;
   font-size: small;
 }

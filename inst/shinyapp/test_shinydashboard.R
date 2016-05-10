@@ -35,6 +35,9 @@ ui <- dashboardPage(
     )
   ),
   dashboardBody(
+    tags$head(
+      tags$style(HTML(paste(readLines("~/projects/centrifuger/inst/shinyapp/www/style.css"),collapse = "\n")))
+      ),
     tabItems(
       tabItem(
         "Data", intro,
@@ -89,4 +92,5 @@ server <- function(input, output, session) {
   callModule(alignmentModule, "alignment", samples_df)
 }
 
+setwd("~/projects/centrifuger/inst/shinyapp")
 shinyApp(ui, server)
