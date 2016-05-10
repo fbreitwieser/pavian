@@ -51,6 +51,7 @@ comparisonModuleUI <- function(id) {
       ),
       box(
         width = 6,
+        title = "Filter contaminants",
         selectizeInput(
           ns('contaminant_selector'),
           label = "",

@@ -28,7 +28,7 @@ sampleModuleUI <- function(id) {
             width = "100%"
           ),
           checkboxInput(ns("opt_remove_root_hits"),
-                        label = "Remove reads that stay at root", value = FALSE))
+                        label = "Remove reads that stay at the root", value = FALSE))
     ),
     fluidRow(
       box(width=12,
@@ -67,9 +67,11 @@ sampleModule <- function(input, output, session, samples_df, reports,
     validate(need(reports(),
                   "No reports"))
 
-    updateSelectInput(session, 'sample_selector',
-                        choices = names(reports()),
-                        selected = names(reports())[1])
+    if (!input$sample_selector %in% names(reports())) {
+      updateSelectInput(session, 'sample_selector',
+                          choices = names(reports()),
+                          selected = names(reports())[1])
+    }
 
     my_report <- reports()[[input$sample_selector]]
     if (is.null(my_report))
@@ -119,11 +121,15 @@ sampleModule <- function(input, output, session, samples_df, reports,
     my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth")]
     my_report <- my_report[tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), ]
 
-    my_report <- my_report[!my_report$name == '-_root', ]
+    my_report <- my_report[!my_report$name %in% c('-_root','u_unclassified'), ]
+    #my_report$name <- sub("^-_root.", "", my_report$name)
+
     splits <- strsplit(my_report$taxonstring, "\\|")
+    sel <- sapply(splits, length) >= 3
+    splits <- splits[sel]
     links <- data.frame(do.call(rbind, lapply(splits, tail, n=2)), stringsAsFactors = FALSE)
     colnames(links) <- c("source","target")
-    links$value <- my_report$reads
+    links$value <- my_report$reads[sel]
     nodes <- data.frame(name=unique(unlist(splits)),stringsAsFactors=FALSE)
     names_id = setNames(seq_len(nrow(nodes)) - 1, nodes[,1])
     links$source <- names_id[links$source]
@@ -131,16 +137,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
     links <- links[links$source != links$target, ]
 
     nodes$name <- sub("^._","", nodes$name)
-    #max.reads <- max(links[, "value"])
-
-    #print(links)
-
-    #output$maxReads <- renderUI({
-    #  helpText(sprintf("max.reads: %s",max.reads))
-    #})
-
-    #updateSliderInput(session,inputId = "min.reads",min = 1,max = min(1000,max.reads))
-    #links$source_name <- nodes$name[links$source + 1]
+    links$source_name <- nodes$name[links$source + 1]
 
 
     if (!is.null(links))
@@ -153,10 +150,10 @@ sampleModule <- function(input, output, session, samples_df, reports,
         NodeID = "name",
         nodeWidth = 3,
         units = "reads",
-        #LinkGroup = "source_name",
+        LinkGroup = "source_name",
         fontSize = 12,
-        iterations = 250#,
-        #moveNodesRight = FALSE
+        iterations = 250,
+        sinksRight = FALSE
       )
   })
 
