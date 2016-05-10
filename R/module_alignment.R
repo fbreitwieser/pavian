@@ -50,17 +50,6 @@ alignmentModuleUI <- function(id) {
 #'
 #' @examples
 alignmentModule <- function(input, output, session, samples_df) {
-  output$bam_files_tree <- shinyFileTree::renderShinyFileTree({
-    shinyFileTree(
-      list(
-        text = input$cbo_data_dir,
-        type = "directory",
-        state = list(opened = TRUE),
-        children = shinyFileTree::get_list_from_directory(input$cbo_data_dir, ".bam", hide_empty_dirs = TRUE)
-      ),
-      plugins = c("types")
-    )
-  })
 
   nreads <- reactive({
     get_n_reads(input$bam_files_tree_selected)
@@ -68,10 +57,8 @@ alignmentModule <- function(input, output, session, samples_df) {
 
 
   plot_pileup_act <- eventReactive(input$btn_get_alignment, {
-    str(input$bam_files_tree_selected)
-    req(input$bam_files_tree_selected)
     centrifuger::plot_pileup(
-      input$bam_files_tree_selected,
+      system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="centrifuger"),
       input$align_moving_avg,
       input$align_loess,
       text_size = 4
