@@ -25,6 +25,8 @@ comparisonModuleUI <- function(id) {
   library(shinydashboard)
   ns <- NS(id)
   shiny::tagList(
+    fluidRow(box(width=12,collapsible=TRUE,collapsed=TRUE,title="Samples",
+selectizeInput(ns("select_samples"),label="", multiple=TRUE, choices=NULL,selected=NULL))),
     fluidRow(
       box(width=6, background = "green",
           column(6,
@@ -56,7 +58,7 @@ comparisonModuleUI <- function(id) {
           ns('contaminant_selector'),
           label = "",
           allcontaminants,
-          selected = commoncontaminants,
+          selected = c("synthetic construct", "unclassified", "Homo sapiens"),
           multiple = TRUE,
           options = list(
             maxItems = 25,
@@ -120,19 +122,40 @@ comparisonModule <- function(input, output, session, samples_df, reports,
                              datatable_opts = NULL, filter_func = NULL) {
   library(shinydashboard)
 
+  filtered_reports <- reactive({
+   my_reports <- reports()
+    withProgress(message="Loading sample reports ...",{
+    setNames(lapply(names(my_reports), function(my_report_n) {
+     setProgress(detail=my_report_n)    
+      filter_taxon(my_reports[[my_report_n]], input$contaminant_selector)
+    }),names(my_reports))}
+   )
+  })
+
+  selected_reports <- reactive({
+   filtered_reports()[input$select_samples]
+   })
+
   summarized_report <- reactive({
-    my_reports <- reports()
+    my_reports <- selected_reports()
     if (!is.null(filter_func)) {
       my_reports <- lapply(my_reports, filter_func)
     }
+    withProgress(message="Combining sample reports ...",{
     get_summarized_report(
       my_reports,
-      input$contaminant_selector,
       input$opt_display_percentage,
       input$opt_show_reads_stay,
       input$opt_classification_level#,
       #input$opt_remove_root_hits  ## TODO: Consider adding it back in
     )
+    })
+  })
+
+  observeEvent(samples_df, {
+    updateSelectizeInput(session, "select_samples", 
+  choices=samples_df()[,"Name"], selected=samples_df()[,"Name"]  
+)
   })
 
   output$dt_samples_comparison <- DT::renderDataTable({
@@ -320,7 +343,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
   })
 
   output$cluster_plot <- renderPlot({
-    my_reports <- reports()
+    my_reports <- selected_reports()
     if (length(my_reports) == 0)
       return()
 

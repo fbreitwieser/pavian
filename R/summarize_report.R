@@ -1,11 +1,9 @@
 
 get_summarized_report <- function(
   my_reports,
-  filter_contaminants,
   display_percentage,
   show_reads_stay,
   classification_level = NULL,
-  remove_root_hits = FALSE,
   as_matrix = FALSE) {
   ## generate data.frame which has a name column (species name) and a further reads column for each sample
   id_cols_before <- c("name", "level", "taxonid")
@@ -19,8 +17,6 @@ get_summarized_report <- function(
   my_reports <- lapply(names(my_reports), function(report_name) {
     my_report <- my_reports[[report_name]]
     ## filter contaminants if defined
-    for (c in filter_contaminants)
-      my_report <- filter_taxon(my_report, c)
 
     ## subset report to the requested level
     if (!is.null(classification_level) &&
@@ -29,8 +25,6 @@ get_summarized_report <- function(
     }
     my_report <- my_report[, c(id_cols, numeric_col)]
 
-    if (isTRUE(remove_root_hits))
-      my_report <- my_report[my_report$name != "-_root", ]
 
 
     ## set the basename of the report file as name for the numeric column

@@ -2,11 +2,11 @@ library(shiny)
 library(shinydashboard)
 library(rhandsontable)
 
-#' Title
+#' UI part of pavian data input module
 #'
-#' @param id
+#' @param id Namespace ID
 #'
-#' @return
+#' @return shiny UI elements
 #' @export
 #'
 #' @examples
@@ -45,14 +45,16 @@ dataInputModuleUI <- function(id) {
 
 
 
-#' Title
+#' Server part of pavian data input module
 #'
-#' @param input
-#' @param output
-#' @param session
+#' @param input Scoped input
+#' @param output Module output
+#' @param session Shiny session
+#' @param ... Additional arguments for rhandsontable, such as height and width
 #' @param pattern
+#' @param cache_tree \code{boolean}. Whether the file tree should be cached (currently not implemented)
 #'
-#' @return
+#' @return Shiny module server function, to be called by callModule
 #' @export
 #'
 #' @examples

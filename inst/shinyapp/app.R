@@ -11,16 +11,21 @@ intro <- fluidRow(
   column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="centrifuger")))
 )
 
+def_files <- list.files(system.file("shinyapp","example-data",package="pavian"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
+names(def_files) <- basename(dirname(def_files))
+
 ui <- dashboardPage(
   dashboardHeader(),
   dashboardSidebar(
+      selectizeInput("def_files", choices=def_files, label="Select sample set"),
+      br(),
     sidebarSearchForm(
       textId = "txt_sidebarSearch",
       buttonId = "btn_sidebarSearch",
       label = "Search ..."
     ),
-    sidebarMenu(
-      menuItem("Home", tabName="Data"),
+    sidebarMenu(id="tabs",
+      menuItem("Home", tabName="Home"),
       menuItem("Results Overview", tabName="Overview", icon = icon("table")),
       menuItem("Comparison", icon = icon("line-chart"),
                menuSubItem("All data", tabName="Comparison"),
@@ -36,9 +41,10 @@ ui <- dashboardPage(
   ),
   dashboardBody(
     tags$head(
-      tags$style(HTML(paste(readLines("~/projects/centrifuger/inst/shinyapp/www/style.css"),collapse = "\n")))
+      tags$style(HTML(paste(readLines(system.file("shinyapp","www","style.css",package="centrifuger")),collapse = "\n")))
       ),
     tabItems(
+      tabItem("Home",intro),
       tabItem(
         "Data", intro,
         fluidRow(
@@ -59,14 +65,42 @@ ui <- dashboardPage(
         "About",
         #id = "tabs_about",
         intro,
-        fluidRow("ABC")
+        box(width=12,
+            title="Session Information",
+            collapsible=TRUE,
+            collapsed=TRUE,
+            verbatimTextOutput("session_info")
       )
     )
+)
   )
 )
 
 server <- function(input, output, session) {
-  samples_df <- callModule(dataInputModule, "datafile", height = 800)
+
+    observeEvent(input$def_files,{
+      updateTabItems(session,"tabs","Overview") 
+    })
+  #samples_df <- callModule(dataInputModule, "datafile", height = 800)
+  samples_df <- reactive({
+    def_df <- read.delim(input$def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
+
+    validate(need("ReportFile" %in% colnames(def_df),
+                  message = "Required column 'ReportFile' not present in defs.csv"))
+
+
+    if (!"Include" %in% colnames(def_df))
+      def_df <- cbind(Include = TRUE, def_df)
+
+    if ("Class" %in% colnames(def_df))
+      def_df$Class <- as.factor(def_df$Class)
+
+    if (!"ReportFilePath" %in% colnames(def_df))
+      def_df$ReportFilePath <- file.path(dirname(def_files), def_df$ReportFile)
+
+    def_df
+
+  })
   reports <- reactive({
     validate(
       need("ReportFilePath" %in% colnames(samples_df()), "ReportFilePath not available!"),
@@ -90,7 +124,8 @@ server <- function(input, output, session) {
   callModule(sampleModule, "sample", samples_df, reports, common_datatable_opts)
 
   callModule(alignmentModule, "alignment", samples_df)
+ 
+  output$session_info <- renderPrint( { sessionInfo() } )
 }
 
-setwd("~/projects/centrifuger/inst/shinyapp")
 shinyApp(ui, server)

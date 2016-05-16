@@ -268,63 +268,64 @@ has_header=NULL,add_level_columns=FALSE) {
 #'}
 filter_taxon <- function(krakenres,filter_taxon, do_message=TRUE) {
     taxon_depth <- NULL
-    taxon_reads <- 0
+    taxon_reads <- 0    
 
-    pos.taxon <- which(krakenres$name == filter_taxon)
-    if (length(pos.taxon) == 0) {
+    pos.taxons <- which(sub("._","",krakenres$name) %in% filter_taxon)
+    #pos.taxon <- which(krakenres$name := filter_taxon)
+    if (length(pos.taxons) == 0) {
       return(krakenres)
-    } else if (length(pos.taxon) > 1) {
-      stop("More than one position matches to ",filter_taxon)
-    }
+    } 
 
-    taxon_depth <- krakenres[pos.taxon,"depth"]
-    taxon_reads <- krakenres[pos.taxon,"reads"]
-    del_taxon <- filter_taxon
+    row_seq <- seq_len(nrow(krakenres))
+    rows_to_delete <- rep(FALSE,nrow(krakenres))
 
-    sseq <- seq(from=1,to=nrow(krakenres))
+    taxon_depths <- krakenres[pos.taxons,"depth"]
+    taxon_readss <- krakenres[pos.taxons,"reads"]
 
-    rows_to_delete <- c(pos.taxon)
-    if (pos.taxon < nrow(krakenres)) {
-      for (i in seq(from=pos.taxon+1,to=nrow(krakenres))) {
-         if (krakenres[i,"depth"] > taxon_depth) {
-           rows_to_delete <- c(rows_to_delete,i)
-         } else {
-           break()
-         }
+    for (i in seq_along(pos.taxons)) {
+      pos.taxon <- pos.taxons[i]
+      if (pos.taxon == 1) { 
+        rows_to_delete[1] <- TRUE
+        next
       }
-    }
+      taxon_depth <- taxon_depths[i]
+      taxon_reads <- taxon_readss[i]
+    
+    tosum_below <-  row_seq >= pos.taxon & krakenres$depth <= taxon_depth
+    taxons_below <- cumsum(tosum_below) == 1
+    rows_to_delete[taxons_below] <- TRUE
+    rows_to_update <- c()
 
-    ## go to the top in the data.frame and update reads
-    if (pos.taxon > 1) {
-    delete.no.more_rows <- FALSE
+    taxon_string <- krakenres[pos.taxon,"taxonstring"]
+    taxons_above <- seq_len(nrow(krakenres)) < pos.taxon & krakenres$depth == taxon_depth
+
+    any_stays <- FALSE
+    prev_taxon_depth <- taxon_depth
+    taxons_above <- c()
     for (i in seq(from=(pos.taxon-1),to=1)) {
-
-        ##   and the depth is higher than the delete depth
-        if (krakenres[i,'depth'] >= taxon_depth) {
-          delete.no.more_rows <- TRUE
-          next()
-        }
-
-        if (krakenres[i,'reads'] > (taxon_reads + krakenres[i,'reads_stay'])) {
-          ## just update the read count of the current row,
-          ##   if not all reads can be accounted for by the deleted levels (plus those that stay)
-          krakenres[i,'reads'] <- krakenres[i,'reads'] - taxon_reads
-
-          if (krakenres[i,'depth'] == 0)
-            break
-
-        } else if (!delete.no.more_rows && krakenres[i,'reads'] == (taxon_reads + krakenres[i,'reads_stay'])) {
-          ## if all reads can be accounted for by the deleted levels, plus those that stay, delete this level
-          del_taxon <- krakenres[i,'name']
-          taxon_depth <- krakenres[i,'depth']
-          taxon_reads <- krakenres[i,'reads']
-          rows_to_delete <- c(rows_to_delete,i)
-        }
+       curr_taxon_depth <- krakenres[i,"depth"]
+      if (curr_taxon_depth < prev_taxon_depth) {
+        if (!any_stays) {
+          if (krakenres[i,"reads"] == taxon_reads) {
+            rows_to_delete[i] <- TRUE
+            #message("Deleting ",krakenres[i,"name"])
+          } else {
+            any_stays <- TRUE
+          }
+        } 
+        if (!rows_to_delete[i]) {
+          rows_to_update <- c(rows_to_update, i)
+          #message("Updating ",krakenres[i,"name"])
+	}
+        prev_taxon_depth <- curr_taxon_depth
+      } else {
+        any_stays <- TRUE
       }
     }
-    krakenres <- krakenres[-rows_to_delete,]
-    if (do_message)
-      message(sprintf("Deleted %10s reads, %s rows from %s up to %s",taxon_reads,length(rows_to_delete),filter_taxon,del_taxon))
-    krakenres
+    krakenres[rows_to_update, "reads"] <- krakenres[rows_to_update, "reads"] - taxon_reads
+    
+    }
+
+    krakenres[!rows_to_delete,]
 }
 

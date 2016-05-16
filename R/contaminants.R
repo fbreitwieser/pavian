@@ -7,6 +7,7 @@ seq_contaminants = c(
   'Enterobacteria phage phiX174 sensu lato'
 )
 microbe_contaminants = c(
+  'Enterobacteriales',
   'Propionibacterium acnes',
   'Escherichia coli',
   'Saccharomyces cerevisiae',

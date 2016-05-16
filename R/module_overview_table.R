@@ -13,7 +13,7 @@ reportOverviewModuleUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
-    checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads"),
+    checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = TRUE),
     div(style = 'overflow-x: scroll',
         DT::dataTableOutput(ns('dt_samples_overview')))
   )

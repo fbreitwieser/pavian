@@ -24,9 +24,8 @@ alignmentModuleUI <- function(id) {
       )
     ),
     tabPanel(
-      title = "Create alignment",
+      title = "Download genomes for alignment",
       box(width = 12,
-          shiny::actionButton(ns("btn_create_alignment"), "Create alignment"),
           shiny::selectizeInput(ns("cbo_assemblies"), choices =
                                   NULL, label = "RefSeq Assemblies"),
           shiny::actionButton(ns("btn_load_assembly_info"), "Load RefSeq assemblies"),

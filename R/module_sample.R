@@ -20,7 +20,7 @@ sampleModuleUI <- function(id) {
       box(width=6,
           selectizeInput(
             ns('contaminant_selector'), label = "",
-            allcontaminants, selected = commoncontaminants,
+            allcontaminants, selected = c("synthetic construct", "unclassified", "Homo sapiens"),
             multiple = TRUE,
             options = list(
               maxItems = 25, create = TRUE, placeholder = 'Filter clade'
@@ -28,14 +28,15 @@ sampleModuleUI <- function(id) {
             width = "100%"
           ),
           checkboxInput(ns("opt_remove_root_hits"),
-                        label = "Remove reads that stay at the root", value = FALSE))
+                        label = "Do not show reads that stay at the root", value = TRUE))
     ),
     fluidRow(
       box(width=12,
           tabsetPanel(
             tabPanel("Flow diagram",
-                     sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 25, step = 1),
-                     div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "80%"))
+                     sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
+                     #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
+                     div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%"))
             ),
             tabPanel("Sunburst",
                      sunburstR::sunburstOutput(ns("sample_view_sunburst"), width = "100%")
@@ -127,6 +128,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
     splits <- strsplit(my_report$taxonstring, "\\|")
     sel <- sapply(splits, length) >= 3
     splits <- splits[sel]
+     
     links <- data.frame(do.call(rbind, lapply(splits, tail, n=2)), stringsAsFactors = FALSE)
     colnames(links) <- c("source","target")
     links$value <- my_report$reads[sel]
@@ -148,11 +150,11 @@ sampleModule <- function(input, output, session, samples_df, reports,
         Target = "target",
         Value = "value",
         NodeID = "name",
-        nodeWidth = 3,
+        nodeWidth = 5,
         units = "reads",
         LinkGroup = "source_name",
         fontSize = 12,
-        iterations = 250,
+        iterations = ifelse(is.null(input$iterations), 500, input$iterations),
         sinksRight = FALSE
       )
   })
@@ -173,7 +175,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
       my_report,
       filter = 'top',
       selection = 'single',
-      options = common_datatable_opts
+      options = datatable_opts
     ) %>%
       formatString("Percent", suffix = "%") %>%
       formatCurrency(c("Reads", "Reads stay"),
