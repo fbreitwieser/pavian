@@ -25,7 +25,8 @@ Depends:
 Remotes: github::fbreitwieser/shinyFileTree,
     github::fbreitwieser/networkD3,
     github::fbreitwieser/sunburstR,
-    github::htmlwidgets/sparkline
+    github::htmlwidgets/sparkline,
+    github::rstudio/DT
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
