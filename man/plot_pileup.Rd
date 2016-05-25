@@ -4,7 +4,8 @@
 \alias{plot_pileup}
 \title{Title}
 \usage{
-plot_pileup(bam_file, moving_avg, align_loess, nwin = 1000, text_size = 4)
+plot_pileup(pileup, nreads, seq_lengths, align_loess, show_step = TRUE,
+  nwin = 1000, text_size = 4)
 }
 \arguments{
 \item{nwin}{}

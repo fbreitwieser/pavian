@@ -11,17 +11,14 @@
 #' @export
 #'
 #' @examples
-plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_size = 4) {
+plot_pileup <- function(pileup, nreads, seq_lengths, align_loess, show_step = TRUE, nwin = 1000, text_size = 4) {
   require(Rsamtools)
   require(plyr)
   require(ggplot2)
 
-  pileup <- get_pileup(bam_file, moving_avg)
-  nreads <- get_nreads(bam_file)
-  seq_lengths <- get_seqlengths(bam_file)
-
   if (nrow(pileup) == 0)
     return(NULL)
+
 
   covered_bp <- attr(pileup,"covered_bp")
   covered_bp[setdiff(names(seq_lengths),names(covered_bp))] <- 0
@@ -40,8 +37,11 @@ plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_siz
   seq_info_df$perc_covered = seq_info_df$covered_bp / seq_info_df$genome_size
 
 
-  g <- ggplot(pileup, aes(x = pos, y = count)) +
-    geom_step(aes(color = strand),alpha=.8)
+  g <- ggplot(pileup, aes(x = pos, y = count))
+  if (show_step)
+    g <- g + geom_step(aes(color = strand),alpha=.8)
+  else
+    g <- g + geom_path(aes(color = strand),alpha=.8)
 
   if (isTRUE(align_loess))
     g <-
@@ -68,12 +68,11 @@ plot_pileup <- function(bam_file, moving_avg, align_loess, nwin = 1000, text_siz
 
   g + geom_text(
     aes(
-      label = sprintf(
-        "genome: %sp\ncovered: %sp\navg cov: %.f%%\n# of reads: %s",
-        paste0(bp_formatter(genome_size),"b"),
-        paste0(bp_formatter(covered_bp),"b"),
-        signif(100 * avg_coverage, 2),
-        n_reads
+      label = sprintf("%s / %s bp covered\n%s\n%s",
+        sprintf("%s", paste0(bp_formatter(covered_bp))),
+        sprintf("%s", bp_formatter(genome_size)),
+        sprintf("%s reads", n_reads),
+        sprintf("avg cov: %sx", signif(avg_coverage, 2))
       )
     ),
     x = Inf, y = Inf, vjust = "inward", hjust = "inward", ## top-right

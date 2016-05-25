@@ -52,19 +52,21 @@ get_pileup <- function(bam_file, align_moving_avg, nwin = 1000) {
   } else {
     pileup <- ddply(pileup, c("seqnames", "strand"), function(x) {
       genome_length <- seq_lengths[x$seqnames[1]]
-      poss <- x$pos + 1
+      poss <- c(x$pos + 1,x$pos - 1)
       pos_to_set_zero <-
-        poss[!poss %in% x$pos & poss < genome_length]
-      rbind(
+        poss[!poss %in% x$pos & poss < genome_length & poss > 0]
+
+      aa <- rbind(
         x,
         data.frame(
           seqnames = x$seqnames[1],
-          pos = poss,
+          pos = pos_to_set_zero,
           strand = x$strand[1],
           nucleotide = NA,
           count = 0
         )
       )
+      aa[order(aa$pos),]
     })
 
   }

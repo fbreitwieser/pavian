@@ -2,15 +2,26 @@
 % Please edit documentation in R/module_datainput.R
 \name{dataInputModule}
 \alias{dataInputModule}
-\title{Title}
+\title{Server part of pavian data input module}
 \usage{
 dataInputModule(input, output, session, ..., pattern = "defs.csv$",
   cache_tree = TRUE)
 }
 \arguments{
-\item{pattern}{}
+\item{input}{Scoped input}
+
+\item{output}{Module output}
+
+\item{session}{Shiny session}
+
+\item{...}{Additional arguments for rhandsontable, such as height and width}
+
+\item{cache_tree}{\code{boolean}. Whether the file tree should be cached (currently not implemented)}
+}
+\value{
+Shiny module server function, to be called by callModule
 }
 \description{
-Title
+Server part of pavian data input module
 }
 

@@ -25,8 +25,8 @@ comparisonModuleUI <- function(id) {
   library(shinydashboard)
   ns <- NS(id)
   shiny::tagList(
-    fluidRow(box(width=12,collapsible=TRUE,collapsed=TRUE,title="Samples",
-selectizeInput(ns("select_samples"),label="", multiple=TRUE, choices=NULL,selected=NULL))),
+    fluidRow(box(width=12,collapsible=TRUE,collapsed=TRUE,title="Select samples",
+                 selectizeInput(ns("select_samples"),label="", multiple=TRUE, choices=NULL,selected=NULL, options=list(create = TRUE)))),
     fluidRow(
       box(width=6, background = "green",
           column(6,
@@ -38,6 +38,9 @@ selectizeInput(ns("select_samples"),label="", multiple=TRUE, choices=NULL,select
                  ),
                  checkboxInput(ns("opt_display_percentage"),
                                label = "Show percentages",
+                               value = FALSE),
+                 checkboxInput(ns("opt_zscore"),
+                               label = "z-score",
                                value = FALSE)),
           column(6,
                  radioButtons(
@@ -47,8 +50,11 @@ selectizeInput(ns("select_samples"),label="", multiple=TRUE, choices=NULL,select
                      "Reads at taxon" = "reads_stay",
                      "Reads at taxon or lower" = "reads",
                      "both"
-                   )
-                 )
+                   )),
+                 checkboxInput(ns("opt_remove_root_hits"),
+                               label = "Do not show reads that stay at the root",
+                               value = TRUE)
+
           )
       ),
       box(
@@ -88,13 +94,14 @@ selectizeInput(ns("select_samples"),label="", multiple=TRUE, choices=NULL,select
                      ns("heatmap_scale"),
                      'Scale',
                      c("none", "row", "column"),
-                     selected = "none",
+                     selected = "column",
                      inline = TRUE
                    ),
                    checkboxGroupInput(
                      ns("heatmap_cluster"),
                      "Cluster",
                      choices = c('row', 'column'),
+                     selected = c('row', 'column'),
                      inline = TRUE
                    )
                  )
@@ -123,39 +130,55 @@ comparisonModule <- function(input, output, session, samples_df, reports,
   library(shinydashboard)
 
   filtered_reports <- reactive({
-   my_reports <- reports()
+    my_reports <- reports()
     withProgress(message="Loading sample reports ...",{
-    setNames(lapply(names(my_reports), function(my_report_n) {
-     setProgress(detail=my_report_n)    
-      filter_taxon(my_reports[[my_report_n]], input$contaminant_selector)
-    }),names(my_reports))}
-   )
+      setNames(lapply(names(my_reports), function(my_report_n) {
+        setProgress(detail=my_report_n)
+        filter_taxon(my_reports[[my_report_n]], input$contaminant_selector)
+      }),names(my_reports))}
+    )
+  })
+
+  observe({
+    updateSelectizeInput(session, "select_samples",
+                         choices=samples_df()[,"Name"], selected=samples_df()[,"Name"])
   })
 
   selected_reports <- reactive({
-   filtered_reports()[input$select_samples]
-   })
+    selected <- unlist(lapply(input$select_samples,function(s) grep(paste0("^",s,"$"),samples_df()[,"Name"])))
+    #updateSelectizeInput(session, "select_samples",
+    #                     selected=samples_df()[selected,"Name"])
+    filtered_reports()[unique(sort(selected))]
+  })
 
   summarized_report <- reactive({
     my_reports <- selected_reports()
     if (!is.null(filter_func)) {
       my_reports <- lapply(my_reports, filter_func)
     }
+    if (input$opt_remove_root_hits) {
+      for (nn in names(my_reports)) {
+        sel <- my_reports[[nn]]$name == "-_root"
+        if (any(sel))
+          my_reports[[nn]][sel,"reads_stay"] <- 0
+      }
+    }
     withProgress(message="Combining sample reports ...",{
-    get_summarized_report(
-      my_reports,
-      input$opt_display_percentage,
-      input$opt_show_reads_stay,
-      input$opt_classification_level#,
-      #input$opt_remove_root_hits  ## TODO: Consider adding it back in
-    )
+      get_summarized_report(
+        my_reports,
+        input$opt_display_percentage,
+        input$opt_zscore,
+        input$opt_show_reads_stay,
+        input$opt_classification_level#,
+        #input$opt_remove_root_hits  ## TODO: Consider adding it back in
+      )
     })
   })
 
   observeEvent(samples_df, {
-    updateSelectizeInput(session, "select_samples", 
-  choices=samples_df()[,"Name"], selected=samples_df()[,"Name"]  
-)
+    updateSelectizeInput(session, "select_samples",
+                         choices=samples_df()[,"Name"], selected=samples_df()[,"Name"]
+    )
   })
 
   output$dt_samples_comparison <- DT::renderDataTable({
@@ -261,7 +284,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
         selection = 'single'
       )
 
-    if (!isTRUE(input$opt_display_percentage)) {
+    if (!isTRUE(input$opt_display_percentage) && !isTRUE(input$opt_zscore)) {
       dt <-
         dt %>% formatCurrency(
           attr(summarized_report, 'mean_column'),
@@ -274,11 +297,10 @@ comparisonModule <- function(input, output, session, samples_df, reports,
           digits = 0
         )
     } else {
+      suffix <- ifelse(isTRUE(input$opt_zscore),"","%")
       dt <-
-        dt %>% formatString(attr(summarized_report, 'mean_column'), suffix =
-                              '%') %>%
-        formatString(attr(summarized_report, 'data_columns'), suffix =
-                       '%')
+        dt %>% formatString(attr(summarized_report, 'mean_column'), suffix = suffix) %>%
+        formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
     }
 
     dt <- dt %>% formatStyle(

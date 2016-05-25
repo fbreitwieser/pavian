@@ -2,6 +2,7 @@
 get_summarized_report <- function(
   my_reports,
   display_percentage,
+  show_zscore,
   show_reads_stay,
   classification_level = NULL,
   as_matrix = FALSE) {
@@ -11,11 +12,13 @@ get_summarized_report <- function(
   id_cols_after <- c("taxonstring")
   id_cols <- c(id_cols_before, id_cols_after)
 
-  if (is.null(my_reports)) {
+  if (is.null(my_reports) || length(my_reports) == 0) {
     return(NULL)
   }
   my_reports <- lapply(names(my_reports), function(report_name) {
     my_report <- my_reports[[report_name]]
+    if (length(my_report) == 0)
+      stop("Report ",report_name," is empty")
     ## filter contaminants if defined
 
     ## subset report to the requested level
@@ -29,7 +32,7 @@ get_summarized_report <- function(
 
     ## set the basename of the report file as name for the numeric column
     idx_of_numeric_col <-
-      seq(from = length(id_cols) + 1, ncol(my_report))
+      seq(from = length(id_cols) + 1, to = ncol(my_report))
     colnames(my_report)[idx_of_numeric_col] <-
       sub(".*/(.*)(-PT.*)?.report", "\\1", report_name)
     if (length(numeric_col) > 1) {
@@ -59,6 +62,7 @@ get_summarized_report <- function(
   if (isTRUE(display_percentage)) {
     sum_reads <- colSums(data_portion[, reads_stay_idx], na.rm = T)
   }
+
   if (show_reads_stay == "reads") {
     data_portion <- data_portion[, reads_idx]
     colnames(data_portion) <-
@@ -72,30 +76,36 @@ get_summarized_report <- function(
   if (isTRUE(display_percentage)) {
     if (show_reads_stay == "both")
       sum_reads <- rep(sum_reads, each = 2)
-    data_portion <- signif(100 * t(t(data_portion) / sum_reads), 3)
+    data_portion <- 100 * t(t(data_portion) / sum_reads)
   }
+
+  if (isTRUE(show_zscore)) {
+    dp2 <- data_portion
+    sel.na <- is.na(dp2)
+    dp2[sel.na] <- 0
+    data_portion <- t(scale(t(data_portion), center = apply(dp2,1,mean), scale=apply(dp2,1,sd)))
+    #data_portion[sel.na] <- NA
+    #dimnames(data_portion) <- dimnames(dp2)
+    rm(dp2)
+  }
+
 
   if (as_matrix) {
     row_names <- summarized_report[, 1]
     summarized_report <- as.matrix(data_portion)
     rownames(summarized_report) <- gsub("^[a-z-]_", "", row_names)
   } else {
-    if (isTRUE(display_percentage)) {
-      mean_column <-
-        signif(rowSums(data_portion, na.rm = TRUE) / ncol(data_portion),
-               3)
-    } else {
-      mean_column <-
-        signif(rowSums(data_portion, na.rm = TRUE) / ncol(data_portion),
-               3)
+    if (isTRUE(display_percentage) || isTRUE(show_zscore)) {
+      data_portion <- signif(data_portion, 3)
     }
+      mean_column <-
+        signif(rowSums(data_portion, na.rm = TRUE) / ncol(data_portion),
+               3)
     round_digits <- ifelse(isTRUE(display_percentage), 3, 1)
     summarized_report <-
       cbind(
         beautify_colnames(summarized_report[, id_cols_before, drop = FALSE]),
-        Overview = apply(round(zero_if_na(
-          log10(10 * data_portion)
-        ), round_digits), 1, paste0, collapse = ","),
+        Overview = apply(round(zero_if_na(data_portion), round_digits), 1, paste0, collapse = ","),
         Mean = mean_column,
         data_portion,
         beautify_colnames(summarized_report[, id_cols_after, drop =

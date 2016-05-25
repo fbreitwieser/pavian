@@ -4,7 +4,7 @@
 \alias{runApp}
 \title{Run Centrifuger web interface}
 \usage{
-runApp(cache_dir = "cache")
+runApp(cache_dir = "cache", ...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files}

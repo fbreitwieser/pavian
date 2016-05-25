@@ -4,6 +4,8 @@ library(rhandsontable)
 library(magrittr)
 library(shinydashboard)
 
+options(shiny.maxRequestSize=50*1024^2)
+
 common_datatable_opts <- list(saveState = TRUE)
 
 intro <- fluidRow(
@@ -11,7 +13,7 @@ intro <- fluidRow(
   column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="centrifuger")))
 )
 
-def_files <- list.files(system.file("shinyapp","example-data",package="pavian"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
+def_files <- list.files(system.file("shinyapp","example-data",package="centrifuger"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
 names(def_files) <- basename(dirname(def_files))
 
 ui <- dashboardPage(
@@ -19,11 +21,11 @@ ui <- dashboardPage(
   dashboardSidebar(
       selectizeInput("def_files", choices=def_files, label="Select sample set"),
       br(),
-    sidebarSearchForm(
-      textId = "txt_sidebarSearch",
-      buttonId = "btn_sidebarSearch",
-      label = "Search ..."
-    ),
+    #sidebarSearchForm(
+    #  textId = "txt_sidebarSearch",
+    #  buttonId = "btn_sidebarSearch",
+    #  label = "Search ..."
+    #),
     sidebarMenu(id="tabs",
       menuItem("Home", tabName="Home"),
       menuItem("Results Overview", tabName="Overview", icon = icon("table")),
@@ -79,10 +81,14 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
 
     observeEvent(input$def_files,{
-      updateTabItems(session,"tabs","Overview") 
+      updateTabItems(session,"tabs","Overview")
+
     })
   #samples_df <- callModule(dataInputModule, "datafile", height = 800)
   samples_df <- reactive({
+    validate(
+      need(input$def_files, message = "Input files are not available")
+    )
     def_df <- read.delim(input$def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
 
     validate(need("ReportFile" %in% colnames(def_df),
@@ -96,8 +102,9 @@ server <- function(input, output, session) {
       def_df$Class <- as.factor(def_df$Class)
 
     if (!"ReportFilePath" %in% colnames(def_df))
-      def_df$ReportFilePath <- file.path(dirname(def_files), def_df$ReportFile)
+      def_df$ReportFilePath <- file.path(dirname(input$def_files), def_df$ReportFile)
 
+    def_df <- def_df[file.exists(def_df$ReportFilePath),]
     def_df
 
   })
@@ -124,7 +131,7 @@ server <- function(input, output, session) {
   callModule(sampleModule, "sample", samples_df, reports, common_datatable_opts)
 
   callModule(alignmentModule, "alignment", samples_df)
- 
+
   output$session_info <- renderPrint( { sessionInfo() } )
 }
 

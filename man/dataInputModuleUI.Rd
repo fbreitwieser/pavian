@@ -2,14 +2,17 @@
 % Please edit documentation in R/module_datainput.R
 \name{dataInputModuleUI}
 \alias{dataInputModuleUI}
-\title{Title}
+\title{UI part of pavian data input module}
 \usage{
 dataInputModuleUI(id)
 }
 \arguments{
-\item{id}{}
+\item{id}{Namespace ID}
+}
+\value{
+shiny UI elements
 }
 \description{
-Title
+UI part of pavian data input module
 }
 

@@ -22,7 +22,8 @@ microbe_contaminants = c(
   's_Propionibacterium acnes',
   's_Escherichia coli',
   's_Saccharomyces cerevisiae',
-  's_Ralstonia pickettii'
+  's_Ralstonia pickettii',
+  's_Kocuria rhizophila'
 )
 commoncontaminants <- c()  ## this vector is initially filtered
 allcontaminants <-
