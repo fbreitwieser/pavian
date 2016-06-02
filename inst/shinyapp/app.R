@@ -19,39 +19,36 @@ names(def_files) <- basename(dirname(def_files))
 ui <- dashboardPage(
   dashboardHeader(),
   dashboardSidebar(
-      selectizeInput("def_files", choices=def_files, label="Select sample set"),
-      br(),
+    selectizeInput("def_files", choices=def_files, label="Select sample set"),
+    br(),
     #sidebarSearchForm(
     #  textId = "txt_sidebarSearch",
     #  buttonId = "btn_sidebarSearch",
     #  label = "Search ..."
     #),
     sidebarMenu(id="tabs",
-      menuItem("Home", tabName="Home"),
-      menuItem("Results Overview", tabName="Overview", icon = icon("table")),
-      menuItem("Comparison", icon = icon("line-chart"),
-               menuSubItem("All data", tabName="Comparison"),
-               menuSubItem("Bacteria", tabName="Bacteria"),
-               menuSubItem("Viruses", tabName="Viruses"),
-               menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
-      ),
-      menuItem("Sample", tabName="Sample", icon = icon("sun-o")),
-      menuItem("Alignment (beta)", tabName = "Alignment", icon = icon("asterisk")),
-      menuItem("CDC ID (beta)", tabName = "CDC", icon = icon("asterisk")),
-      menuItem("About", tabName = "About")
+                menuItem("Home", tabName="Home"),
+                menuItem("Results Overview", tabName="Overview", icon = icon("table")),
+                menuItem("Comparison", icon = icon("line-chart"),
+                         menuSubItem("All data", tabName="Comparison"),
+                         menuSubItem("Bacteria", tabName="Bacteria"),
+                         menuSubItem("Viruses", tabName="Viruses"),
+                         menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
+                ),
+                menuItem("Sample", tabName="Sample", icon = icon("sun-o")),
+                menuItem("Alignment (beta)", tabName = "Alignment", icon = icon("asterisk")),
+                menuItem("CDC ID (beta)", tabName = "CDC", icon = icon("asterisk")),
+                menuItem("About", tabName = "About")
     )
   ),
   dashboardBody(
     tags$head(
       tags$style(HTML(paste(readLines(system.file("shinyapp","www","style.css",package="centrifuger")),collapse = "\n")))
-      ),
+    ),
     tabItems(
-      tabItem("Home",intro),
-      tabItem(
-        "Data", intro,
-        fluidRow(
-          dataInputModuleUI("datafile")
-        )
+      tabItem("Home",
+              intro,
+              dataInputModuleUI("datafile")
       ),
       tabItem("Overview",
               reportOverviewModuleUI("overview"),
@@ -63,7 +60,7 @@ ui <- dashboardPage(
       tabItem("Fungi_and_Protists", comparisonModuleUI("fungi")),
       tabItem("Sample", sampleModuleUI("sample")),
       tabItem("Alignment", alignmentModuleUI("alignment")),
-            tabItem(
+      tabItem(
         "About",
         #id = "tabs_about",
         intro,
@@ -72,18 +69,26 @@ ui <- dashboardPage(
             collapsible=TRUE,
             collapsed=TRUE,
             verbatimTextOutput("session_info")
+        )
       )
     )
-)
   )
 )
 
 server <- function(input, output, session) {
 
-    observeEvent(input$def_files,{
-      updateTabItems(session,"tabs","Overview")
+  observeEvent(input$def_files,{
+    updateTabItems(session,"tabs","Overview")
 
-    })
+  })
+
+  observeEvent(input$mydata, {
+    message("YIPPPPPEEEEE")
+    len = length(input$mydata)
+    lapply(input$mydata,function(x) message(head(readLines(x))))
+
+  })
+
   #samples_df <- callModule(dataInputModule, "datafile", height = 800)
   samples_df <- reactive({
     validate(

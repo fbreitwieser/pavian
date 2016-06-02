@@ -80,23 +80,23 @@ collapse.levels <- function(krakenlist,keep_levels=LETTERS,filter_taxon=NULL) {
 
     } else {
 
-    ## check if the last (top-most) row should be kept
-    keep_last.child <- child_rows[1,'level'] %in% keep_levels
+      ## check if the last (top-most) row should be kept
+      keep_last.child <- child_rows[1,'level'] %in% keep_levels
 
-    if (!keep_last.child) {
-      cols <- cols[cols %in% colnames(parent_row)]
+      if (!keep_last.child) {
+        cols <- cols[cols %in% colnames(parent_row)]
 
-      ## save the specified colum information to the parent
-      parent_row[,cols] <- parent_row[,cols] + child_rows[1,cols]
+        ## save the specified colum information to the parent
+        parent_row[,cols] <- parent_row[,cols] + child_rows[1,cols]
 
-      ## remove row
-      child_rows <- child_rows[-1,,drop=FALSE]
+        ## remove row
+        child_rows <- child_rows[-1,,drop=FALSE]
 
-      ## decrease depths of rows below child row
-      if (nrow(child_rows) > 0)
-        child_rows[,'depth'] <- child_rows[,'depth'] - 1
+        ## decrease depths of rows below child row
+        if (nrow(child_rows) > 0)
+          child_rows[,'depth'] <- child_rows[,'depth'] - 1
 
-    }
+      }
     }
     all.child_rows <- rbind(all.child_rows,child_rows)
   }
@@ -161,20 +161,20 @@ delete_levels_below <- function(krakenres,level="S") {
 #' @export
 #'
 read_krakenres <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O","F","G","S"),min.depth=0,filter_taxon=NULL,
-has_header=NULL,add_level_columns=FALSE) {
+                           has_header=NULL,add_level_columns=FALSE) {
   if (is.null(myfile))
     file = "~/work/support/Patient_29Jan_CSF-identify-pathogen/JH64778849.report"
   else
     file <- myfile
 
-	if (is.null(has_header)) {
-		first.line <- readLines(myfile,n=1)
-		has_header <- grepl("^[a-zA-Z]",first.line)
-	}
+  if (is.null(has_header)) {
+    first.line <- readLines(myfile,n=1)
+    has_header <- grepl("^[a-zA-Z]",first.line)
+  }
 
   if (has_header) {
-  krakenres <- read.table(file,sep="\t",header = T,
-                          quote = "",stringsAsFactors=FALSE)
+    krakenres <- read.table(file,sep="\t",header = T,
+                            quote = "",stringsAsFactors=FALSE)
     #colnames(krakenres) <- c("percentage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
@@ -191,9 +191,9 @@ has_header=NULL,add_level_columns=FALSE) {
     colnames(krakenres)[colnames(krakenres)=="tax"] <- "taxonid"
 
   } else {
-  krakenres <- read.table(file,sep="\t",header = F,
-                          col.names = c("percentage","reads","reads_stay","level","taxonid","name"),
-                          quote = "",stringsAsFactors=FALSE)
+    krakenres <- read.table(file,sep="\t",header = F,
+                            col.names = c("percentage","reads","reads_stay","level","taxonid","name"),
+                            quote = "",stringsAsFactors=FALSE)
   }
 
   krakenres$depth <- nchar(gsub("\\S.*","",krakenres$name))/2
@@ -207,31 +207,31 @@ has_header=NULL,add_level_columns=FALSE) {
   krakenres <- collapse.levels(kraken.tree,keep_levels=keep_levels,filter_taxon=filter_taxon)
 
   ## Add a metaphlan-style taxon string
-	if (add_level_columns) {
-		krakenres[,keep_levels] <- NA
-	}
+  if (add_level_columns) {
+    krakenres[,keep_levels] <- NA
+  }
   krakenres$taxonstring = krakenres$name
   rows_to_consider <- rep(FALSE,nrow(krakenres))
 
   for (i in seq_len(nrow(krakenres))) {
-      ## depth > 2 correspond to levels below 'D'
-      if (i > 1 && krakenres[i,"depth"] > min.depth) {
-        ## find the maximal index of a row below the current depth
-        idx <- krakenres$depth < krakenres[i,"depth"] & rows_to_consider
-        if (!any(idx)) { next() }
+    ## depth > 2 correspond to levels below 'D'
+    if (i > 1 && krakenres[i,"depth"] > min.depth) {
+      ## find the maximal index of a row below the current depth
+      idx <- krakenres$depth < krakenres[i,"depth"] & rows_to_consider
+      if (!any(idx)) { next() }
 
-				current.level <- krakenres[i,'level']
-        my_row <- max(which(idx))
-        krakenres[i,'taxonstring'] <- paste(krakenres[my_row,'taxonstring'],krakenres[i,'taxonstring'],sep="|")
+      current.level <- krakenres[i,'level']
+      my_row <- max(which(idx))
+      krakenres[i,'taxonstring'] <- paste(krakenres[my_row,'taxonstring'],krakenres[i,'taxonstring'],sep="|")
 
-				if (add_level_columns) {
-					if (krakenres[my_row,'level'] %in% keep_levels) {
-						levels.cp <- keep_levels[seq(from=1,to=which(keep_levels == krakenres[my_row,'level']))]
-						krakenres[i,levels.cp] <- krakenres[my_row,levels.cp]
-					}
+      if (add_level_columns) {
+        if (krakenres[my_row,'level'] %in% keep_levels) {
+          levels.cp <- keep_levels[seq(from=1,to=which(keep_levels == krakenres[my_row,'level']))]
+          krakenres[i,levels.cp] <- krakenres[my_row,levels.cp]
+        }
 
-				  krakenres[i,krakenres[i,'level']] <- krakenres[i,'name']
-				}
+        krakenres[i,krakenres[i,'level']] <- krakenres[i,'name']
+      }
     }
     rows_to_consider[i] <- TRUE
   }
@@ -266,66 +266,75 @@ has_header=NULL,add_level_columns=FALSE) {
 #'\donotrun{
 #'   filter_taxon(krakenres, 's_Homo sapiens')
 #'}
-filter_taxon <- function(krakenres,filter_taxon, do_message=TRUE) {
-    taxon_depth <- NULL
-    taxon_reads <- 0    
+filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TRUE) {
+  taxon_depth <- NULL
+  taxon_reads <- 0
 
-    pos.taxons <- which(sub("._","",krakenres$name) %in% filter_taxon)
-    #pos.taxon <- which(krakenres$name := filter_taxon)
-    if (length(pos.taxons) == 0) {
-      return(krakenres)
-    } 
+  pos.taxons <- which(sub("._","",krakenres$name) %in% filter_taxon)
+  #pos.taxon <- which(krakenres$name := filter_taxon)
+  if (length(pos.taxons) == 0) {
+    return(krakenres)
+  }
 
-    row_seq <- seq_len(nrow(krakenres))
-    rows_to_delete <- rep(FALSE,nrow(krakenres))
+  row_seq <- seq_len(nrow(krakenres))
+  rows_to_delete <- rep(FALSE,nrow(krakenres))
 
-    taxon_depths <- krakenres[pos.taxons,"depth"]
+  taxon_depths <- krakenres[pos.taxons,"depth"]
+  if (isTRUE(rm_clade)) {
     taxon_readss <- krakenres[pos.taxons,"reads"]
+  } else {
+    taxon_readss <- krakenres[pos.taxons,"reads_stay"]
+    krakenres[pos.taxons,"reads_stay"] <- 0
+  }
 
-    for (i in seq_along(pos.taxons)) {
-      pos.taxon <- pos.taxons[i]
-      if (pos.taxon == 1) { 
-        rows_to_delete[1] <- TRUE
-        next
-      }
-      taxon_depth <- taxon_depths[i]
-      taxon_reads <- taxon_readss[i]
-    
+
+  for (i in seq_along(pos.taxons)) {
+    pos.taxon <- pos.taxons[i]
+    if (pos.taxon == 1) {
+      rows_to_delete[1] <- TRUE
+      next
+    }
+    taxon_depth <- taxon_depths[i]
+    taxon_reads <- taxon_readss[i]
+
     tosum_below <-  row_seq >= pos.taxon & krakenres$depth <= taxon_depth
     taxons_below <- cumsum(tosum_below) == 1
     rows_to_delete[taxons_below] <- TRUE
-    rows_to_update <- c()
+    rows_to_update <- c(pos.taxon)
 
-    taxon_string <- krakenres[pos.taxon,"taxonstring"]
     taxons_above <- seq_len(nrow(krakenres)) < pos.taxon & krakenres$depth == taxon_depth
 
     any_stays <- FALSE
     prev_taxon_depth <- taxon_depth
     taxons_above <- c()
     for (i in seq(from=(pos.taxon-1),to=1)) {
-       curr_taxon_depth <- krakenres[i,"depth"]
+      curr_taxon_depth <- krakenres[i,"depth"]
       if (curr_taxon_depth < prev_taxon_depth) {
         if (!any_stays) {
           if (krakenres[i,"reads"] == taxon_reads) {
             rows_to_delete[i] <- TRUE
-            #message("Deleting ",krakenres[i,"name"])
+            if (do_message)
+              message("Deleting ",krakenres[i,"name"])
           } else {
             any_stays <- TRUE
           }
-        } 
+        }
         if (!rows_to_delete[i]) {
           rows_to_update <- c(rows_to_update, i)
-          #message("Updating ",krakenres[i,"name"])
-	}
+          if (do_message)
+            message("Updating ",krakenres[i,"name"])
+        }
         prev_taxon_depth <- curr_taxon_depth
       } else {
         any_stays <- TRUE
       }
     }
     krakenres[rows_to_update, "reads"] <- krakenres[rows_to_update, "reads"] - taxon_reads
-    
-    }
+  }
 
+  if (rm_clade)
     krakenres[!rows_to_delete,]
+  else
+    krakenres
 }
 

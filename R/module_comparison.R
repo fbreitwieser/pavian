@@ -62,9 +62,22 @@ comparisonModuleUI <- function(id) {
         title = "Filter contaminants",
         selectizeInput(
           ns('contaminant_selector'),
-          label = "",
           allcontaminants,
+          label = "At level",
           selected = c("synthetic construct", "unclassified", "Homo sapiens"),
+          multiple = TRUE,
+          options = list(
+            maxItems = 25,
+            create = TRUE,
+            placeholder = 'Filter clade'
+          ),
+          width = "100%"
+        ),
+        selectizeInput(
+          ns('contaminant_selector_clade'),
+          label = "At level and below",
+          allcontaminants,
+          selected = c(""),
           multiple = TRUE,
           options = list(
             maxItems = 25,
@@ -134,7 +147,8 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     withProgress(message="Loading sample reports ...",{
       setNames(lapply(names(my_reports), function(my_report_n) {
         setProgress(detail=my_report_n)
-        filter_taxon(my_reports[[my_report_n]], input$contaminant_selector)
+        r1 <- filter_taxon(my_reports[[my_report_n]], input$contaminant_selector, rm_clade = FALSE)
+        filter_taxon(r1, input$contaminant_selector_clade, rm_clade = TRUE)
       }),names(my_reports))}
     )
   })

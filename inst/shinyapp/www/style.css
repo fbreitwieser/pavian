@@ -64,3 +64,30 @@ div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
   fill: #fff;
   font-size: small;
 }
+
+
+
+#data-title {
+    text-align:center;
+}
+
+#drop-area {
+    background-color:#BCED91;
+    border:2px solid #46523C;
+    border-radius:25px;
+    height:90px;
+    overflow:auto;
+    padding:12px;
+}
+
+#drop-area #datasets {
+    display:inline-block;
+    font-size:small;
+    margin-right:8px;
+    text-align:center;
+    vertical-align:top;
+}
+
+.thumb {
+    height:45px;
+}

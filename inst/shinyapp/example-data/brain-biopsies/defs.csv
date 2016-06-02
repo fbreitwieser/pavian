@@ -10,3 +10,7 @@ PT8-S1;patient 8;kraken;PT8-DNA-S1.report
 PT8-S2;patient 8;kraken;PT8-DNA-S2.report
 PT9;patient 9;kraken;PT9-DNA.report
 PT10;patient 10;kraken;PT10-DNA.report
+AV1;AV 1;kraken;AV1.report
+AV2;AV 2;kraken;AV2.report
+AV3;AV 3;kraken;AV3.report
+AV3_newdb;AV 3 new;kraken;AV3-CSF-RNA-S1-R1.krakendb-2016-02-28_refseq+hmp.report

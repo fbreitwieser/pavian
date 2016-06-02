@@ -4,7 +4,7 @@
 \alias{filter_taxon}
 \title{Filter lines from a kraken report result based on the taxonomy name}
 \usage{
-filter_taxon(krakenres, filter_taxon, do_message = TRUE)
+filter_taxon(krakenres, filter_taxon, rm_clade = TRUE, do_message = TRUE)
 }
 \arguments{
 \item{krakenres}{kraken report.}
