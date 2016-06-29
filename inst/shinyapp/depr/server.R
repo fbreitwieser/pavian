@@ -1,6 +1,6 @@
 library(shiny)
 library(shinydashboard)
-library(centrifuger)
+library(pavian)
 library(shinyFileTree)
 library(magrittr)
 library(DT)
@@ -18,10 +18,10 @@ shinyServer(function(input, output, clientData, session) {
     inputs
   }
 
-  #if (is.null(getOption("centrifuger.cache_dir")))
-  options(centrifuger.cache_dir = "cache")
+  #if (is.null(getOption("pavian.cache_dir")))
+  options(pavian.cache_dir = "cache")
 
-  info_message("cache dir: ", getOption("centrifuger.cache_dir"))
+  info_message("cache dir: ", getOption("pavian.cache_dir"))
 
   kraken_reports <- reactive({
     kraken_files <- report_files()
@@ -46,7 +46,7 @@ shinyServer(function(input, output, clientData, session) {
                      function()
                        read_krakenres(kraken_file),
                      sprintf("%s.rds", basename(kraken_file)),
-                     cache_dir = getOption("centrifuger.cache_dir")
+                     cache_dir = getOption("pavian.cache_dir")
                    )
                  })
         }
@@ -828,7 +828,7 @@ list(
   plot_pileup_act <- eventReactive(input$btn_get_alignment, {
     str(input$bam_files_tree_selected)
     req(input$bam_files_tree_selected)
-    centrifuger::plot_pileup(
+    pavian::plot_pileup(
       input$bam_files_tree_selected,
       input$align_moving_avg,
       input$align_loess,
@@ -845,9 +845,9 @@ list(
   })
 
   assembly_info <- eventReactive("btn_load_assembly_info", {
-    dir.create(getOption("centrifuger.cache_dir"))
+    dir.create(getOption("pavian.cache_dir"))
     assembly_info_f <-
-      paste0(getOption("centrifuger.cache_dir"),
+      paste0(getOption("pavian.cache_dir"),
              "/assembly_summary_refseq.txt")
     assembly_info_f <- "/home/fbreitwieser/ai.txt"
     if (!file.exists(assembly_info_f)) {

@@ -2,14 +2,17 @@
 % Please edit documentation in R/module_alignment.R
 \name{alignmentModuleUI}
 \alias{alignmentModuleUI}
-\title{Title}
+\title{UI part of alignment module}
 \usage{
 alignmentModuleUI(id)
 }
 \arguments{
-\item{id}{}
+\item{id}{Shiny namespace id}
+}
+\value{
+UI part of alignment module
 }
 \description{
-Title
+UI part of alignment module
 }
 

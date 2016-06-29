@@ -2,15 +2,30 @@
 % Please edit documentation in R/plot_pileup.R
 \name{plot_pileup}
 \alias{plot_pileup}
-\title{Title}
+\title{Plot a pileup}
 \usage{
-plot_pileup(pileup, nreads, seq_lengths, align_loess, show_step = TRUE,
+plot_pileup(pileup, nreads, seq_lengths, show_loess, show_step = TRUE,
   nwin = 1000, text_size = 4)
 }
 \arguments{
-\item{nwin}{}
+\item{pileup}{The output from \code{\link{get_pileup}}}
+
+\item{nreads}{Number of matched reads - displayed in legend text.}
+
+\item{seq_lengths}{Lengths of reference sequences - used for legend text.}
+
+\item{show_loess}{Display a locally weighthed smoothed line}
+
+\item{show_step}{If \code{TRUE}, display data in a stairstep plot (instead of a path)}
+
+\item{nwin}{Number of points to evaluated to evaluate smoother at, when \code{show_loess} is \code{TRUE}}
+
+\item{text_size}{Legend text size}
+}
+\value{
+ggplot of pileup
 }
 \description{
-Title
+Plot a pileup
 }
 

@@ -47,7 +47,7 @@ get_combinations <- function(...) {
   # look at each combination of 1, 2, ..., n elements
   for (num.elements in length(x):1) {
 
-    apply(combn(my_names,num.elements),2,function(y) {
+    apply(utils::combn(my_names,num.elements),2,function(y) {
       print(y)
       my_name <- paste(y,collapse="&")
       comn_elements <- Reduce(intersect,x[y])

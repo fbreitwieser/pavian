@@ -1,13 +1,13 @@
 library(shiny)
-library(centrifuger)
+library(pavian)
 library(rhandsontable)
 library(magrittr)
 
 common_datatable_opts <- list(saveState = TRUE)
 
 intro <- fluidRow(
-      column(width = 8, includeMarkdown(system.file("shinyapp","intro_data.md",package="centrifuger"))),
-      column(width = 4, includeMarkdown(system.file("shinyapp","intro_logo.html",package="centrifuger")))
+      column(width = 8, includeMarkdown(system.file("shinyapp","intro_data.md",package="pavian"))),
+      column(width = 4, includeMarkdown(system.file("shinyapp","intro_logo.html",package="pavian")))
     )
 
 ui <- navbarPage(

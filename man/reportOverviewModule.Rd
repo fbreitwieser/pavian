@@ -8,7 +8,20 @@ reportOverviewModule(input, output, session, samples_df, reports,
   datatable_opts = NULL)
 }
 \arguments{
-\item{session}{}
+\item{input}{Shiny input object.}
+
+\item{output}{Shiyn output object.}
+
+\item{session}{Shiny session object.}
+
+\item{samples_df}{Samples \code{data.frame}.}
+
+\item{reports}{List of reports.}
+
+\item{datatable_opts}{Additional options for datatable.}
+}
+\value{
+Report overview module server functionality.
 }
 \description{
 Shiny modules to display an overview of metagenomics reports

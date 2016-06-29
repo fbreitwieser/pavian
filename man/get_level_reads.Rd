@@ -4,14 +4,16 @@
 \alias{get_level_reads}
 \title{Get all reads from a certain level}
 \usage{
-get_level_reads(reports, ..., min.perc = 0.1, take.names = NULL)
+get_level_reads(reports, ..., min_perc = 0.1, select_names = NULL)
 }
 \arguments{
-\item{reports}{list fo kraken reports}
+\item{reports}{List fo kraken reports.}
 
-\item{...}{subsetting arguments}
+\item{...}{Arguments to \code{subset} reports.}
 
-\item{min.perc}{minimum percentage to be included}
+\item{min_perc}{Minimum percentage to be included.}
+
+\item{select_names}{Select by taxons by name instead of \code{min_perc}.}
 }
 \value{
 all reads from a certain level
@@ -20,9 +22,9 @@ all reads from a certain level
 Get all reads from a certain level
 }
 \examples{
-plot_level_reads(get_level_reads(reports,level=="P",min.perc=.05)) + ggtitle("Phylum level")
-plot_level_reads(get_level_reads(reports,level=="C",min.perc=.05)) + ggtitle("Clade level")
-plot_level_reads(get_level_reads(reports,level=="O",min.perc=.05)) + ggtitle("Order level")
-plot_level_reads(get_level_reads(reports,level=="F" & name != "f_Hominidae",min.perc=.05)) + ggtitle("Family level (w/o human)")
+# plot_level_reads(get_level_reads(reports,level=="P",min_perc=.05)) + ggtitle("Phylum level")
+# plot_level_reads(get_level_reads(reports,level=="C",min_perc=.05)) + ggtitle("Clade level")
+# plot_level_reads(get_level_reads(reports,level=="O",min_perc=.05)) + ggtitle("Order level")
+# plot_level_reads(get_level_reads(reports,level=="F" & name != "f_Hominidae",min_perc=.05)) + ggtitle("Family level (w/o human)")
 }
 

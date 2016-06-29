@@ -2,14 +2,17 @@
 % Please edit documentation in R/module_sample.R
 \name{sampleModuleUI}
 \alias{sampleModuleUI}
-\title{Title}
+\title{UI part for sample module}
 \usage{
 sampleModuleUI(id)
 }
 \arguments{
-\item{id}{}
+\item{id}{Shiny namespace id}
+}
+\value{
+UI elements for sample module
 }
 \description{
-Title
+UI part for sample module
 }
 

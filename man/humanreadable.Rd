@@ -2,14 +2,26 @@
 % Please edit documentation in R/humanreadable.R
 \name{humanreadable}
 \alias{humanreadable}
-\title{Title}
+\title{Make a number human readable}
 \usage{
 humanreadable(x, base = 10^3, suffix = "", signif_digits = 3)
 }
 \arguments{
-\item{digits}{}
+\item{x}{Number.}
+
+\item{base}{typically 1000 or 2^10.}
+
+\item{suffix}{Will be concatendated to the end.}
+
+\item{signif_digits}{Number of significant digits.}
+}
+\value{
+human readable representation of the number
 }
 \description{
-Title
+Make a number human readable
+}
+\examples{
+humanreadable(1234.567)
 }
 

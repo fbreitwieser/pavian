@@ -2,14 +2,17 @@
 % Please edit documentation in R/module_comparison.R
 \name{comparisonModuleUI}
 \alias{comparisonModuleUI}
-\title{Title}
+\title{UI part of the comparison module}
 \usage{
 comparisonModuleUI(id)
 }
 \arguments{
-\item{id}{}
+\item{id}{Shiny namespace id.}
+}
+\value{
+UI elements of the comparison module.
 }
 \description{
-Title
+UI part of the comparison module
 }
 

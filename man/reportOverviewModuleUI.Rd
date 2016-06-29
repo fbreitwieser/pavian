@@ -2,14 +2,17 @@
 % Please edit documentation in R/module_overview_table.R
 \name{reportOverviewModuleUI}
 \alias{reportOverviewModuleUI}
-\title{Title}
+\title{UI part of report overview module}
 \usage{
 reportOverviewModuleUI(id)
 }
 \arguments{
-\item{id}{}
+\item{id}{Shiny namespace id.}
+}
+\value{
+UI elements for report overview module.
 }
 \description{
-Title
+UI part of report overview module
 }
 

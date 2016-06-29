@@ -7,7 +7,9 @@
 runApp(cache_dir = "cache", ...)
 }
 \arguments{
-\item{cache_dir}{Directory to save temporary files}
+\item{cache_dir}{Directory to save temporary files.}
+
+\item{...}{Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.}
 }
 \description{
 Run Centrifuger web interface

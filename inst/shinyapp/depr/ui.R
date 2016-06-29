@@ -1,7 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
-library(centrifuger)
+library(pavian)
 library(shinyFileTree)
 
 convertMenuItem <- function(mi,tabName) {
@@ -83,7 +83,7 @@ shinyUI(dashboardPage(
           textInput(
             "cbo_data_dir",
             "Select reports",
-            value = system.file("shinyapp/example-data", package = "centrifuger"),
+            value = system.file("shinyapp/example-data", package = "pavian"),
             width = "100%"
           ),
           shinyFileTree::shinyFileTreeOutput("files_tree"),

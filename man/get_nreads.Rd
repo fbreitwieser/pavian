@@ -2,14 +2,21 @@
 % Please edit documentation in R/get_pileup.R
 \name{get_nreads}
 \alias{get_nreads}
-\title{Title}
+\title{Get number of aligned reads from a bam file}
 \usage{
 get_nreads(bam_file)
 }
 \arguments{
-\item{bam_file}{}
+\item{bam_file}{character(1) or BamFile; BAM file path.}
+}
+\value{
+Number of reads for each sequence.
 }
 \description{
-Title
+Get number of aligned reads from a bam file
+}
+\examples{
+bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
+get_nreads(bam_file)
 }
 

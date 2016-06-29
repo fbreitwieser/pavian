@@ -2,14 +2,19 @@
 % Please edit documentation in R/read_reports.R
 \name{read_reports}
 \alias{read_reports}
-\title{Title}
+\title{Read report files, with Shiny progress bar}
 \usage{
 read_reports(report_files, report_names)
 }
 \arguments{
-\item{report_names}{}
+\item{report_files}{character vector with files}
+
+\item{report_names}{character vector with names}
+}
+\value{
+List of reports
 }
 \description{
-Title
+Read report files, with Shiny progress bar
 }
 

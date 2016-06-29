@@ -1,12 +1,11 @@
 
-#' Title
+#' UI part for sample module
 #'
-#' @param id
+#' @param id Shiny namespace id
 #'
-#' @return
+#' @return UI elements for sample module
 #' @export
-#'
-#' @examples
+#' @import shiny
 sampleModuleUI <- function(id) {
   ns <- NS(id)
   shiny::tagList(
@@ -51,16 +50,17 @@ sampleModuleUI <- function(id) {
   )
 }
 
-#' Title
+#' Server part for sample module
 #'
-#' @param input
-#' @param output
-#' @param session
+#' @param input Shiny input object
+#' @param output Shiny output object
+#' @param session Shiny session object
+#' @param samples_df Samples \code{data.frame}
+#' @param reports List of reports
+#' @param datatable_opts Additional options for datatable
 #'
-#' @return
+#' @return Sample module server functionality
 #' @export
-#'
-#' @examples
 sampleModule <- function(input, output, session, samples_df, reports,
                          datatable_opts = NULL) {
   sample_view_report <- reactive({
@@ -120,7 +120,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
     #eng <- get_nodes_and_links(my_report, 10)
 
     my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth")]
-    my_report <- my_report[tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), ]
+    my_report <- my_report[utils::tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), ]
 
     my_report <- my_report[!my_report$name %in% c('-_root','u_unclassified'), ]
     #my_report$name <- sub("^-_root.", "", my_report$name)
@@ -128,12 +128,12 @@ sampleModule <- function(input, output, session, samples_df, reports,
     splits <- strsplit(my_report$taxonstring, "\\|")
     sel <- sapply(splits, length) >= 3
     splits <- splits[sel]
-     
-    links <- data.frame(do.call(rbind, lapply(splits, tail, n=2)), stringsAsFactors = FALSE)
+
+    links <- data.frame(do.call(rbind, lapply(splits, utils::tail, n=2)), stringsAsFactors = FALSE)
     colnames(links) <- c("source","target")
     links$value <- my_report$reads[sel]
     nodes <- data.frame(name=unique(unlist(splits)),stringsAsFactors=FALSE)
-    names_id = setNames(seq_len(nrow(nodes)) - 1, nodes[,1])
+    names_id = stats::setNames(seq_len(nrow(nodes)) - 1, nodes[,1])
     links$source <- names_id[links$source]
     links$target <- names_id[links$target]
     links <- links[links$source != links$target, ]

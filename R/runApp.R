@@ -1,19 +1,20 @@
 
 #' Run Centrifuger web interface
 #'
-#' @param cache_dir Directory to save temporary files
+#' @param cache_dir Directory to save temporary files.
+#' @param ... Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.
 #'
 #' @export
 runApp <- function(cache_dir = "cache", ...) {
-  appDir <- system.file("shinyapp", package = "centrifuger")
+  appDir <- system.file("shinyapp", package = "pavian")
   if (appDir == "") {
-    stop("Could not find example directory. Try re-installing `centrifuger`.", call. = FALSE)
+    stop("Could not find example directory. Try re-installing `pavian`.", call. = FALSE)
   }
 
-  #source(system.file("shinyapp","ui.R", package = "centrifuger"))
-  #source(system.file("shinyapp","server.R", package = "centrifuger"))
+  #source(system.file("shinyapp","ui.R", package = "pavian"))
+  #source(system.file("shinyapp","server.R", package = "pavian"))
 
-  options(centrifuger.cache_dir = cache_dir)
+  options(pavian.cache_dir = cache_dir)
 
   shiny::runApp(appDir, display.mode="normal", ...)
 }

@@ -2,15 +2,28 @@
 % Please edit documentation in R/module_sample.R
 \name{sampleModule}
 \alias{sampleModule}
-\title{Title}
+\title{Server part for sample module}
 \usage{
 sampleModule(input, output, session, samples_df, reports,
   datatable_opts = NULL)
 }
 \arguments{
-\item{session}{}
+\item{input}{Shiny input object}
+
+\item{output}{Shiny output object}
+
+\item{session}{Shiny session object}
+
+\item{samples_df}{Samples \code{data.frame}}
+
+\item{reports}{List of reports}
+
+\item{datatable_opts}{Additional options for datatable}
+}
+\value{
+Sample module server functionality
 }
 \description{
-Title
+Server part for sample module
 }
 

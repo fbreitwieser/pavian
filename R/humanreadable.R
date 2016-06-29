@@ -1,15 +1,17 @@
 
-#' Title
+#' Make a number human readable
 #'
-#' @param x
-#' @param base
-#' @param digits
+#' @param x Number.
+#' @param base typically 1000 or 2^10.
+#' @param suffix Will be concatendated to the end.
+#' @param signif_digits Number of significant digits.
 #'
-#' @return
+#' @return human readable representation of the number
 #' @export
 #'
 #' @examples
-humanreadable <- function (x, base = 10^3, suffix = "", signif_digits = 3)  {
+#' humanreadable(1234.567)
+humanreadable <- function(x, base = 10^3, suffix = "", signif_digits = 3)  {
   base_suffixes <- c("k", "M", "G", "T", "P", "E", "Z", "Y")
   if (length(x) == 0)
     return()
@@ -24,6 +26,5 @@ humanreadable <- function (x, base = 10^3, suffix = "", signif_digits = 3)  {
     x[sel] <- x[sel] / base
     x_suffixes[sel] <- base_suffix
   }
-  str(x)
-  return (paste0(signif(x,signif_digits),x_suffixes,suffix))
+  return(paste0(signif(x,signif_digits),x_suffixes,suffix))
 }

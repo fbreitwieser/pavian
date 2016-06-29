@@ -1,14 +1,10 @@
-library(shiny)
-library(DT)
-
-#' Title
+#' UI part of report overview module
 #'
-#' @param id
+#' @param id Shiny namespace id.
 #'
-#' @return
+#' @return UI elements for report overview module.
 #' @export
-#'
-#' @examples
+#' @import shiny
 reportOverviewModuleUI <- function(id) {
   ns <- shiny::NS(id)
 
@@ -22,18 +18,18 @@ reportOverviewModuleUI <- function(id) {
 
 #' Shiny modules to display an overview of metagenomics reports
 #'
-#' @param input
-#' @param output
-#' @param session
+#' @param input Shiny input object.
+#' @param output Shiyn output object.
+#' @param session Shiny session object.
+#' @param samples_df Samples \code{data.frame}.
+#' @param reports List of reports.
+#' @param datatable_opts Additional options for datatable.
 #'
-#' @return
+#' @return Report overview module server functionality.
 #' @export
-#'
-#' @examples
+#' @import shiny
 reportOverviewModule <- function(input, output, session, samples_df, reports, datatable_opts = NULL) {
-  library(DT)
-
-  r_state <- list()
+  #r_state <- list()
 
   observeEvent(input$opt_samples_overview_percent, {
     ## save state of table
@@ -41,7 +37,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     #  search_columns = input$dt_samples_overview_search_columns,
     #  state = input$dt_samples_overview_state
     #  )
-    str(input$dt_samples_overview_state)
+    utils::str(input$dt_samples_overview_state)
   })
 
   ## Samples overview output

@@ -2,18 +2,24 @@
 % Please edit documentation in R/plot_level_reads.R
 \name{plot_level_reads}
 \alias{plot_level_reads}
-\title{Plot report content in form of a barplot}
+\title{Barplot of metagenomics results at a certain level}
 \usage{
 plot_level_reads(level_reads, value = "perc", ylab = "fraction of reads",
   labels = percent)
 }
 \arguments{
-\item{labels}{}
+\item{level_reads}{\code{data.frame} with all reads at a certain level with columns '.id', 'name', value}
+
+\item{value}{Name of column with quantitative values to display}
+
+\item{ylab}{Label on y axis}
+
+\item{labels}{Label formatter. See \code{\link[ggplot2]{scale_y_continuous}}.}
 }
 \value{
-barplot
+Barplot of level reads
 }
 \description{
-Plot report content in form of a barplot
+Barplot of metagenomics results at a certain level
 }
 
