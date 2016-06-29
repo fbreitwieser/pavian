@@ -113,7 +113,7 @@ get_nreads <- function(bam_file) {
 #'
 #' @examples
 #' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-#' get_seq_length(bam_file)
+#' get_seqlengths(bam_file)
 get_seqlengths <- function(bam_file) {
   bamHeader <- Rsamtools::scanBamHeader(bam_file)
   bamHeader[[1]][["targets"]]

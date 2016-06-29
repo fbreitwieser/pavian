@@ -16,7 +16,7 @@ data.frame with number of raw read, classified at certain levels, etc
 Summarize the result of a metagenomics report
 }
 \examples{
-\\donotrun{
+\dontrun{
   summarize_kraken_report(krakenres)
 }
 }

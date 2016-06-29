@@ -19,7 +19,7 @@ extract_from_report <- function(my_report,name,level=NULL) {
 #' @export
 #'
 #' @examples
-#'\donotrun{
+#'\dontrun{
 #'   summarize_kraken_report(krakenres)
 #'}
 summarize_report <- function(my_report) {

@@ -17,6 +17,6 @@ Get sequence lengths from a bam file
 }
 \examples{
 bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-get_seq_length(bam_file)
+get_seqlengths(bam_file)
 }
 

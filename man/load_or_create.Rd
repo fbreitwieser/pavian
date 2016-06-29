@@ -22,10 +22,10 @@ object created by function f, or stored in cache file
 Load a file from a cache directory, or create and save it
 }
 \examples{
-\\donotrun{
-load_or_create(function() {
-  rnorm(10000)
-}, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
+\dontrun{
+ load_or_create(function() {
+   rnorm(10000)
+ }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
 }
 }
 

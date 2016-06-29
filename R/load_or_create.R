@@ -10,11 +10,11 @@
 #' @export
 #'
 #' @examples
-#'\donotrun{
-#' load_or_create(function() {
-#'   rnorm(10000)
-#' }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
-#'}
+#' \dontrun{
+#'  load_or_create(function() {
+#'    rnorm(10000)
+#'  }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
+#' }
 load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
   if (is.null(cache_dir))
     cache_dir <- "cache"
