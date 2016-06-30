@@ -328,9 +328,9 @@ filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TR
     krakenres[rows_to_update, "reads"] <- krakenres[rows_to_update, "reads"] - taxon_reads
   }
 
-  if (rm_clade)
+  #if (rm_clade)
     krakenres[!rows_to_delete,]
-  else
-    krakenres
+  #else
+  #  krakenres
 }
 
