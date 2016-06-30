@@ -68,7 +68,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
         render = htmlwidgets::JS(
           "function(data, type, row, meta) {",
           "value = (100 * data / row[1]).toPrecision(3)",
-          "backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
+          "backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
           "return type === 'display' ?",
           "'<span title=\"' + data + ' reads\">' + value + '</span>' : data;",
           "}")))
@@ -78,7 +78,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
         sprintf(" for (i = 1; i < %s; i++) { ",ncol(samples_summary)-1),
         " value = data[i]",
         " perc = (100 * data / data[1]).toPrecision(3)",
-        " backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
+        " backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
         " $('td', row).eq(i).css('background',backgroundValue); ",
         " $('td', row).eq(i).css('background-repeat','no-repeat'); ",
         " $('td', row).eq(i).css('background-position','center'); ",

@@ -313,7 +313,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
     dt <- dt %>% formatStyle(
       attr(summarized_report, 'data_columns'),
-      background = styleColorBar(summarized_report$Mean, 'lightblue'),
+      background = DT::styleColorBar(summarized_report$Mean, 'lightblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'
