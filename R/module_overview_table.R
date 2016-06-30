@@ -130,14 +130,14 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
 
      if (isTRUE(input$opt_samples_overview_percent)) {
        dt <- dt %>%
-          formatCurrency(1, currency = '', digits = 0) %>%
-         formatString(2:ncol(samples_summary),
+         DT::formatCurrency(1, currency = '', digits = 0) %>%
+         DT::formatString(2:ncol(samples_summary),
                       suffix = '%')  ## TODO: display as percent
     #   ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
     #   ## with signif.
      } else {
        dt <-
-         dt %>% formatCurrency(1:ncol(samples_summary),
+         dt %>% DT::formatCurrency(1:ncol(samples_summary),
                                currency = '',
                                digits = 0)
      }

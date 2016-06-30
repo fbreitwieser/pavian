@@ -67,7 +67,7 @@ dataInputModule <- function(input, output, session,
     )
 
     withProgress(message = "Reading directory tree ...", {
-      shinyFileTree(
+      shinyFileTree::shinyFileTree(
         list(
           text = basename(data_dir()),
           type = "directory",

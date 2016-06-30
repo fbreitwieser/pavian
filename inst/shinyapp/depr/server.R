@@ -382,8 +382,8 @@ shinyServer(function(input, output, clientData, session) {
       selection = 'single',
       options = common_datatable_opts
     ) %>%
-      formatString("Percent", string_after = "%") %>%
-      formatCurrency(c("Reads", "Reads stay"),
+      DT::formatString("Percent", suffix = "%") %>%
+      DT::formatCurrency(c("Reads", "Reads stay"),
                      digits = 0,
                      currency = "")
 
@@ -468,15 +468,15 @@ shinyServer(function(input, output, clientData, session) {
 
     if (isTRUE(input$opt_samples_overview_percent)) {
       dt <- dt %>%
-        formatCurrency(1, currency = '', digits = 0) %>%
-        formatString(2:ncol(samples_summary),
-                     string_after = '%',
+        DT::formatCurrency(1, currency = '', digits = 0) %>%
+        DT::formatString(2:ncol(samples_summary),
+                     suffix = '%',
                      string_before = '')  ## TODO: display as percent
       ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
       ## with signif.
     } else {
       dt <-
-        dt %>% formatCurrency(1:ncol(samples_summary),
+        dt %>% DT::formatCurrency(1:ncol(samples_summary),
                               currency = '',
                               digits = 0)
     }
@@ -619,7 +619,7 @@ list(
 
     if (!isTRUE(input$opt_display_percentage)) {
       dt <-
-        dt %>% formatCurrency(
+        dt %>% DT::formatCurrency(
           attr(summarized_report, 'mean_column'),
           currency = '',
           digits = 1
@@ -631,10 +631,8 @@ list(
         )
     } else {
       dt <-
-        dt %>% formatString(attr(summarized_report, 'mean_column'), string_after =
-                              '%') %>%
-        formatString(attr(summarized_report, 'data_columns'), string_after =
-                       '%')
+        dt %>% DT::formatString(attr(summarized_report, 'mean_column'), suffix = '%') %>%
+        formatString(attr(summarized_report, 'data_columns'), suffix = '%')
     }
 
     ## use the sparkline package and the getDependencies function in htmlwidgets to get the

@@ -294,12 +294,12 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
     if (!isTRUE(input$opt_display_percentage) && !isTRUE(input$opt_zscore)) {
       dt <-
-        dt %>% formatCurrency(
+        dt %>% DT::formatCurrency(
           attr(summarized_report, 'mean_column'),
           currency = '',
           digits = 1
         ) %>%
-        formatCurrency(
+        DT::formatCurrency(
           attr(summarized_report, 'data_columns'),
           currency = '',
           digits = 0
@@ -307,11 +307,11 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     } else {
       suffix <- ifelse(isTRUE(input$opt_zscore),"","%")
       dt <-
-        dt %>% formatString(attr(summarized_report, 'mean_column'), suffix = suffix) %>%
-        formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
+        dt %>% DT::formatString(attr(summarized_report, 'mean_column'), suffix = suffix) %>%
+        DT::formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
     }
 
-    dt <- dt %>% formatStyle(
+    dt <- dt %>% DT::formatStyle(
       attr(summarized_report, 'data_columns'),
       background = DT::styleColorBar(summarized_report$Mean, 'lightblue'),
       backgroundSize = '100% 90%',

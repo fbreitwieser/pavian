@@ -177,8 +177,8 @@ sampleModule <- function(input, output, session, samples_df, reports,
       selection = 'single',
       options = datatable_opts
     ) %>%
-      formatString("Percent", suffix = "%") %>%
-      formatCurrency(c("Reads", "Reads stay"),
+      DT::formatString("Percent", suffix = "%") %>%
+      DT::formatCurrency(c("Reads", "Reads stay"),
                      digits = 0,
                      currency = "")
 
