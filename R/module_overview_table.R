@@ -65,7 +65,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
         100 * signif(sweep(samples_summary[, 2:ncol(samples_summary)], 1, samples_summary[, 1], `/`), 2)
       columnDefs = list(list(
         targets = 2:(ncol(samples_summary)),
-        render = JS(
+        render = htmlwidgets::JS(
           "function(data, type, row, meta) {",
           "value = (100 * data / row[1]).toPrecision(3)",
           "backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
@@ -73,7 +73,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
           "'<span title=\"' + data + ' reads\">' + value + '</span>' : data;",
           "}")))
 
-      rowCallback = JS(
+      rowCallback = htmlwidgets::JS(
         "function(row, data) {",
         sprintf(" for (i = 1; i < %s; i++) { ",ncol(samples_summary)-1),
         " value = data[i]",
@@ -93,7 +93,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     styleColorBar2 = function(data, color, angle=90) {
       rg = range(data, na.rm = TRUE, finite = TRUE)
       r1 = rg[1]; r2 = rg[2]; r = r2 - r1
-      JS(sprintf(
+      htmlwidgets::JS(sprintf(
         "isNaN(parseFloat(value)) || value <= %s ? '' : 'linear-gradient(%sdeg, transparent ' + (%s - value)/%s * 100 + '%%, %s ' + (%s - value)/%s * 100 + '%%)'",
         r1, angle, r2, r, color, r2, r
       ))
