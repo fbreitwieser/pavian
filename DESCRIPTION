@@ -28,7 +28,8 @@ Remotes: github::fbreitwieser/shinyFileTree,
     github::fbreitwieser/networkD3,
     github::fbreitwieser/sunburstR,
     github::htmlwidgets/sparkline,
-    github::rstudio/DT
+    github::rstudio/DT,
+    bioc::Rsamtools
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
