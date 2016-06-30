@@ -119,7 +119,7 @@ server <- function(input, output, session) {
       need("ReportFilePath" %in% colnames(samples_df()), "ReportFilePath not available!"),
       need("Name" %in% colnames(samples_df()), "Name not available!")
     )
-    read_reports(samples_df()$ReportFilePath, samples_df()$Name, cache_dir = cache_dir))
+    read_reports(samples_df()$ReportFilePath, samples_df()$Name, cache_dir = cache_dir)
   })
   callModule(reportOverviewModule, "overview", samples_df, reports, datatable_opts = common_datatable_opts)
   callModule(comparisonModule, "comparison", samples_df, reports, datatable_opts = common_datatable_opts)
