@@ -1,15 +1,12 @@
-library(shiny)
-library(shinydashboard)
-library(rhandsontable)
-
-#' Data input module
+#' UI part of pavian data input module
 #'
 #' @param id Namespace ID
 #'
 #' @return Shiny UI elements
 #' @export
-#'
-#' @examples
+#' @import shiny
+#' @import shinydashboard
+#' @import rhandsontable
 dataInputModuleUI <- function(id) {
   ns <- NS(id)
   shiny::tagList(
@@ -18,7 +15,8 @@ dataInputModuleUI <- function(id) {
         background = "green",
         collapsible = TRUE,
         collapse = TRUE,
-        fluidRow(
+          "Either select a directory on the server, or upload report files",
+          fileInput(ns("file_upload"), "Upload files", multiple = TRUE),
           column(8,
                  textInput(ns("txt_data_dir"),label="Directory (on server)",
                            value = system.file("shinyapp/example-data", package = "pavian"),
@@ -30,8 +28,8 @@ dataInputModuleUI <- function(id) {
           column(2,
                  actionButton(ns("btn_check_files"), "Check file"),
                  tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")
-          )),
-        fluidRow(shinyFileTree::shinyFileTreeOutput(ns("files_tree"))),
+          ),
+        shinyFileTree::shinyFileTreeOutput(ns("files_tree")),
         br()
     ),
     br(),
@@ -51,20 +49,28 @@ dataInputModuleUI <- function(id) {
 #' @param output Module output
 #' @param session Shiny session
 #' @param ... Additional arguments for rhandsontable, such as height and width
-#' @param pattern
+#' @param pattern File name pattern for definition file
 #' @param cache_tree \code{boolean}. Whether the file tree should be cached (currently not implemented)
 #'
 #' @return Shiny module server function, to be called by callModule
 #' @export
-#'
-#' @examples
 dataInputModule <- function(input, output, session,
                             ...,
-                            pattern = "defs.csv$", cache_tree = TRUE) {
-  library(shinyFileTree)
-
+                            pattern = "defs.csv$",
+                            cache_tree = TRUE) {
   data_dir <- eventReactive(input$btn_set_data_dir, {
     input$txt_data_dir
+  })
+
+  observeEvent(input$file_upload, {
+    inFile <- input$file_upload
+
+    for (i in seq_along(inFile$datapath)) {
+      dirname <- dirname(inFile$datapath[i])
+      file.rename(inFile$datapath[i], file.path(dirname, inFile$name[i]))
+    }
+
+    updateTextInput(session, "txt_data_dir", value = dirname(inFile$datapath[1]))
   })
 
   output$files_tree <- shinyFileTree::renderShinyFileTree({
@@ -74,12 +80,12 @@ dataInputModule <- function(input, output, session,
     )
 
     withProgress(message = "Reading directory tree ...", {
-      shinyFileTree(
+      shinyFileTree::shinyFileTree(
         list(
           text = basename(data_dir()),
           type = "directory",
           state = list(opened = TRUE),
-          children = get_list_from_directory(data_dir(),
+          children = shinyFileTree::get_list_from_directory(data_dir(),
                                              pattern, hide_empty_dirs = TRUE,
                                              state = list(opened = TRUE))
         ),
@@ -91,6 +97,7 @@ dataInputModule <- function(input, output, session,
   report_files <- reactive({
     def_files <- files_selected_in_tree()
     def_df <- get_def_df()
+
     file.path(dirname(def_files), def_df$ReportFile)
   })
 
@@ -100,8 +107,8 @@ dataInputModule <- function(input, output, session,
       gd_files <- file.exists(report_files())
       #def_df[gd_files,"ReportFile"] <- sprintf("<span style='background:#00FF00'>%s</span>",def_df[gd_files,"ReportFile"])
       #def_df[!gd_files,"ReportFile"] <- sprintf("<span style='background:#FF0000'>%s</span>",def_df[!gd_files,"ReportFile"])
-      def_df[gd_files,"ReportFilePath"] <- sprintf("✓ %s",def_df[gd_files,"ReportFilePath"])
-      def_df[!gd_files,"ReportFilePath"] <- sprintf("✗Does not exist: %s",def_df[!gd_files,"ReportFilePath"])
+      def_df[gd_files,"ReportFilePath"] <- sprintf("&check; %s",def_df[gd_files,"ReportFilePath"])
+      def_df[!gd_files,"ReportFilePath"] <- sprintf("&times; Does not exist: %s",def_df[!gd_files,"ReportFilePath"])
 
 
     }
@@ -139,7 +146,7 @@ dataInputModule <- function(input, output, session,
     ## TODO: Specify order, and allow loading multiple defs files at once
     #column_order <- c("Include", "Name", "Engine")
 
-    def_df <- read.delim(def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
+    def_df <- utils::read.delim(def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
 
     validate(need("ReportFile" %in% colnames(def_df),
                   message = "Required column 'ReportFile' not present in defs.csv"))
@@ -155,7 +162,12 @@ dataInputModule <- function(input, output, session,
       def_df$ReportFilePath <- file.path(dirname(def_files), def_df$ReportFile)
 
     def_df
+
+
+
   })
+
+  #get_sample_sets <- TODO
 
   return(get_def_df)
 }

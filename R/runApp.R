@@ -1,7 +1,8 @@
 
 #' Run Centrifuger web interface
 #'
-#' @param cache_dir Directory to save temporary files
+#' @param cache_dir Directory to save temporary files.
+#' @param ... Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.
 #'
 #' @export
 runApp <- function(cache_dir = "cache", ...) {

@@ -1,21 +1,19 @@
 
 
-#' Title
+#' Plot a pileup
 #'
-#' @param pileup
-#' @param nreads
-#' @param align_loess
-#' @param nwin
+#' @param pileup The output from \code{\link{get_pileup}}
+#' @param nreads Number of matched reads - displayed in legend text.
+#' @param seq_lengths Lengths of reference sequences - used for legend text.
+#' @param show_loess Display a locally weighthed smoothed line
+#' @param show_step If \code{TRUE}, display data in a stairstep plot (instead of a path)
+#' @param nwin Number of points to evaluated to evaluate smoother at, when \code{show_loess} is \code{TRUE}
+#' @param text_size Legend text size
 #'
-#' @return
+#' @return ggplot of pileup
 #' @export
-#'
-#' @examples
-plot_pileup <- function(pileup, nreads, seq_lengths, align_loess, show_step = TRUE, nwin = 1000, text_size = 4) {
-  library(Rsamtools)
-  library(plyr)
-  library(ggplot2)
-
+#' @import ggplot2
+plot_pileup <- function(pileup, nreads, seq_lengths, show_loess, show_step = TRUE, nwin = 1000, text_size = 4) {
   if (nrow(pileup) == 0)
     return(NULL)
 
@@ -43,7 +41,7 @@ plot_pileup <- function(pileup, nreads, seq_lengths, align_loess, show_step = TR
   else
     g <- g + geom_path(aes(color = strand),alpha=.8)
 
-  if (isTRUE(align_loess))
+  if (isTRUE(show_loess))
     g <-
     g + geom_smooth(aes(color = strand),
                     n = nwin,

@@ -2,14 +2,23 @@
 % Please edit documentation in R/module_alignment.R
 \name{alignmentModule}
 \alias{alignmentModule}
-\title{Title}
+\title{Server part of alignment module}
 \usage{
 alignmentModule(input, output, session, samples_df)
 }
 \arguments{
-\item{samples_df}{}
+\item{input}{Shiny input object}
+
+\item{output}{Shiny output object}
+
+\item{session}{Shiny session}
+
+\item{samples_df}{\code{data.frame} for samples}
+}
+\value{
+Alignment module server functionality
 }
 \description{
-Title
+Server part of alignment module
 }
 

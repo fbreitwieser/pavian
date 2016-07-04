@@ -10,11 +10,11 @@
 #' @export
 #'
 #' @examples
-#'\donotrun{
-#' load_or_create(function() {
-#'   rnorm(10000)
-#' }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
-#'}
+#' \dontrun{
+#'  load_or_create(function() {
+#'    rnorm(10000)
+#'  }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
+#' }
 load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
   if (is.null(cache_dir))
     cache_dir <- "cache"
@@ -47,7 +47,7 @@ get_combinations <- function(...) {
   # look at each combination of 1, 2, ..., n elements
   for (num.elements in length(x):1) {
 
-    apply(combn(my_names,num.elements),2,function(y) {
+    apply(utils::combn(my_names,num.elements),2,function(y) {
       print(y)
       my_name <- paste(y,collapse="&")
       comn_elements <- Reduce(intersect,x[y])

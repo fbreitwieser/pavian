@@ -1,16 +1,11 @@
-
-
-
-#' Title
+#' Read report files, with Shiny progress bar
 #'
-#' @param report_files
-#' @param report_names
+#' @param report_files character vector with files
+#' @param report_names character vector with names
 #'
-#' @return
+#' @return List of reports
 #' @export
-#'
-#' @examples
-read_reports <- function(report_files, report_names) {
+read_reports <- function(report_files, report_names, cache_dir = "cache") {
   if (length(report_files) == 0) {
     return()
   }
@@ -31,7 +26,7 @@ read_reports <- function(report_files, report_names) {
                    function()
                      read_krakenres(report_files[i]),
                    sprintf("%s.rds", basename(report_files[i])),
-                   cache_dir = getOption("pavian.cache_dir")
+                   cache_dir = cache_dir
                  )
                })
       }

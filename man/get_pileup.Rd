@@ -2,14 +2,32 @@
 % Please edit documentation in R/get_pileup.R
 \name{get_pileup}
 \alias{get_pileup}
-\title{Title}
+\title{Get the pileup-statistics from a bam file using Rsamtools}
 \usage{
-get_pileup(bam_file, align_moving_avg, nwin = 1000)
+get_pileup(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, ...)
 }
 \arguments{
-\item{nwin}{}
+\item{bam_file}{character(1) or BamFile; BAM file path.}
+
+\item{summarize}{boolean(1). Return average of \code{nwin} observations.}
+
+\item{nwin}{integer(1) of number of observations to average.}
+
+\item{top_n}{If not NULL, return at most the pileups of that many sequences. integer(1).}
+
+\item{...}{Additional arguments for \code{Rsamtools::pileup}}
+}
+\value{
+\code{data.frame} with sequence names, positions, strand and count information
 }
 \description{
-Title
+Returns per-base pileup statistics, or a moving average.
+TODO: Non-overlapping mean is probably the better idea, here,
+as only one value per bin is reported
+}
+\examples{
+bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
+head(get_pileup(bam_file))
+head(get_pileup(bam_file, summarize = TRUE))
 }
 

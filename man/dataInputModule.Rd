@@ -16,6 +16,8 @@ dataInputModule(input, output, session, ..., pattern = "defs.csv$",
 
 \item{...}{Additional arguments for rhandsontable, such as height and width}
 
+\item{pattern}{File name pattern for definition file}
+
 \item{cache_tree}{\code{boolean}. Whether the file tree should be cached (currently not implemented)}
 }
 \value{

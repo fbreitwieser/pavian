@@ -1,7 +1,3 @@
-library(shiny)
-library(shinydashboard)
-library(d3heatmap)
-
 taxon_levels <- c(
   "Any" = "-",
   "Species" = "S",
@@ -13,16 +9,14 @@ taxon_levels <- c(
   "Domain" = "D"
 )
 
-#' Title
+#' UI part of the comparison module
 #'
-#' @param id
+#' @param id Shiny namespace id.
 #'
-#' @return
+#' @return UI elements of the comparison module.
 #' @export
-#'
-#' @examples
+#' @import shiny
 comparisonModuleUI <- function(id) {
-  library(shinydashboard)
   ns <- NS(id)
   shiny::tagList(
     fluidRow(box(width=12,collapsible=TRUE,collapsed=TRUE,title="Select samples",
@@ -127,25 +121,25 @@ comparisonModuleUI <- function(id) {
 
 
 
-#' Title
+
+#' Server part of comparison module
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param pattern
+#' @param input Shiny input object.
+#' @param output Shiny output object.
+#' @param session Shiny session.
+#' @param samples_df A \code{data.frame} specifying sample names and file paths (read from a defs.csv file).
+#' @param reports A list with report \code{data.frame}s.
+#' @param datatable_opts Additional options for creating the datatable.
+#' @param filter_func If not NULL, \code{filter_func} is applied to every data.frame in \code{reports}.
 #'
-#' @return
+#' @return Comparison module server functionality
 #' @export
-#'
-#' @examples
 comparisonModule <- function(input, output, session, samples_df, reports,
                              datatable_opts = NULL, filter_func = NULL) {
-  library(shinydashboard)
-
   filtered_reports <- reactive({
     my_reports <- reports()
     withProgress(message="Loading sample reports ...",{
-      setNames(lapply(names(my_reports), function(my_report_n) {
+      stats::setNames(lapply(names(my_reports), function(my_report_n) {
         setProgress(detail=my_report_n)
         r1 <- filter_taxon(my_reports[[my_report_n]], input$contaminant_selector, rm_clade = FALSE)
         filter_taxon(r1, input$contaminant_selector_clade, rm_clade = TRUE)
@@ -300,12 +294,12 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
     if (!isTRUE(input$opt_display_percentage) && !isTRUE(input$opt_zscore)) {
       dt <-
-        dt %>% formatCurrency(
+        dt %>% DT::formatCurrency(
           attr(summarized_report, 'mean_column'),
           currency = '',
           digits = 1
         ) %>%
-        formatCurrency(
+        DT::formatCurrency(
           attr(summarized_report, 'data_columns'),
           currency = '',
           digits = 0
@@ -313,13 +307,13 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     } else {
       suffix <- ifelse(isTRUE(input$opt_zscore),"","%")
       dt <-
-        dt %>% formatString(attr(summarized_report, 'mean_column'), suffix = suffix) %>%
-        formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
+        dt %>% DT::formatString(attr(summarized_report, 'mean_column'), suffix = suffix) %>%
+        DT::formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
     }
 
-    dt <- dt %>% formatStyle(
+    dt <- dt %>% DT::formatStyle(
       attr(summarized_report, 'data_columns'),
-      background = styleColorBar(summarized_report$Mean, 'lightblue'),
+      background = DT::styleColorBar(summarized_report$Mean, 'lightblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'
@@ -374,7 +368,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
       xaxis_height = 200,
       xaxis_font_size = "10pt",
       yaxis_font_size = "10pt",
-      colors = colorRampPalette(c("blue", "white", "red"))(100)
+      colors = grDevices::colorRampPalette(c("blue", "white", "red"))(100)
     )
   })
 
@@ -388,8 +382,8 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     timevar = ".id"
 
     all.s.reads <-
-      reshape(
-        get_level_reads(my_reports, level == "S", min.perc = 0.01)[, c(idvar, timevar, "reads")],
+      stats::reshape(
+        get_level_reads(my_reports, level == "S", min_perc = 0.01)[, c(idvar, timevar, "reads")],
         timevar = timevar,
         idvar = idvar,
         direction = "wide"
@@ -399,9 +393,9 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     colnames(all.s.reads) <-
       sub("reads.(.*)", "\\1", colnames(all.s.reads))
 
-    eucl.dist <- dist(t(all.s.reads))
-    hc <- hclust(eucl.dist)
-    dend <- as.dendrogram(hc)
+    eucl.dist <- stats::dist(t(all.s.reads))
+    hc <- stats::hclust(eucl.dist)
+    dend <- stats::as.dendrogram(hc)
 
     gapmap::gapmap(
       m = as.matrix(eucl.dist),
@@ -448,7 +442,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
       )),
       paste0(
         sprintf(
-          "<tr><th>%s</th><td align='right'>%s</td><td><a href='%s'>⇨  align</a></td></tr>",
+          "<tr><th>%s</th><td align='right'>%s</td><td><a href='%s'>&rarr;  align</a></td></tr>",
           colnames(selected_row)[data_columns],
           selected_row[, data_columns],
           "test"

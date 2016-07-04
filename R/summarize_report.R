@@ -83,7 +83,7 @@ get_summarized_report <- function(
     dp2 <- data_portion
     sel.na <- is.na(dp2)
     dp2[sel.na] <- 0
-    data_portion <- t(scale(t(data_portion), center = apply(dp2,1,mean), scale=apply(dp2,1,sd)))
+    data_portion <- t(scale(t(data_portion), center = apply(dp2,1,mean), scale=apply(dp2,1,stats::sd)))
     #data_portion[sel.na] <- NA
     #dimnames(data_portion) <- dimnames(dp2)
     rm(dp2)

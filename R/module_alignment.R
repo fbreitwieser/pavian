@@ -26,14 +26,12 @@ ncbi_viral <- c("NCBI Viral Genomes"="http://www.ncbi.nlm.nih.gov/genomes/Genome
 #assembly_resources = c(refseq_assemblies, genbank_assemblies, ncbi_viral)
 assembly_resources = c(refseq_assemblies)
 
-#' Title
+#' UI part of alignment module
 #'
-#' @param id
+#' @param id Shiny namespace id
 #'
-#' @return
+#' @return UI part of alignment module
 #' @export
-#'
-#' @examples
 alignmentModuleUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -77,23 +75,21 @@ With bowtie2
 
 }
 
-#' Title
+#' Server part of alignment module
 #'
-#' @param input
-#' @param output
-#' @param session
-#' @param samples_df
+#' @param input Shiny input object
+#' @param output Shiny output object
+#' @param session Shiny session
+#' @param samples_df \code{data.frame} for samples
 #'
-#' @return
+#' @return Alignment module server functionality
 #' @export
-#'
-#' @examples
+#' @import shinydashboard
 alignmentModule <- function(input, output, session, samples_df) {
 
   bam_file <- reactive({
     bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
     if (!is.null(input$bam_file)) {
-      str(input$bam_file)
       validate(need(
         is.data.frame(input$bam_file) &&
           nrow(input$bam_file)== 2  &&
@@ -179,7 +175,7 @@ alignmentModule <- function(input, output, session, samples_df) {
       # assembly_accession    bioproject  biosample   wgs_master  refseq_category
       # taxid   species_taxid   organism_name   infraspecific_name  isolate
       # version_status  assembly_level  release_type    genome_rep  seq_rel_date    asm_name    submitter   gbrs_paired_asm paired_asm_comp ftp_path    excluded_from_refseq
-      read.delim(url, comment.char = "#",
+      utils::read.delim(url, comment.char = "#",
                  colClasses = as.character(colClasses),
                  col.names = names(colClasses),
                  fill = TRUE,

@@ -1,14 +1,10 @@
-library(shiny)
-library(DT)
-
-#' Title
+#' UI part of report overview module
 #'
-#' @param id
+#' @param id Shiny namespace id.
 #'
-#' @return
+#' @return UI elements for report overview module.
 #' @export
-#'
-#' @examples
+#' @import shiny
 reportOverviewModuleUI <- function(id) {
   ns <- shiny::NS(id)
 
@@ -22,18 +18,18 @@ reportOverviewModuleUI <- function(id) {
 
 #' Shiny modules to display an overview of metagenomics reports
 #'
-#' @param input
-#' @param output
-#' @param session
+#' @param input Shiny input object.
+#' @param output Shiyn output object.
+#' @param session Shiny session object.
+#' @param samples_df Samples \code{data.frame}.
+#' @param reports List of reports.
+#' @param datatable_opts Additional options for datatable.
 #'
-#' @return
+#' @return Report overview module server functionality.
 #' @export
-#'
-#' @examples
+#' @import shiny
 reportOverviewModule <- function(input, output, session, samples_df, reports, datatable_opts = NULL) {
-  library(DT)
-
-  r_state <- list()
+  #r_state <- list()
 
   observeEvent(input$opt_samples_overview_percent, {
     ## save state of table
@@ -41,7 +37,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     #  search_columns = input$dt_samples_overview_search_columns,
     #  state = input$dt_samples_overview_state
     #  )
-    str(input$dt_samples_overview_state)
+    utils::str(input$dt_samples_overview_state)
   })
 
   ## Samples overview output
@@ -51,38 +47,41 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     validate(need(reports(), message = "No data available."))
 
     samples_summary <- do.call(rbind, lapply(reports(), summarize_report))
+    samples_summary$Name <- rownames(samples_summary)
+    samples_summary$FileName <- samples_df()[,"ReportFile"]
+    samples_summary <- samples_summary[,c(c("Name","FileName"),setdiff(colnames(samples_summary),c("Name","FileName")))]
     #rownames(samples_summary) <- basename(rownames(samples_summary))
     colnames(samples_summary) <-
       beautify_string(colnames(samples_summary))
 
     number_range <-  c(0, max(samples_summary[, 1], na.rm = TRUE))
-    start_color_bar_at <- 1
+    start_color_bar_at <- 3
 
     columnDefs <- list()
     rowCallback <- NULL
 
     if (isTRUE(input$opt_samples_overview_percent)) {
       ## add a custom renderer.
-      start_color_bar_at <- 2
+      start_color_bar_at <- start_color_bar_at + 1
       number_range <- c(0, 100)
-      samples_summary[, 2:ncol(samples_summary)] <-
-        100 * signif(sweep(samples_summary[, 2:ncol(samples_summary)], 1, samples_summary[, 1], `/`), 2)
+      samples_summary[, start_color_bar_at:ncol(samples_summary)] <-
+        100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, start_color_bar_at], `/`), 2)
       columnDefs = list(list(
-        targets = 2:(ncol(samples_summary)),
-        render = JS(
+        targets = start_color_bar_at:(ncol(samples_summary)),
+        render = htmlwidgets::JS(
           "function(data, type, row, meta) {",
           "value = (100 * data / row[1]).toPrecision(3)",
-          "backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
+          "backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
           "return type === 'display' ?",
           "'<span title=\"' + data + ' reads\">' + value + '</span>' : data;",
           "}")))
 
-      rowCallback = JS(
+      rowCallback = htmlwidgets::JS(
         "function(row, data) {",
-        sprintf(" for (i = 1; i < %s; i++) { ",ncol(samples_summary)-1),
+        sprintf(" for (i = %s; i < %s; i++) { ",start_color_bar_at - 1, ncol(samples_summary)-1),
         " value = data[i]",
         " perc = (100 * data / data[1]).toPrecision(3)",
-        " backgroundValue =",styleColorBar(c(0,100), 'lightblue')[1],
+        " backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
         " $('td', row).eq(i).css('background',backgroundValue); ",
         " $('td', row).eq(i).css('background-repeat','no-repeat'); ",
         " $('td', row).eq(i).css('background-position','center'); ",
@@ -97,12 +96,13 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     styleColorBar2 = function(data, color, angle=90) {
       rg = range(data, na.rm = TRUE, finite = TRUE)
       r1 = rg[1]; r2 = rg[2]; r = r2 - r1
-      JS(sprintf(
+      htmlwidgets::JS(sprintf(
         "isNaN(parseFloat(value)) || value <= %s ? '' : 'linear-gradient(%sdeg, transparent ' + (%s - value)/%s * 100 + '%%, %s ' + (%s - value)/%s * 100 + '%%)'",
         r1, angle, r2, r, color, r2, r
       ))
     }
 
+    microbial_col <- 8
 
     dt <- DT::datatable(
       samples_summary,
@@ -110,19 +110,19 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
       ,extensions = c('Buttons')
       , options = list(
         dom = 'Bfrtip'
-        , buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy')
+        , buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy', 'colvis')
         , lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All'))
         , pageLength = 25
         , options = c(datatable_opts, list(stateSave = TRUE))
       )
     ) %>%
       DT::formatStyle(
-        colnames(samples_summary)[start_color_bar_at:5],
+        colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],
         background = styleColorBar2(number_range, 'lightblue')
       ) %>%
-       DT::formatStyle(colnames(samples_summary)[6:ncol(samples_summary)],
+       DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=ncol(samples_summary))],
                        background = DT::styleColorBar(c(0, max(
-                         samples_summary[, 6], na.rm = TRUE
+                         samples_summary[, microbial_col], na.rm = TRUE
                      )), 'lightgreen'))
 
     #formatString <- function(table, columns, before="", after="") {
@@ -134,14 +134,14 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
 
      if (isTRUE(input$opt_samples_overview_percent)) {
        dt <- dt %>%
-          formatCurrency(1, currency = '', digits = 0) %>%
-         formatString(2:ncol(samples_summary),
+         DT::formatCurrency(start_color_bar_at, currency = '', digits = 0) %>%
+         DT::formatString(seq(from=start_color_bar_at+1, to=ncol(samples_summary)),
                       suffix = '%')  ## TODO: display as percent
     #   ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
     #   ## with signif.
      } else {
        dt <-
-         dt %>% formatCurrency(1:ncol(samples_summary),
+         dt %>% DT::formatCurrency(seq(from=start_color_bar_at, to=ncol(samples_summary)),
                                currency = '',
                                digits = 0)
      }

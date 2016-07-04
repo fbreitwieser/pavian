@@ -173,7 +173,7 @@ read_krakenres <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O
   }
 
   if (has_header) {
-    krakenres <- read.table(file,sep="\t",header = T,
+    krakenres <- utils::read.table(file,sep="\t",header = T,
                             quote = "",stringsAsFactors=FALSE)
     #colnames(krakenres) <- c("percentage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
@@ -191,7 +191,7 @@ read_krakenres <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O
     colnames(krakenres)[colnames(krakenres)=="tax"] <- "taxonid"
 
   } else {
-    krakenres <- read.table(file,sep="\t",header = F,
+    krakenres <- utils::read.table(file,sep="\t",header = F,
                             col.names = c("percentage","reads","reads_stay","level","taxonid","name"),
                             quote = "",stringsAsFactors=FALSE)
   }
@@ -255,17 +255,13 @@ read_krakenres <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O
 #' It updates the read_stay counts, and removes any children below the
 #' entry, and any parent entries that have no reads that stay
 #'
-#' @param krakenres kraken report.
-#' @param filter_taxon name of entry to remove.
-#' @param do_message If TRUE, report how many rows and reads were deleted.
+#' @param krakenres Report \code{data.frame}.
+#' @param filter_taxon Name of entry to remove.
+#' @param rm_clade If \code{TRUE}, remove all reads at and below clade, otherwise just set the number of reads that stay at taxon to zero.
+#' @param do_message If \code{TRUE}, report how many rows and reads were deleted.
 #'
 #' @return filtered krakenres
 #' @export
-#'
-#' @examples
-#'\donotrun{
-#'   filter_taxon(krakenres, 's_Homo sapiens')
-#'}
 filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TRUE) {
   taxon_depth <- NULL
   taxon_reads <- 0
@@ -297,9 +293,11 @@ filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TR
     taxon_depth <- taxon_depths[i]
     taxon_reads <- taxon_readss[i]
 
-    tosum_below <-  row_seq >= pos.taxon & krakenres$depth <= taxon_depth
-    taxons_below <- cumsum(tosum_below) == 1
-    rows_to_delete[taxons_below] <- TRUE
+    if (rm_clade) {
+      tosum_below <-  row_seq >= pos.taxon & krakenres$depth <= taxon_depth
+      taxons_below <- cumsum(tosum_below) == 1
+      rows_to_delete[taxons_below] <- TRUE
+    }
     rows_to_update <- c(pos.taxon)
 
     taxons_above <- seq_len(nrow(krakenres)) < pos.taxon & krakenres$depth == taxon_depth
@@ -332,9 +330,9 @@ filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TR
     krakenres[rows_to_update, "reads"] <- krakenres[rows_to_update, "reads"] - taxon_reads
   }
 
-  if (rm_clade)
+  #if (rm_clade)
     krakenres[!rows_to_delete,]
-  else
-    krakenres
+  #else
+  #  krakenres
 }
 

@@ -7,11 +7,13 @@
 filter_taxon(krakenres, filter_taxon, rm_clade = TRUE, do_message = TRUE)
 }
 \arguments{
-\item{krakenres}{kraken report.}
+\item{krakenres}{Report \code{data.frame}.}
 
-\item{filter_taxon}{name of entry to remove.}
+\item{filter_taxon}{Name of entry to remove.}
 
-\item{do_message}{If TRUE, report how many rows and reads were deleted.}
+\item{rm_clade}{If \code{TRUE}, remove all reads at and below clade, otherwise just set the number of reads that stay at taxon to zero.}
+
+\item{do_message}{If \code{TRUE}, report how many rows and reads were deleted.}
 }
 \value{
 filtered krakenres
@@ -19,10 +21,5 @@ filtered krakenres
 \description{
 It updates the read_stay counts, and removes any children below the
 entry, and any parent entries that have no reads that stay
-}
-\examples{
-\\donotrun{
-  filter_taxon(krakenres, 's_Homo sapiens')
-}
 }
 
