@@ -12,7 +12,7 @@
 plot_level_reads <- function(level_reads,value="perc",ylab="fraction of reads", labels=percent) {
   library(ggplot2)
   library(scales)
-  require(ggthemes)
+  library(ggthemes)
 
   ggplot(level_reads[,c(".id","name",value)]) +
     geom_bar(aes_string(x=".id",y=value,fill="name"),stat="identity") +

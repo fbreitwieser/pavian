@@ -30,7 +30,7 @@ get_level_reads <- function(reports,...,min.perc = .1,take.names=NULL) {
   else
     sel_names <- names(max.perc)[names(max.perc) %in% take.names]
 
-  require(plyr)
+  library(plyr)
   level_reads <- level_reads[order(level_reads$.id,level_reads$name,decreasing=TRUE),]
   level_reads <-
     ddply(level_reads,".id",function(x) {

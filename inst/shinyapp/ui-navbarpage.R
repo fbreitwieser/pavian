@@ -1,7 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
-library(centrifuger)
+library(pavian)
 library(shinyFileTree)
 
 convertMenuItem <- function(mi,title) {
@@ -33,7 +33,7 @@ allcontaminants <- unlist(allcontaminants)
 names(allcontaminants) <- NULL
 
 shinyUI(navbarPage(
-  windowTitle="centrifuger metagenomics results viewer",
+  windowTitle="pavian metagenomics results viewer",
   #########################################################  SIDEBAR
     #includeCSS("style.css"),
     useShinyjs(),
@@ -50,7 +50,7 @@ shinyUI(navbarPage(
           textInput(
             "cbo_data_dir",
             "Select reports",
-            value = system.file("shinyapp/example-data", package = "centrifuger"),
+            value = system.file("shinyapp/example-data", package = "pavian"),
             width = "100%"
           ),
           shinyFileTree::shinyFileTreeOutput("files_tree"),

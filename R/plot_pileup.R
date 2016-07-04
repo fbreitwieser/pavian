@@ -12,9 +12,9 @@
 #'
 #' @examples
 plot_pileup <- function(pileup, nreads, seq_lengths, align_loess, show_step = TRUE, nwin = 1000, text_size = 4) {
-  require(Rsamtools)
-  require(plyr)
-  require(ggplot2)
+  library(Rsamtools)
+  library(plyr)
+  library(ggplot2)
 
   if (nrow(pileup) == 0)
     return(NULL)

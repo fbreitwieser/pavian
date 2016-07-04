@@ -1,5 +1,5 @@
 library(shiny)
-library(centrifuger)
+library(pavian)
 library(rhandsontable)
 library(magrittr)
 

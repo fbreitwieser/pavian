@@ -1,3 +1,3 @@
 #!/usr/bin/Rscript
 
-centrifuger::runApp()
+pavian::runApp()

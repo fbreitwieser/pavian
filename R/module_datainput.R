@@ -2,11 +2,11 @@ library(shiny)
 library(shinydashboard)
 library(rhandsontable)
 
-#' UI part of pavian data input module
+#' Data input module
 #'
 #' @param id Namespace ID
 #'
-#' @return shiny UI elements
+#' @return Shiny UI elements
 #' @export
 #'
 #' @examples
@@ -21,7 +21,7 @@ dataInputModuleUI <- function(id) {
         fluidRow(
           column(8,
                  textInput(ns("txt_data_dir"),label="Directory (on server)",
-                           value = system.file("shinyapp/example-data", package = "centrifuger"),
+                           value = system.file("shinyapp/example-data", package = "pavian"),
                            width = "100%"),
                  tags$style(type="text/css", "#string { height: 50px; width: 100%; text-align:center; font-size: 30px; display: block;}")),
           column(2,

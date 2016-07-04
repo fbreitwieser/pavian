@@ -1,5 +1,5 @@
 library(shiny)
-library(centrifuger)
+library(pavian)
 library(rhandsontable)
 library(magrittr)
 library(shinydashboard)
@@ -9,11 +9,11 @@ options(shiny.maxRequestSize=50*1024^2)
 common_datatable_opts <- list(saveState = TRUE)
 
 intro <- fluidRow(
-  column(width = 8, includeMarkdown(system.file("shinyapp", "intro_data.md", package="centrifuger"))),
-  column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="centrifuger")))
+  column(width = 8, includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
+  column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
 )
 
-def_files <- list.files(system.file("shinyapp","example-data",package="centrifuger"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
+def_files <- list.files(system.file("shinyapp","example-data",package="pavian"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
 names(def_files) <- basename(dirname(def_files))
 
 ui <- dashboardPage(
@@ -43,7 +43,7 @@ ui <- dashboardPage(
   ),
   dashboardBody(
     tags$head(
-      tags$style(HTML(paste(readLines(system.file("shinyapp","www","style.css",package="centrifuger")),collapse = "\n")))
+      tags$style(HTML(paste(readLines(system.file("shinyapp","www","style.css",package="pavian")),collapse = "\n")))
     ),
     tabItems(
       tabItem("Home",

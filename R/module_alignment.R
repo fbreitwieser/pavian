@@ -91,7 +91,7 @@ With bowtie2
 alignmentModule <- function(input, output, session, samples_df) {
 
   bam_file <- reactive({
-    bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="centrifuger")
+    bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
     if (!is.null(input$bam_file)) {
       str(input$bam_file)
       validate(need(

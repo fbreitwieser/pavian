@@ -9,8 +9,8 @@
 #'
 #' @examples
 get_pileup <- function(bam_file, align_moving_avg, nwin = 1000) {
-  require(Rsamtools)
-  require(plyr)
+  library(Rsamtools)
+  library(plyr)
 
   pileup <- Rsamtools::pileup(bam_file)
 
@@ -85,7 +85,7 @@ get_pileup <- function(bam_file, align_moving_avg, nwin = 1000) {
 #'
 #' @examples
 get_nreads <- function(bam_file) {
-  require(Rsamtools)
+  library(Rsamtools)
   p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth"))
   bam <- Rsamtools::scanBam(bam_file, param = p2)
   res <- tapply(bam[[1]]$qname, bam[[1]]$rname, function(x) length(unique(x)))
