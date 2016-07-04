@@ -15,7 +15,8 @@ dataInputModuleUI <- function(id) {
         background = "green",
         collapsible = TRUE,
         collapse = TRUE,
-        fluidRow(
+          "Either select a directory on the server, or upload report files",
+          fileInput(ns("file_upload"), "Upload files", multiple = TRUE),
           column(8,
                  textInput(ns("txt_data_dir"),label="Directory (on server)",
                            value = system.file("shinyapp/example-data", package = "pavian"),
@@ -27,8 +28,8 @@ dataInputModuleUI <- function(id) {
           column(2,
                  actionButton(ns("btn_check_files"), "Check file"),
                  tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")
-          )),
-        fluidRow(shinyFileTree::shinyFileTreeOutput(ns("files_tree"))),
+          ),
+        shinyFileTree::shinyFileTreeOutput(ns("files_tree")),
         br()
     ),
     br(),
@@ -55,9 +56,21 @@ dataInputModuleUI <- function(id) {
 #' @export
 dataInputModule <- function(input, output, session,
                             ...,
-                            pattern = "defs.csv$", cache_tree = TRUE) {
+                            pattern = "defs.csv$",
+                            cache_tree = TRUE) {
   data_dir <- eventReactive(input$btn_set_data_dir, {
     input$txt_data_dir
+  })
+
+  observeEvent(input$file_upload, {
+    inFile <- input$file_upload
+
+    for (i in seq_along(inFile$datapath)) {
+      dirname <- dirname(inFile$datapath[i])
+      file.rename(inFile$datapath[i], file.path(dirname, inFile$name[i]))
+    }
+
+    updateTextInput(session, "txt_data_dir", value = dirname(inFile$datapath[1]))
   })
 
   output$files_tree <- shinyFileTree::renderShinyFileTree({
@@ -72,7 +85,7 @@ dataInputModule <- function(input, output, session,
           text = basename(data_dir()),
           type = "directory",
           state = list(opened = TRUE),
-          children = get_list_from_directory(data_dir(),
+          children = shinyFileTree::get_list_from_directory(data_dir(),
                                              pattern, hide_empty_dirs = TRUE,
                                              state = list(opened = TRUE))
         ),
@@ -149,7 +162,12 @@ dataInputModule <- function(input, output, session,
       def_df$ReportFilePath <- file.path(dirname(def_files), def_df$ReportFile)
 
     def_df
+
+
+
   })
+
+  #get_sample_sets <- TODO
 
   return(get_def_df)
 }

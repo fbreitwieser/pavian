@@ -4,7 +4,7 @@
 \alias{read_reports}
 \title{Read report files, with Shiny progress bar}
 \usage{
-read_reports(report_files, report_names)
+read_reports(report_files, report_names, cache_dir = "cache")
 }
 \arguments{
 \item{report_files}{character vector with files}

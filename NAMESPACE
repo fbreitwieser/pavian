@@ -2,6 +2,7 @@
 
 export(alignmentModule)
 export(alignmentModuleUI)
+export(allcontaminants)
 export(comparisonModule)
 export(comparisonModuleUI)
 export(dataInputModule)

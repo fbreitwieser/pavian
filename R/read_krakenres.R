@@ -293,9 +293,11 @@ filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TR
     taxon_depth <- taxon_depths[i]
     taxon_reads <- taxon_readss[i]
 
-    tosum_below <-  row_seq >= pos.taxon & krakenres$depth <= taxon_depth
-    taxons_below <- cumsum(tosum_below) == 1
-    rows_to_delete[taxons_below] <- TRUE
+    if (rm_clade) {
+      tosum_below <-  row_seq >= pos.taxon & krakenres$depth <= taxon_depth
+      taxons_below <- cumsum(tosum_below) == 1
+      rows_to_delete[taxons_below] <- TRUE
+    }
     rows_to_update <- c(pos.taxon)
 
     taxons_above <- seq_len(nrow(krakenres)) < pos.taxon & krakenres$depth == taxon_depth

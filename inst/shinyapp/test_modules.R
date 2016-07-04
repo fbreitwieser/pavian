@@ -3,14 +3,12 @@ library(pavian)
 library(rhandsontable)
 library(magrittr)
 
+options(shiny.maxRequestSize=256*1024^2)
+
 ui <- navbarPage("DataInputModule",
   tabPanel(
     title = "Data",
     id = "tabs_data",
-    fluidRow(
-      column(width = 8, includeMarkdown("intro_data.md")),
-      column(width = 4, includeMarkdown("intro_logo.html"))
-    ),
     fluidRow(
           dataInputModuleUI("datafile")
     )

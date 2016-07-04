@@ -16,6 +16,7 @@ intro <- fluidRow(
 
 def_files <- list.files(system.file("shinyapp","example-data",package="pavian"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
 names(def_files) <- basename(dirname(def_files))
+def_files["Upload samples ..."] <- "upload_files"
 
 ui <- dashboardPage(
   dashboardHeader(),
@@ -79,22 +80,27 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
 
   observeEvent(input$def_files,{
-    updateTabItems(session,"tabs","Overview")
+    if (input$def_files == "upload_files") {
+      updateTabItems(session,"tabs","Home")
+    } else {
+      updateTabItems(session,"tabs","Overview")
+    }
 
   })
 
   observeEvent(input$mydata, {
-    message("YIPPPPPEEEEE")
     len = length(input$mydata)
     lapply(input$mydata,function(x) message(head(readLines(x))))
 
   })
 
-  #samples_df <- callModule(dataInputModule, "datafile", height = 800)
+  callModule(dataInputModule, "datafile", height = 800)
   samples_df <- reactive({
     validate(
-      need(input$def_files, message = "Input files are not available")
+      need(input$def_files, message = "Input files are not available"),
+      need(input$def_files != "upload_files", message = "Select a sample set")
     )
+
     def_df <- read.delim(input$def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
 
     validate(need("ReportFile" %in% colnames(def_df),

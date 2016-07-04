@@ -14,6 +14,8 @@ microbe_contaminants = c(
   'Ralstonia pickettii'
 )
 commoncontaminants <- c()  ## this vector is initially filtered
+
+#' @export
 allcontaminants <-
   list(Host = host_contaminants,
        Artificial = seq_contaminants,

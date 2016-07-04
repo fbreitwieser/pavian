@@ -179,8 +179,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
     ) %>%
       DT::formatString("Percent", suffix = "%") %>%
       DT::formatCurrency(c("Reads", "Reads stay"),
-                     digits = 0,
-                     currency = "")
+                     digits = 0, currency = "")
 
   }, server = TRUE)
 
