@@ -20,7 +20,7 @@ Imports:
     ggplot2 (>= 1.0.1),
     shinyFileTree,
     rhandsontable,
-    Rsamtools,
+    Rsamtools
     ggthemes,
     plyr,
     htmlwidgets

@@ -2,7 +2,7 @@
 #'
 #' @param id Namespace ID
 #'
-#' @return shiny UI elements
+#' @return Shiny UI elements
 #' @export
 #' @import shiny
 #' @import shinydashboard

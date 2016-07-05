@@ -17,7 +17,6 @@
 #' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
 #' head(get_pileup(bam_file))
 #' head(get_pileup(bam_file, summarize = TRUE))
-
 get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, ...) {
   pileup <- Rsamtools::pileup(bam_file)
 
