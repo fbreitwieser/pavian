@@ -262,7 +262,7 @@ read_krakenres <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O
 #'
 #' @return filtered krakenres
 #' @export
-filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=TRUE) {
+filter_taxon <- function(krakenres, filter_taxon, rm_clade = TRUE, do_message=FALSE) {
   taxon_depth <- NULL
   taxon_reads <- 0
 

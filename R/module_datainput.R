@@ -8,36 +8,36 @@
 #' @import shinydashboard
 #' @import rhandsontable
 dataInputModuleUI <- function(id) {
+
   ns <- NS(id)
+
   shiny::tagList(
     box(width=12,
         title = "Data Input",
         background = "green",
         collapsible = TRUE,
         collapse = TRUE,
-          "Either select a directory on the server, or upload report files",
-          fileInput(ns("file_upload"), "Upload files", multiple = TRUE),
-          column(8,
-                 textInput(ns("txt_data_dir"),label="Directory (on server)",
-                           value = system.file("shinyapp/example-data", package = "pavian"),
-                           width = "100%"),
-                 tags$style(type="text/css", "#string { height: 50px; width: 100%; text-align:center; font-size: 30px; display: block;}")),
-          column(2,
-                 actionButton(ns("btn_set_data_dir"), "Set directory"),
-                 tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")),
-          column(2,
-                 actionButton(ns("btn_check_files"), "Check file"),
-                 tags$style(type='text/css', "#button { vertical-align: middle; height: 50px; width: 100%; font-size: 30px;}")
-          ),
-        shinyFileTree::shinyFileTreeOutput(ns("files_tree")),
-        br()
+        "Upload report files. You can then change the display name of any of the samples.",
+        fileInput(ns("file_upload"), "Upload files", multiple = TRUE),
+        shinyjs::hidden(textInput(ns("txt_data_dir"),label="Directory (on server)",
+                  value = system.file("shinyapp","example-data", package = "pavian"),
+                  width = "100%")),
+        shinyjs::hidden(actionButton(ns("btn_set_data_dir"), "Set directory")),
+        actionButton(ns("btn_load_example"), "Load example data")
     ),
     br(),
-    box(width=12,
+    shinyjs::hidden(
+      div(id = ns("sample_set_box"),
+      box(width=12,
+        selectizeInput(ns("sample_sets"), label = "Select sample set", choices = NULL),
         htmlOutput(ns("info_samples")),
         br(),
-        rHandsontableOutput(ns("table"))
-    )
+        rhandsontable::rHandsontableOutput(ns("table")),
+        actionButton(ns("btn_save_table"),"Save table"),
+        shinyjs::hidden(textInput(ns("txt_rename_sample_set"), label = "New name")),
+        actionButton(ns("btn_rename_sample_set"),"Rename sample set"),
+        actionButton(ns("btn_remove_sample_set"),"Remove sample set")
+    )))
   )
 }
 
@@ -58,11 +58,36 @@ dataInputModule <- function(input, output, session,
                             ...,
                             pattern = "defs.csv$",
                             cache_tree = TRUE) {
-  data_dir <- eventReactive(input$btn_set_data_dir, {
-    input$txt_data_dir
+
+  sample_sets <- reactiveValues(val = data.frame())
+
+  set_data_dir <- function(data_dir) {
+    shinyjs::show("sample_set_box")
+    dirs <- list.dirs(data_dir, recursive = FALSE)
+    new_sample_sets <- lapply(list.dirs(data_dir, recursive = FALSE), get_reports_def_df)
+    names(new_sample_sets) <- basename(dirs)
+    new_sample_sets <- new_sample_sets[! sapply(new_sample_sets, is.null) ]
+
+    new_sample_sets[[basename(data_dir)]] <- get_reports_def_df(data_dir)
+
+    validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
+    sample_sets$val <<- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
+    updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(new_sample_sets)[1])
+  }
+
+  observeEvent(input$btn_load_example, {
+    set_data_dir(system.file("shinyapp","example-data", package = "pavian"))
   })
 
+  update_sample_set_hot <- reactive({
+    req(input$table)
+    req(input$sample_sets)
+    sample_sets$val[[input$sample_sets]] <<- rhandsontable::hot_to_r(input$table)
+  })
+
+
   observeEvent(input$file_upload, {
+    #update_sample_set_hot()
     inFile <- input$file_upload
 
     for (i in seq_along(inFile$datapath)) {
@@ -71,53 +96,67 @@ dataInputModule <- function(input, output, session,
     }
 
     updateTextInput(session, "txt_data_dir", value = dirname(inFile$datapath[1]))
+    set_data_dir(dirname(inFile$datapath[1]))
   })
 
-  output$files_tree <- shinyFileTree::renderShinyFileTree({
-    validate(
-      need(data_dir(), message = "No sample directory is set", label =
-             "Sample directory")
-    )
+  observeEvent(input$btn_set_data_dir, {
+    #update_sample_set_hot()
+    validate(need(input$txt_data_dir, message = "Need input$txt_data_dir."),
+             need(dir.exists(input$txt_data_dir), message = "Need input$txt_data_dir as directory."))
 
-    withProgress(message = "Reading directory tree ...", {
-      shinyFileTree::shinyFileTree(
-        list(
-          text = basename(data_dir()),
-          type = "directory",
-          state = list(opened = TRUE),
-          children = shinyFileTree::get_list_from_directory(data_dir(),
-                                             pattern, hide_empty_dirs = TRUE,
-                                             state = list(opened = TRUE))
-        ),
-        plugins = c("types")
-      )
-    })
+    set_data_dir(input$txt_data_dir)
+  })
+
+  get_def_df <- reactive({
+    validate(need(sample_sets$val, message = "Need samples sets"))
+    sample_sets$val[[input$sample_sets]]
   })
 
   report_files <- reactive({
-    def_files <- files_selected_in_tree()
     def_df <- get_def_df()
-
+    validate(need(def_df, message = "Need def df."))
     file.path(dirname(def_files), def_df$ReportFile)
   })
 
   output$table <- renderRHandsontable({
     def_df <- get_def_df()
-    if (input$btn_check_files) {
-      gd_files <- file.exists(report_files())
-      #def_df[gd_files,"ReportFile"] <- sprintf("<span style='background:#00FF00'>%s</span>",def_df[gd_files,"ReportFile"])
-      #def_df[!gd_files,"ReportFile"] <- sprintf("<span style='background:#FF0000'>%s</span>",def_df[!gd_files,"ReportFile"])
-      def_df[gd_files,"ReportFilePath"] <- sprintf("&check; %s",def_df[gd_files,"ReportFilePath"])
-      def_df[!gd_files,"ReportFilePath"] <- sprintf("&times; Does not exist: %s",def_df[!gd_files,"ReportFilePath"])
+    validate(need(def_df, message = "Need def df."))
 
+    def_df$Include[! file.exists(report_files()) ] <- FALSE
 
+    rh <- rhandsontable(def_df, readOnly = TRUE) %>%
+      hot_col("Include", readOnly = FALSE) %>%
+      hot_col("Name", readOnly = FALSE)
+    if ("Class" %in% colnames(def_df))
+      rh <- rh %>% hot_col("Class", readOnly = FALSE)
+
+    rh
+  })
+
+  observeEvent(input$btn_save_table, {
+    update_sample_set_hot()
+  })
+
+  currently_renaming_sample_set <- FALSE
+
+  observeEvent(input$btn_rename_sample_set, {
+    shinyjs::toggle("txt_rename_sample_set")
+
+    if (currently_renaming_sample_set) {
+      selected_item <- names(sample_sets$val) == input$sample_sets
+      names(sample_sets$val)[selected_item] <<- input$txt_rename_sample_set
+      updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[selected_item])
+    } else {
+      updateTextInput(session, "txt_rename_sample_set", value = input$sample_sets)
     }
 
-    ## The custom rendering does not seem to work ...
-    #rhandsontable(def_df, ...) #%>%
-    #hot_col("ReportFile", renderer = htmlwidgets::JS("html"))
+    currently_renaming_sample_set <<- !currently_renaming_sample_set
+  })
 
-    rhandsontable(def_df, ...)
+  observeEvent(input$btn_remove_sample_set, {
+    selected_item <- names(sample_sets$val) == input$sample_sets
+    sample_sets$val <<- sample_sets$val[!selected_item]
+    updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[1])
   })
 
   output$info_samples <- renderText({
@@ -125,50 +164,9 @@ dataInputModule <- function(input, output, session,
             sum(file.exists(report_files())))
   })
 
-  files_selected_in_tree <- eventReactive (input$files_tree, {
-    selected <- grep(pattern, input$files_tree, value = TRUE)
-    validate(
-      need(
-        selected,
-        message = "Please select at a sample definition file."
-      )
-    )
-
-    file.path(dirname(data_dir()),selected)
+  return(function() {
+    attr(sample_sets$val, "selected") <<- input$sample_sets
+    sample_sets
   })
-
-  get_def_df <- reactive({
-    def_files <- files_selected_in_tree()
-
-    validate(
-      need(all(file.exists(def_files)), sprintf("An error occured looking up some of the definition files (%s)",paste(def_files, collapse = ", "))))
-
-    ## TODO: Specify order, and allow loading multiple defs files at once
-    #column_order <- c("Include", "Name", "Engine")
-
-    def_df <- utils::read.delim(def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
-
-    validate(need("ReportFile" %in% colnames(def_df),
-                  message = "Required column 'ReportFile' not present in defs.csv"))
-
-
-    if (!"Include" %in% colnames(def_df))
-      def_df <- cbind(Include = TRUE, def_df)
-
-    if ("Class" %in% colnames(def_df))
-      def_df$Class <- as.factor(def_df$Class)
-
-    if (!"ReportFilePath" %in% colnames(def_df))
-      def_df$ReportFilePath <- file.path(dirname(def_files), def_df$ReportFile)
-
-    def_df
-
-
-
-  })
-
-  #get_sample_sets <- TODO
-
-  return(get_def_df)
 }
 

@@ -3,6 +3,7 @@ library(pavian)
 library(rhandsontable)
 library(magrittr)
 library(shinydashboard)
+library(shinyjs)
 
 options(shiny.maxRequestSize=50*1024^2)
 cache_dir <- tempdir()
@@ -13,10 +14,6 @@ intro <- fluidRow(
   column(width = 8, includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
   column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
 )
-
-def_files <- list.files(system.file("shinyapp","example-data",package="pavian"), pattern="defs.csv", recursive=TRUE, full.names=TRUE)
-names(def_files) <- basename(dirname(def_files))
-def_files["Upload samples ..."] <- "upload_files"
 
 ui <- dashboardPage(
   dashboardHeader(),
@@ -29,7 +26,7 @@ ui <- dashboardPage(
     #  label = "Search ..."
     #),
     sidebarMenu(id="tabs",
-                menuItem("Home", tabName="Home"),
+                menuItem("Data Input", tabName="Home"),
                 menuItem("Results Overview", tabName="Overview", icon = icon("table")),
                 menuItem("Comparison", icon = icon("line-chart"),
                          menuSubItem("All data", tabName="Comparison"),
@@ -38,12 +35,12 @@ ui <- dashboardPage(
                          menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
                 ),
                 menuItem("Sample", tabName="Sample", icon = icon("sun-o")),
-                menuItem("Alignment (beta)", tabName = "Alignment", icon = icon("asterisk")),
-                menuItem("CDC ID (beta)", tabName = "CDC", icon = icon("asterisk")),
+                menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
                 menuItem("About", tabName = "About")
     )
   ),
   dashboardBody(
+    useShinyjs(),
     tags$head(
       tags$style(HTML(paste(readLines(system.file("shinyapp","www","style.css",package="pavian")),collapse = "\n")))
     ),
@@ -80,12 +77,11 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
 
   observeEvent(input$def_files,{
-    if (input$def_files == "upload_files") {
+    if (isTRUE(input$def_files == "upload_files")) {
       updateTabItems(session,"tabs","Home")
-    } else {
-      updateTabItems(session,"tabs","Overview")
-    }
-
+    } #else {
+    #  updateTabItems(session,"tabs","Overview")
+    #}
   })
 
   observeEvent(input$mydata, {
@@ -94,32 +90,21 @@ server <- function(input, output, session) {
 
   })
 
-  callModule(dataInputModule, "datafile", height = 800)
-  samples_df <- reactive({
-    validate(
-      need(input$def_files, message = "Input files are not available"),
-      need(input$def_files != "upload_files", message = "Select a sample set")
-    )
+  sample_sets_df <- callModule(dataInputModule, "datafile", height = 800)
 
-    def_df <- read.delim(input$def_files, header = TRUE, sep = ";", stringsAsFactors = FALSE)
+  observeEvent(sample_sets_df(),{
+    message("sample sets df changed!!")
+    def_files <- names(sample_sets_df()$val)
+    def_files["Upload samples ..."] <- "upload_files"
 
-    validate(need("ReportFile" %in% colnames(def_df),
-                  message = "Required column 'ReportFile' not present in defs.csv"))
-
-
-    if (!"Include" %in% colnames(def_df))
-      def_df <- cbind(Include = TRUE, def_df)
-
-    if ("Class" %in% colnames(def_df))
-      def_df$Class <- as.factor(def_df$Class)
-
-    if (!"ReportFilePath" %in% colnames(def_df))
-      def_df$ReportFilePath <- file.path(dirname(input$def_files), def_df$ReportFile)
-
-    def_df <- def_df[file.exists(def_df$ReportFilePath),]
-    def_df
-
+    updateSelectizeInput(session, "def_files", choices = def_files, selected = attr(sample_sets_df()$val, "selected"))
   })
+
+  samples_df <- reactive({
+    res <- sample_sets_df()$val[[input$def_files]]
+    res[res$Include, ]
+  })
+
   reports <- reactive({
     validate(
       need("ReportFilePath" %in% colnames(samples_df()), "ReportFilePath not available!"),

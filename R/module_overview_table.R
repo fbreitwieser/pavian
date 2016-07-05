@@ -48,14 +48,13 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
 
     samples_summary <- do.call(rbind, lapply(reports(), summarize_report))
     samples_summary$Name <- rownames(samples_summary)
-    samples_summary$FileName <- samples_df()[,"ReportFile"]
-    samples_summary <- samples_summary[,c(c("Name","FileName"),setdiff(colnames(samples_summary),c("Name","FileName")))]
-    #rownames(samples_summary) <- basename(rownames(samples_summary))
-    colnames(samples_summary) <-
-      beautify_string(colnames(samples_summary))
+    #samples_summary$FileName <- samples_df()[,"ReportFile"]
+    extra_cols <- c("Name")
+    samples_summary <- samples_summary[,c(extra_cols, setdiff(colnames(samples_summary),extra_cols))]
+    colnames(samples_summary) <- beautify_string(colnames(samples_summary))
 
-    number_range <-  c(0, max(samples_summary[, 1], na.rm = TRUE))
-    start_color_bar_at <- 3
+    start_color_bar_at <- length(extra_cols) + 1
+    number_range <-  c(0, max(samples_summary[, start_color_bar_at], na.rm = TRUE))
 
     columnDefs <- list()
     rowCallback <- NULL
@@ -80,7 +79,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
         "function(row, data) {",
         sprintf(" for (i = %s; i < %s; i++) { ",start_color_bar_at - 1, ncol(samples_summary)-1),
         " value = data[i]",
-        " perc = (100 * data / data[1]).toPrecision(3)",
+        " perc = (100 * data / data[",start_color_bar_at,"]).toPrecision(3)",
         " backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
         " $('td', row).eq(i).css('background',backgroundValue); ",
         " $('td', row).eq(i).css('background-repeat','no-repeat'); ",
@@ -102,11 +101,13 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
       ))
     }
 
-    microbial_col <- 8
+    microbial_col <- start_color_bar_at + 5
+    str(samples_summary)
 
     dt <- DT::datatable(
-      samples_summary,
-      selection = 'single'
+      samples_summary
+      , rownames = FALSE
+      , selection = 'single'
       ,extensions = c('Buttons')
       , options = list(
         dom = 'Bfrtip'
@@ -135,7 +136,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
      if (isTRUE(input$opt_samples_overview_percent)) {
        dt <- dt %>%
          DT::formatCurrency(start_color_bar_at, currency = '', digits = 0) %>%
-         DT::formatString(seq(from=start_color_bar_at+1, to=ncol(samples_summary)),
+         DT::formatString(seq(from=start_color_bar_at, to=ncol(samples_summary)),
                       suffix = '%')  ## TODO: display as percent
     #   ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
     #   ## with signif.

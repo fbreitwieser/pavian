@@ -1,11 +1,14 @@
 library(shiny)
+library(shinyjs)
 library(pavian)
 library(rhandsontable)
 library(magrittr)
 
 options(shiny.maxRequestSize=256*1024^2)
 
-ui <- navbarPage("DataInputModule",
+ui <- tagList(
+  useShinyjs(),
+  navbarPage("DataInputModule",
   tabPanel(
     title = "Data",
     id = "tabs_data",
@@ -13,6 +16,7 @@ ui <- navbarPage("DataInputModule",
           dataInputModuleUI("datafile")
     )
   )
+)
 )
 
 server <- function(input, output, session) {
