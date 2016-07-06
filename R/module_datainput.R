@@ -17,7 +17,7 @@ dataInputModuleUI <- function(id) {
         background = "green",
         collapsible = TRUE,
         collapse = TRUE,
-        "Upload Kraken and Centrifuge report files. You can then change the display name of any of the samples.",
+        "You can upload Kraken and Centrifuge report files, or load an example data set.",
         fileInput(ns("file_upload"), "", multiple = TRUE),
         shinyjs::hidden(textInput(ns("txt_data_dir"),label="Directory (on server)",
                   value = system.file("shinyapp","example-data", package = "pavian"),

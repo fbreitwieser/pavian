@@ -125,3 +125,8 @@ div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
     background: linear-gradient(#164f9a, #477cb2); /* Standard syntax */
 
 }
+
+.sidebartext {
+    padding: 10px !important;
+    color: #ccc;
+}

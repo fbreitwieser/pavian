@@ -18,8 +18,12 @@ intro <- fluidRow(
 ui <- dashboardPage(skin="blue",
   dashboardHeader(title = "",
                   tags$li(class = "dropdown",
+                          tags$img(src="baboon2.png")
+                  ),
+                  tags$li(class = "dropdown",
                           tags$a(href="https://ccb.jhu.edu",
                                  target="_blank",
+                                 style = "font-size: 20px;",
                                  tags$b("Pavian metagenomics data explorer"))
                           ),
                   tags$li(class = "dropdown",
@@ -39,8 +43,21 @@ ui <- dashboardPage(skin="blue",
     #  buttonId = "btn_sidebarSearch",
     #  label = "Search ..."
     #),
-    sidebarMenuOutput("dy_menu")
-  ),
+    sidebarMenu(
+      id = "tabs",
+      menuItem("Data Input", tabName="Home", icon = icon("cloud-upload"), selected = TRUE),
+      menuItemOutput("dy_menu_overview"),
+      menuItemOutput("dy_menu_comp"),
+      menuItemOutput("dy_menu_sample"),
+      menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
+      menuItem("About", tabName = "About")),
+    br(),br(),
+    br(),br(),
+    tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
+    tags$p(class="sidebartext", "Or view alignments and download genomes in the 'Alignment viewer'."),
+    br(),
+    tags$p(class="sidebartext", "@fbreitwieser, 2016")
+    ),
   dashboardBody(
     useShinyjs(),
     tags$head(
@@ -79,33 +96,26 @@ ui <- dashboardPage(skin="blue",
 )
 
 server <- function(input, output, session) {
-  updateTabItems(session,"tabs","Home")
 
-  output$dy_menu <- renderMenu({
-    menulist <- list(
-      menuItem("Data Input", tabName="Home", icon = icon("cloud-upload"))
-    )
-    if (!is.null(input$def_files) && input$def_files != "") {
-      menulist <- c(menulist, list(
-                    menuItem("Results Overview", tabName="Overview", icon = icon("table")),
-                    menuItem("Comparison", icon = icon("line-chart"),
-                             menuSubItem("All data", tabName="Comparison"),
-                             menuSubItem("Bacteria", tabName="Bacteria"),
-                             menuSubItem("Viruses", tabName="Viruses"),
-                             menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
-                    ),
-                    menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
-                    ))
-    }
-
-    menulist <- c(menulist,
-                  list(
-                  menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
-                  menuItem("About", tabName = "About")))
-
-    do.call(sidebarMenu,menulist)
-
+  output$dy_menu_overview <- renderMenu({
+    req(input$def_files)
+    menuItem("Results Overview", tabName="Overview", icon = icon("table"))
   })
+  output$dy_menu_comp <- renderMenu({
+    req(input$def_files)
+    menuItem("Comparison", icon = icon("line-chart"),
+             menuSubItem("All data", tabName="Comparison"),
+             menuSubItem("Bacteria", tabName="Bacteria"),
+             menuSubItem("Viruses", tabName="Viruses"),
+             menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
+    )
+  })
+
+  output$dy_menu_sample <- renderMenu({
+    req(input$def_files)
+    menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
+  })
+
 
   observeEvent(input$def_files,{
     if (isTRUE(input$def_files == "upload_files")) {
@@ -115,17 +125,11 @@ server <- function(input, output, session) {
     #}
   })
 
-  observeEvent(input$mydata, {
-    len = length(input$mydata)
-    lapply(input$mydata,function(x) message(head(readLines(x))))
-
-  })
-
   sample_sets_df <- callModule(dataInputModule, "datafile", height = 800)
 
   observeEvent(sample_sets_df(),{
     if (length(sample_sets_df()$val) > 0) {
-      message("sample sets df changed!!")
+      message("sample sets df changed!")
       def_files <- names(sample_sets_df()$val)
       #def_files["Upload samples ..."] <- "upload_files"
       shinyjs::enable("def_files")
