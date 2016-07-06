@@ -15,34 +15,36 @@ intro <- fluidRow(
   column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
 )
 
-ui <- dashboardPage(
-  dashboardHeader(),
+ui <- dashboardPage(skin="blue",
+  dashboardHeader(title = "",
+                  tags$li(class = "dropdown",
+                          tags$a(href="https://ccb.jhu.edu",
+                                 target="_blank",
+                                 tags$b("Pavian metagenomics data explorer"))
+                          ),
+                  tags$li(class = "dropdown",
+                          tags$a(href="https://ccb.jhu.edu", target="_blank",
+                                 "CCB @ JHU")
+                  ),
+                  tags$li(class = "dropdown",
+                          tags$a(href="http://twitter.com/share?url=http://ccb.jhu.edu/pavian&amp;text=Explore metagenomics data with @pavian ", target="_blank", tags$img(icon('twitter')))),
+                  tags$li(class = "dropdown",
+                          tags$a(href="http://github.com/fbreitwieser/pavian", target="_blank", tags$img(icon('github'))))
+                  ),
   dashboardSidebar(
-    selectizeInput("def_files", choices=def_files, label="Select sample set"),
+    shinyjs::disabled(selectizeInput("def_files", choices=c("Not available"=""), label="Select sample set")),
     br(),
     #sidebarSearchForm(
     #  textId = "txt_sidebarSearch",
     #  buttonId = "btn_sidebarSearch",
     #  label = "Search ..."
     #),
-    sidebarMenu(id="tabs",
-                menuItem("Data Input", tabName="Home"),
-                menuItem("Results Overview", tabName="Overview", icon = icon("table")),
-                menuItem("Comparison", icon = icon("line-chart"),
-                         menuSubItem("All data", tabName="Comparison"),
-                         menuSubItem("Bacteria", tabName="Bacteria"),
-                         menuSubItem("Viruses", tabName="Viruses"),
-                         menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
-                ),
-                menuItem("Sample", tabName="Sample", icon = icon("sun-o")),
-                menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
-                menuItem("About", tabName = "About")
-    )
+    sidebarMenuOutput("dy_menu")
   ),
   dashboardBody(
     useShinyjs(),
     tags$head(
-      tags$style(HTML(paste(readLines(system.file("shinyapp","www","style.css",package="pavian")),collapse = "\n")))
+      tags$style(HTML(paste(readLines(system.file("shinyapp","style.css",package="pavian")),collapse = "\n")))
     ),
     tabItems(
       tabItem("Home",
@@ -61,12 +63,14 @@ ui <- dashboardPage(
       tabItem("Alignment", alignmentModuleUI("alignment")),
       tabItem(
         "About",
-        #id = "tabs_about",
         intro,
+        "This tool was developed by Florian Breitwieser in Steven Salzberg's lab at the Center for Computational Biology at Johns Hopkins Medical Institution. ",
+        br(),
+        br(),
         box(width=12,
             title="Session Information",
             collapsible=TRUE,
-            collapsed=TRUE,
+            collapsed=FALSE,
             verbatimTextOutput("session_info")
         )
       )
@@ -75,6 +79,33 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output, session) {
+  updateTabItems(session,"tabs","Home")
+
+  output$dy_menu <- renderMenu({
+    menulist <- list(
+      menuItem("Data Input", tabName="Home", icon = icon("cloud-upload"))
+    )
+    if (!is.null(input$def_files) && input$def_files != "") {
+      menulist <- c(menulist, list(
+                    menuItem("Results Overview", tabName="Overview", icon = icon("table")),
+                    menuItem("Comparison", icon = icon("line-chart"),
+                             menuSubItem("All data", tabName="Comparison"),
+                             menuSubItem("Bacteria", tabName="Bacteria"),
+                             menuSubItem("Viruses", tabName="Viruses"),
+                             menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
+                    ),
+                    menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
+                    ))
+    }
+
+    menulist <- c(menulist,
+                  list(
+                  menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
+                  menuItem("About", tabName = "About")))
+
+    do.call(sidebarMenu,menulist)
+
+  })
 
   observeEvent(input$def_files,{
     if (isTRUE(input$def_files == "upload_files")) {
@@ -93,11 +124,17 @@ server <- function(input, output, session) {
   sample_sets_df <- callModule(dataInputModule, "datafile", height = 800)
 
   observeEvent(sample_sets_df(),{
-    message("sample sets df changed!!")
-    def_files <- names(sample_sets_df()$val)
-    def_files["Upload samples ..."] <- "upload_files"
+    if (length(sample_sets_df()$val) > 0) {
+      message("sample sets df changed!!")
+      def_files <- names(sample_sets_df()$val)
+      #def_files["Upload samples ..."] <- "upload_files"
+      shinyjs::enable("def_files")
 
-    updateSelectizeInput(session, "def_files", choices = def_files, selected = attr(sample_sets_df()$val, "selected"))
+      updateSelectizeInput(session, "def_files", choices = def_files, selected = attr(sample_sets_df()$val, "selected"))
+    } else {
+      updateSelectizeInput(session, "def_files", choices = c("Not available"=""))
+      shinyjs::disable("def_files")
+    }
   })
 
   samples_df <- reactive({

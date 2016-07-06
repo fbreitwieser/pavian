@@ -50,7 +50,8 @@ get_summarized_report <- function(
   ## transform to percent
   data_portion <-
     summarized_report[, seq(from = length(id_cols) + 1,
-                            to = ncol(summarized_report))]
+                            to = ncol(summarized_report))
+                      , drop = FALSE]
 
   reads_idx <- seq(from = 1,
                    to = ncol(data_portion) - 1,
@@ -60,15 +61,15 @@ get_summarized_report <- function(
                         by = 2)
 
   if (isTRUE(display_percentage)) {
-    sum_reads <- colSums(data_portion[, reads_stay_idx], na.rm = T)
+    sum_reads <- colSums(data_portion[, reads_stay_idx, drop = FALSE], na.rm = T)
   }
 
   if (show_reads_stay == "reads") {
-    data_portion <- data_portion[, reads_idx]
+    data_portion <- data_portion[, reads_idx, drop = FALSE]
     colnames(data_portion) <-
       sub("\nreads", "", colnames(data_portion))
   } else if (show_reads_stay == "reads_stay") {
-    data_portion <- data_portion[, reads_stay_idx]
+    data_portion <- data_portion[, reads_stay_idx, drop = FALSE]
     colnames(data_portion) <-
       sub("\nreads_stay", "", colnames(data_portion))
   }
@@ -108,8 +109,7 @@ get_summarized_report <- function(
         Overview = apply(round(zero_if_na(data_portion), round_digits), 1, paste0, collapse = ","),
         Mean = mean_column,
         data_portion,
-        beautify_colnames(summarized_report[, id_cols_after, drop =
-                                              FALSE])
+        beautify_colnames(summarized_report[, id_cols_after, drop = FALSE])
       )
 
     ## that's the last column before the data, and the one which we sort for

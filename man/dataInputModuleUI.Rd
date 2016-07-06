@@ -10,7 +10,7 @@ dataInputModuleUI(id)
 \item{id}{Namespace ID}
 }
 \value{
-shiny UI elements
+Shiny UI elements
 }
 \description{
 UI part of pavian data input module

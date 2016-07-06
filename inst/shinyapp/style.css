@@ -48,13 +48,80 @@ div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
   height: unset !important;
 }
 
-
+.sunburst-sidebar {
+  position: absolute;
+  width: 20%;
+  left: 80%;
+  top: 40px;
+}
 
 .sunburst-legend {
   padding: 2px 0 0 3px;
 }
 
-.sunbrust-sequence text, .sunburst-legend text {
+.sunburst-sequence text, .sunburst-legend text {
+  font-weight: normal;
   fill: #fff;
   font-size: small;
+}
+
+
+
+#data-title {
+    text-align:center;
+}
+
+#drop-area {
+    background-color:#BCED91;
+    border:2px solid #46523C;
+    border-radius:25px;
+    height:90px;
+    overflow:auto;
+    padding:12px;
+}
+
+#drop-area #datasets {
+    display:inline-block;
+    font-size:small;
+    margin-right:8px;
+    text-align:center;
+    vertical-align:top;
+}
+
+.thumb {
+    height:45px;
+}
+
+
+/* SIDEBAR */
+
+/*
+.sidebar {
+  color: black !important;
+}
+
+.sidebar a {
+  color: black !important;
+}
+
+.sidebar a:active, .sidebar a:focus, .sidebar a:hover {
+  color: #fff !important;
+}
+
+.main-sidebar {
+  background-color: #ccc !important;
+}
+
+.sidebar-menu>li.active>a, .sidebar-menu>li:hover>a {
+  color: #fff !important;
+}
+*/
+
+.main-header .logo , .main-header .navbar {
+    background: #164f9a; /* For browsers that do not support gradients */
+    background: -webkit-linear-gradient(#164f9a, #477cb2); /* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(#164f9a, #477cb2); /* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(#164f9a, #477cb2); /* For Firefox 3.6 to 15 */
+    background: linear-gradient(#164f9a, #477cb2); /* Standard syntax */
+
 }

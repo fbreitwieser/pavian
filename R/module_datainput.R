@@ -17,8 +17,8 @@ dataInputModuleUI <- function(id) {
         background = "green",
         collapsible = TRUE,
         collapse = TRUE,
-        "Upload report files. You can then change the display name of any of the samples.",
-        fileInput(ns("file_upload"), "Upload files", multiple = TRUE),
+        "Upload Kraken and Centrifuge report files. You can then change the display name of any of the samples.",
+        fileInput(ns("file_upload"), "", multiple = TRUE),
         shinyjs::hidden(textInput(ns("txt_data_dir"),label="Directory (on server)",
                   value = system.file("shinyapp","example-data", package = "pavian"),
                   width = "100%")),
@@ -115,7 +115,7 @@ dataInputModule <- function(input, output, session,
   report_files <- reactive({
     def_df <- get_def_df()
     validate(need(def_df, message = "Need def df."))
-    file.path(dirname(def_files), def_df$ReportFile)
+    def_df$ReportFilePath
   })
 
   output$table <- renderRHandsontable({
@@ -157,6 +157,9 @@ dataInputModule <- function(input, output, session,
     selected_item <- names(sample_sets$val) == input$sample_sets
     sample_sets$val <<- sample_sets$val[!selected_item]
     updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[1])
+    if (length(sample_sets) == 0) {
+      shinyjs::hide("sample_set_box")
+    }
   })
 
   output$info_samples <- renderText({
