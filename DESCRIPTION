@@ -1,7 +1,7 @@
 Package: pavian
 Type: Package
 Title: Analyze and dispaly metagenomics data in R
-Version: 0.1.5
+Version: 0.1.6
 Date: 2016-05-07
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
 Description: R package to visualize and analyse metagenomics data created by
