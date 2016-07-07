@@ -81,7 +81,7 @@ ui <- dashboardPage(skin="blue",
       tabItem(
         "About",
         intro,
-        "This tool was developed by Florian Breitwieser in Steven Salzberg's lab at the Center for Computational Biology at Johns Hopkins Medical Institution. ",
+        "This tool was developed by Florian Breitwieser in Steven Salzberg's lab at the Center for Computational Biology at Johns Hopkins Medical Institution. This work was supported by the U.S. National Institutes of Health [R01-HG006677,R01-GM083873]; and by the U.S. Army Research Office [W911NF-1410490].",
         br(),
         br(),
         box(width=12,
