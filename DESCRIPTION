@@ -15,7 +15,7 @@ Imports:
     sunburstR (>= 0.1),
     DT (>= 0.1.56),
     d3heatmap (>= 0.6.1),
-    networkD3 (>= 0.2.6),
+    networkD3 (>= 0.2),
     gapmap (>= 0.0.2),
     ggplot2 (>= 1.0.1),
     shinyFileTree,
