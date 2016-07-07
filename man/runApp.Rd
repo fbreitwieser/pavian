@@ -4,7 +4,8 @@
 \alias{runApp}
 \title{Run Centrifuger web interface}
 \usage{
-runApp(cache_dir = "cache", ...)
+runApp(cache_dir = "cache", example_dir = system.file("shinyapp",
+  "example-data", package = "pavian"), ...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files.}

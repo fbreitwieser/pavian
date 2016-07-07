@@ -51,8 +51,7 @@ ui <- dashboardPage(skin="blue",
       menuItemOutput("dy_menu_sample"),
       menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
       menuItem("About", tabName = "About")),
-    br(),br(),
-    br(),br(),
+    br(), br(), br(),
     tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
     tags$p(class="sidebartext", "Or view alignments and download genomes in the 'Alignment viewer'."),
     br(),
@@ -125,7 +124,8 @@ server <- function(input, output, session) {
     #}
   })
 
-  sample_sets_df <- callModule(dataInputModule, "datafile", height = 800)
+  sample_sets_df <- callModule(dataInputModule, "datafile", height = 800,
+                               example_dir = getOption("pavian.example_dir", system.file("shinyapp", "example-data", package = "pavian")))
 
   observeEvent(sample_sets_df(),{
     if (length(sample_sets_df()$val) > 0) {

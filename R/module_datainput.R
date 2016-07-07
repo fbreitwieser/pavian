@@ -45,19 +45,24 @@ dataInputModuleUI <- function(id) {
 
 #' Server part of pavian data input module
 #'
-#' @param input Scoped input
-#' @param output Module output
-#' @param session Shiny session
-#' @param ... Additional arguments for rhandsontable, such as height and width
-#' @param pattern File name pattern for definition file
-#' @param cache_tree \code{boolean}. Whether the file tree should be cached (currently not implemented)
+#' @param input Scoped input.
+#' @param output Module output.
+#' @param session Shiny session.
+#' @param ... Additional arguments for rhandsontable, such as height and width.
+#' @param example_dir Directory with report files that can be loaded.
+#' @param pattern File name pattern for definition file.
+#' @param cache_tree \code{boolean}. Whether the file tree should be cached (currently not implemented).
 #'
-#' @return Shiny module server function, to be called by callModule
+#' @return Shiny module server function, to be called by callModule.
 #' @export
 dataInputModule <- function(input, output, session,
                             ...,
+                            example_dir = NULL,
                             pattern = "defs.csv$",
                             cache_tree = TRUE) {
+
+  if (is.null(example_dir))
+    example_dir <- system.file("shinyapp","example-data", package = "pavian")
 
   sample_sets <- reactiveValues(val = data.frame())
 
@@ -76,7 +81,7 @@ dataInputModule <- function(input, output, session,
   }
 
   observeEvent(input$btn_load_example, {
-    set_data_dir(system.file("shinyapp","example-data", package = "pavian"))
+    set_data_dir(example_dir)
   })
 
   update_sample_set_hot <- reactive({
