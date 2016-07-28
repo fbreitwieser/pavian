@@ -81,12 +81,17 @@ dataInputModule <- function(input, output, session,
   }
 
   observeEvent(input$btn_load_example, {
-    set_data_dir(example_dir)
+    withProgress(message = "Reading example directory reports ...", {
+      set_data_dir(example_dir)
+    })
+
   })
 
   update_sample_set_hot <- reactive({
     req(input$table)
     req(input$sample_sets)
+    message("Save")
+    str(rhandsontable::hot_to_r(input$table))
     sample_sets$val[[input$sample_sets]] <<- rhandsontable::hot_to_r(input$table)
   })
 
@@ -129,7 +134,7 @@ dataInputModule <- function(input, output, session,
 
     def_df$Include[! file.exists(report_files()) ] <- FALSE
 
-    rh <- rhandsontable(def_df, readOnly = TRUE) %>%
+    rh <- rhandsontable(def_df, readOnly = TRUE, manualRowMove = TRUE) %>%
       hot_col("Include", readOnly = FALSE) %>%
       hot_col("Name", readOnly = FALSE)
     if ("Class" %in% colnames(def_df))

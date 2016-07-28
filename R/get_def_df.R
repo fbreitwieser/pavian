@@ -25,5 +25,12 @@ get_reports_def_df <- function(my_dir, def_filename = "defs.csv", report_extensi
   if (!"ReportFilePath" %in% colnames(def_df))
     def_df$ReportFilePath <- file.path(my_dir, def_df$ReportFile)
 
-  def_df <- def_df[file.exists(def_df$ReportFilePath),]
+  if ("KrakenFile" %in% colnames(def_df) && ! "KrakenFilePath" %in% colnames(def_df))
+    def_df$KrakenFilePath <- file.path(my_dir, def_df$KrakenFile)
+
+  if ("FastqFile" %in% colnames(def_df) && ! "FastqFilePath" %in% colnames(def_df))
+    def_df$FastqFilePath <- file.path(my_dir, def_df$FastqFile)
+
+
+  def_df <- def_df[file.exists(def_df$ReportFilePath), ]
 }

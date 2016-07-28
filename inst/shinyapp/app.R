@@ -15,7 +15,7 @@ intro <- fluidRow(
   column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
 )
 
-ui <- dashboardPage(skin="blue",
+ui <- dashboardPage(skin="blue", title = "Pavian",
   dashboardHeader(title = "",
                   tags$li(class = "dropdown",
                           tags$img(src="baboon2.png")
@@ -26,12 +26,12 @@ ui <- dashboardPage(skin="blue",
                                  style = "font-size: 20px;",
                                  tags$b("Pavian metagenomics data explorer"))
                           ),
-                  tags$li(class = "dropdown",
-                          tags$a(href="https://ccb.jhu.edu", target="_blank",
-                                 "CCB @ JHU")
-                  ),
-                  tags$li(class = "dropdown",
-                          tags$a(href="http://twitter.com/share?url=http://ccb.jhu.edu/pavian&amp;text=Explore metagenomics data with @pavian ", target="_blank", tags$img(icon('twitter')))),
+                  #tags$li(class = "dropdown",
+                  #        tags$a(href="https://ccb.jhu.edu", target="_blank",
+                  #               "CCB @ JHU")
+                  #),
+                  #tags$li(class = "dropdown",
+                  #        tags$a(href="http://twitter.com/share?url=http://ccb.jhu.edu/pavian&amp;text=Explore metagenomics data with @pavian ", target="_blank", tags$img(icon('twitter')))),
                   tags$li(class = "dropdown",
                           tags$a(href="http://github.com/fbreitwieser/pavian", target="_blank", tags$img(icon('github'))))
                   ),
@@ -51,11 +51,9 @@ ui <- dashboardPage(skin="blue",
       menuItemOutput("dy_menu_sample"),
       menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
       menuItem("About", tabName = "About")),
-    br(), br(), br(),
-    tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
-    tags$p(class="sidebartext", "Or view alignments and download genomes in the 'Alignment viewer'."),
+    uiOutput("sidebartext"),
     br(),
-    tags$p(class="sidebartext", "@fbreitwieser, 2016")
+    tags$p(class="sidebartext", "@fbreitw, 2016")
     ),
   dashboardBody(
     useShinyjs(),
@@ -109,6 +107,15 @@ server <- function(input, output, session) {
              menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
     )
   })
+  output$sidebartext <- renderUI({
+    if (is.null(input$def_files) || input$def_files == "") {
+    shiny::tagList(
+    br(),
+    tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
+    tags$p(class="sidebartext", "Or view alignments and download genomes in the 'Alignment viewer'."))
+    br(),
+    }
+  })
 
   output$dy_menu_sample <- renderMenu({
     req(input$def_files)
@@ -126,6 +133,7 @@ server <- function(input, output, session) {
 
   sample_sets_df <- callModule(dataInputModule, "datafile", height = 800,
                                example_dir = getOption("pavian.example_dir", system.file("shinyapp", "example-data", package = "pavian")))
+
 
   observeEvent(sample_sets_df(),{
     if (length(sample_sets_df()$val) > 0) {
