@@ -14,8 +14,8 @@ bibliography: /home/fbreitwieser/Dropbox/work/manuscripts/pavian-manuscript/pavi
 2) Look at the overall statistics across the samples
 3) Compare the classification across samples
     - in specific domains
-    - interactive table or heatmap
-4) Zoom into one sample - flow chart or sunburst diagram
+    - through an interactive table or heatmap
+4) Zoom into one sample using a flow chart or sunburst diagram
 5) Zoom into one pathogen in one sample 
     - view the alignment on the genome
 

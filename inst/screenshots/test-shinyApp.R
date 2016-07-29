@@ -23,6 +23,7 @@ remDr$screenshot(display = DISPLAY, useViewer = FALSE, file="load-data-set.png")
 
 menu_results <- remDr$findElement(using="css selector","#dy_menu_overview > a:nth-child(1)")
 menu_results$clickElement()
+# ... wait until samples are loaded
 remDr$setWindowSize(1200,600)
 remDr$screenshot(display = DISPLAY, useViewer = FALSE, file="results-overview.png")
 
@@ -31,6 +32,7 @@ menu_comp$clickElement()
 menu_comp1 <- remDr$findElement(using="css selector",".treeview-menu > li:nth-child(1) > a:nth-child(1)")
 menu_comp1$clickElement()
 remDr$setWindowSize(1200,1000)
+# wait
 remDr$screenshot(display = DISPLAY, file="menu-comp.png")
 
 heatmap_tab <- remDr$findElement(using="css selector","#shiny-tab-Comparison > div:nth-child(3) > div:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)")
@@ -48,8 +50,18 @@ remDr$screenshot(display = DISPLAY, file="flow-pt1.png")
 ## TODO: Select PT5 by hand
 remDr$screenshot(display = DISPLAY, file="flow-pt5.png")
 
+## Click sunburst, screenshot
+remDr$findElement(using="css selector","div.tabbable:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)")$clickElement()
+# TODO: Screenshot
 
-## TODO: Click sunburst, screenshot
-
-## TODO: Click alignment viewer - show alignment pileup - select area
+## Click alignment viewer - show alignment pileup - select area
+remDr$findElement(using="css selector","#tabs > li:nth-child(5) > a:nth-child(1)")$clickElement()
+remDr$findElement(using="css selector","#alignment-btn_get_alignment")$clickElement()
+## TODO: select region of the genome
 remDr$screenshot(display = DISPLAY, file="alignment_viewer-pt5.png")
+
+## Download genomes
+remDr$findElement(using="css selector","div.tabbable:nth-child(2) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)")$clickElement()
+## TODO: Select viral and 'Get assembly info', search for JC Pol and select table entry
+remDr$setWindowSize(1200,800)
+remDr$screenshot(display = DISPLAY, file="download-genome-jcv.png")
