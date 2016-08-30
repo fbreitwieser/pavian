@@ -238,7 +238,8 @@ comparisonModule <- function(input, output, session, samples_df, reports,
       "function (oSettings, json) {
       $('.spark:not(:has(canvas))').sparkline('html', {
       type: 'bar',
-      highlightColor: 'orange'
+      highlightColor: 'orange',
+      chartRangeMin: 0
       });
   }"
     )

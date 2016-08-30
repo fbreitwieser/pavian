@@ -113,7 +113,7 @@ server <- function(input, output, session) {
     br(),
     tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
     tags$p(class="sidebartext", "Or view alignments and download genomes in the 'Alignment viewer'."))
-    br(),
+    br()
     }
   })
 
