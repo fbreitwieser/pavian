@@ -40,24 +40,29 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
     utils::str(input$dt_samples_overview_state)
   })
 
-  ## Samples overview output
-  output$dt_samples_overview <- DT::renderDataTable({
-
+  get_samples_summary <- reactive( {
     validate(need(samples_df(), message = "No data available."))
     validate(need(reports(), message = "No data available."))
 
+    withProgress({
+    ## Create summaries of all reports
     samples_summary <- do.call(rbind, lapply(reports(), summarize_report))
     samples_summary$Name <- rownames(samples_summary)
     #samples_summary$FileName <- samples_df()[,"ReportFile"]
     extra_cols <- c("Name")
     samples_summary <- samples_summary[,c(extra_cols, setdiff(colnames(samples_summary),extra_cols))]
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
+    samples_summary
+    }, message = "Summarizing sample contents ... ")
+  })
 
-    start_color_bar_at <- length(extra_cols) + 1
+  ## Samples overview output
+  output$dt_samples_overview <- DT::renderDataTable({
+
+    samples_summary <- get_samples_summary()
+
+    start_color_bar_at <- 2  ## length of extra_cols + 1
     number_range <-  c(0, max(samples_summary[, start_color_bar_at], na.rm = TRUE))
-
-    columnDefs <- list()
-    rowCallback <- NULL
 
     if (isTRUE(input$opt_samples_overview_percent)) {
       ## add a custom renderer.
@@ -65,31 +70,8 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
       number_range <- c(0, 100)
       samples_summary[, start_color_bar_at:ncol(samples_summary)] <-
         100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, start_color_bar_at], `/`), 2)
-      columnDefs = list(list(
-        targets = start_color_bar_at:(ncol(samples_summary)),
-        render = htmlwidgets::JS(
-          "function(data, type, row, meta) {",
-          "value = (100 * data / row[1]).toPrecision(3)",
-          "backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
-          "return type === 'display' ?",
-          "'<span title=\"' + data + ' reads\">' + value + '</span>' : data;",
-          "}")))
 
-      rowCallback = htmlwidgets::JS(
-        "function(row, data) {",
-        sprintf(" for (i = %s; i < %s; i++) { ",start_color_bar_at - 1, ncol(samples_summary)-1),
-        " value = data[i]",
-        " perc = (100 * data / data[",start_color_bar_at,"]).toPrecision(3)",
-        " backgroundValue =",DT::styleColorBar(c(0,100), 'lightblue')[1],
-        " $('td', row).eq(i).css('background',backgroundValue); ",
-        " $('td', row).eq(i).css('background-repeat','no-repeat'); ",
-        " $('td', row).eq(i).css('background-position','center'); ",
-        " $('td', row).eq(i).css('background-size','98% 88%') }",
-        " var span = $('<span title=\"'+value+' reads\">some text</span>');",
-        " $('td', row).eq(i).html('ABC')",
-        #" $('td', row).eq(i).text('<span title=\"'+value+' reads\">' + perc + '</span>')",
-        "}"
-      )
+      ## TODO: Define columnDefs and give read counts on mouse-over
     }
 
     styleColorBar2 = function(data, color, angle=90) {
@@ -135,7 +117,7 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
 
      if (isTRUE(input$opt_samples_overview_percent)) {
        dt <- dt %>%
-         DT::formatCurrency(start_color_bar_at, currency = '', digits = 0) %>%
+         DT::formatCurrency(start_color_bar_at - 1, currency = '', digits = 0) %>%
          DT::formatString(seq(from=start_color_bar_at, to=ncol(samples_summary)),
                       suffix = '%')  ## TODO: display as percent
     #   ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round

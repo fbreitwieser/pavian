@@ -17,13 +17,13 @@ dataInputModuleUI <- function(id) {
         background = "green",
         collapsible = TRUE,
         collapse = TRUE,
-        "You can upload Kraken and Centrifuge report files, or load an example data set.",
+        "You can upload Kraken and Centrifuge report files, biom format files, or load the example data set.",
         fileInput(ns("file_upload"), "", multiple = TRUE),
-        shinyjs::hidden(textInput(ns("txt_data_dir"),label="Directory (on server)",
+        textInput(ns("txt_data_dir"),label="Directory (on server)",
                   value = system.file("shinyapp","example-data", package = "pavian"),
-                  width = "100%")),
-        shinyjs::hidden(actionButton(ns("btn_set_data_dir"), "Set directory")),
-        actionButton(ns("btn_load_example"), "Load example data")
+                  width = "100%"),
+        actionButton(ns("btn_reset_server_dir"), "Re-set directory"),
+        actionButton(ns("btn_load_server_dir"), "Load directory")
     ),
     br(),
     shinyjs::hidden(
@@ -40,7 +40,6 @@ dataInputModuleUI <- function(id) {
     )))
   )
 }
-
 
 
 #' Server part of pavian data input module
@@ -64,9 +63,11 @@ dataInputModule <- function(input, output, session,
   if (is.null(example_dir))
     example_dir <- system.file("shinyapp","example-data", package = "pavian")
 
+  updateTextInput(session, "txt_data_dir", value = example_dir)
+
   sample_sets <- reactiveValues(val = data.frame())
 
-  set_data_dir <- function(data_dir) {
+  read_server_directory <- function(data_dir) {
     shinyjs::show("sample_set_box")
     dirs <- list.dirs(data_dir, recursive = FALSE)
     new_sample_sets <- lapply(list.dirs(data_dir, recursive = FALSE), get_reports_def_df)
@@ -80,9 +81,9 @@ dataInputModule <- function(input, output, session,
     updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(new_sample_sets)[1])
   }
 
-  observeEvent(input$btn_load_example, {
-    withProgress(message = "Reading example directory reports ...", {
-      set_data_dir(example_dir)
+  observeEvent(input$btn_load_server_dir, {
+    withProgress(message = "Reading server directory ...", {
+      read_server_directory(input$txt_data_dir)
     })
 
   })
@@ -90,7 +91,6 @@ dataInputModule <- function(input, output, session,
   update_sample_set_hot <- reactive({
     req(input$table)
     req(input$sample_sets)
-    message("Save")
     str(rhandsontable::hot_to_r(input$table))
     sample_sets$val[[input$sample_sets]] <<- rhandsontable::hot_to_r(input$table)
   })
@@ -106,15 +106,15 @@ dataInputModule <- function(input, output, session,
     }
 
     updateTextInput(session, "txt_data_dir", value = dirname(inFile$datapath[1]))
-    set_data_dir(dirname(inFile$datapath[1]))
+    read_server_directory(dirname(inFile$datapath[1]))
   })
 
-  observeEvent(input$btn_set_data_dir, {
+  observeEvent(input$btn_read_server_directory, {
     #update_sample_set_hot()
     validate(need(input$txt_data_dir, message = "Need input$txt_data_dir."),
              need(dir.exists(input$txt_data_dir), message = "Need input$txt_data_dir as directory."))
 
-    set_data_dir(input$txt_data_dir)
+    read_server_directory(input$txt_data_dir)
   })
 
   get_def_df <- reactive({

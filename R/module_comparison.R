@@ -24,19 +24,29 @@ comparisonModuleUI <- function(id) {
     fluidRow(
       box(width=6, background = "green",
           column(6,
+                 selectizeInput(ns("opt_statistic"),
+                                label = " Summarization statistic",
+                                choices = c("Mean", "Median", "Max", "Sd",
+                                            "Maximum absolute deviation", "Max Z-score"),
+                                selected = "Mean"),
+                 checkboxInput(ns("opt_display_percentage"),
+                               label = "Normalize by sample reads",
+                               value = FALSE),
+                 checkboxInput(ns("opt_log_data"),
+                               label = "Apply variance-stabilizing transformation",
+                               value = FALSE),
+                 checkboxInput(ns("opt_zscore"),
+                               label = " Robust z-score",
+                               value = FALSE)
+                 ),
+          column(6,
                  selectizeInput(
+
                    ns("opt_classification_level"),
                    label = "Taxon level",
                    choices = taxon_levels,
                    selected = "-"
                  ),
-                 checkboxInput(ns("opt_display_percentage"),
-                               label = "Show percentages",
-                               value = FALSE),
-                 checkboxInput(ns("opt_zscore"),
-                               label = "z-score",
-                               value = FALSE)),
-          column(6,
                  radioButtons(
                    ns("opt_show_reads_stay"),
                    label = "",
@@ -44,10 +54,10 @@ comparisonModuleUI <- function(id) {
                      "Reads at taxon" = "reads_stay",
                      "Reads at taxon or lower" = "reads",
                      "both"
-                   )),
-                 checkboxInput(ns("opt_remove_root_hits"),
-                               label = "Do not show reads that stay at the root",
-                               value = TRUE)
+                   ))#,
+                 #checkboxInput(ns("opt_remove_root_hits"),
+                #               label = "Do not show reads that stay at the root",
+                #               value = TRUE)
 
           )
       ),
@@ -89,8 +99,9 @@ comparisonModuleUI <- function(id) {
         div(style = 'overflow-x: scroll',
             DT::dataTableOutput(ns('dt_samples_comparison'))),
         actionButton(ns("btn_sc_filter"), "Filter"),
-        actionButton(ns("btn_sc_gointo"), "Go Into"),
-        shiny::htmlOutput(ns("txt_samples_comparison"))
+        actionButton(ns("btn_sc_gointo"), "Go Into")#,
+        #shiny::htmlOutput(ns("txt_samples_comparison")),
+        #DT::dataTableOutput(ns("row_details_table"))
       ),
       tabPanel("Heatmap",
                fluidRow(
@@ -119,6 +130,16 @@ comparisonModuleUI <- function(id) {
   )
 }
 
+
+stat_name_to_f <- list(
+  "Mean"=mean,
+  "Median"=median,
+  "Max"=max,
+  "Standard deviation"=sd,
+  "Sd"=sd,
+  "Maximum absolute deviation"=function(x) { max(x - median(x)) },
+  "Max Z-score"=function(x) { (max(x) - median(x))/max(1,mad(x)) }
+)
 
 
 
@@ -159,28 +180,79 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     filtered_reports()[unique(sort(selected))]
   })
 
-  summarized_report <- reactive({
-    my_reports <- selected_reports()
+  get_summarized_report_reads_stay <- reactive({
+    get_summarized_report2(reports_filtered(), "reads_stay")
+  })
+
+  get_summarized_report_reads_clade <- reactive({
+    get_summarized_report2(reports_filtered(), "reads")
+  })
+
+  reports_filtered <- reactive({
+    ## filter reports, if a filter function is given to the module
     if (!is.null(filter_func)) {
-      my_reports <- lapply(my_reports, filter_func)
+      lapply(selected_reports(), filter_func)
+    } else {
+      selected_reports()
     }
-    if (input$opt_remove_root_hits) {
-      for (nn in names(my_reports)) {
-        sel <- my_reports[[nn]]$name == "-_root"
-        if (any(sel))
-          my_reports[[nn]][sel,"reads_stay"] <- 0
-      }
+  })
+
+  get_summarized_report1 <- reactive({
+    if (input$opt_show_reads_stay == "reads") {
+      get_summarized_report_reads_clade()
+    } else {
+      get_summarized_report_reads_stay()
     }
-    withProgress(message="Combining sample reports ...",{
-      get_summarized_report(
-        my_reports,
-        input$opt_display_percentage,
-        input$opt_zscore,
-        input$opt_show_reads_stay,
-        input$opt_classification_level#,
-        #input$opt_remove_root_hits  ## TODO: Consider adding it back in
-      )
-    })
+  })
+
+  get_summarized_reportc <- reactive({
+    summarized_report <- withProgress(message="Combining sample reports ...", { get_summarized_report1() })
+
+    str(summarized_report)
+    if (req(input$opt_classification_level) != "-") {
+      summarized_report <- summarized_report[summarized_report[["Level"]] %in% input$opt_classification_level,]
+    }
+    summarized_report
+  })
+
+  get_summarized_reportp <- reactive({
+    withProgress(message="Normalizing samples ...", { get_summarized_reportc() %>% normalize_data_cols() })
+  })
+
+
+  r_summarized_report <- reactive({
+
+    if (isTRUE(input$opt_display_percentage)) {
+      summarized_report <- get_summarized_reportp()
+    } else {
+      summarized_report <- get_summarized_reportc()
+    }
+
+    if (isTRUE(input$opt_log_data)) {
+      summarized_report <- withProgress(message="Logging data ...", { summarized_report %>% log_data_cols() })
+    }
+
+    if (isTRUE(input$opt_zscore)) {
+      summarized_report <- withProgress(message="Calculating z-score ...", {
+        summarized_report %>% calc_robust_zscore(min_scale=ifelse(isTRUE(input$opt_display_percentage), 0.001, 1))
+        })
+    }
+
+    validate(need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"))
+    data_cols <- attr(summarized_report, "data_columns")
+    round_digits <- ifelse(isTRUE(input$opt_display_percentage), 3, 1)
+    summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
+
+    colnames(summarized_report)[colnames(summarized_report) == "STAT"] <- input$opt_statistic
+    summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols]), round_digits), 1, paste0, collapse = ",")
+    colnames(summarized_report)[colnames(summarized_report) == "OVERVIEW"] <- "Overview"
+
+    if (isTRUE(input$opt_display_percentage) || isTRUE(input$opt_zscore)) {
+      summarized_report[,data_cols] <- signif(summarized_report[,data_cols], 3)
+    }
+
+    summarized_report
+
   })
 
   observeEvent(samples_df, {
@@ -191,38 +263,31 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
   output$dt_samples_comparison <- DT::renderDataTable({
 
-    summarized_report <- summarized_report()
-    validate(need(summarized_report, message = "No data"))
+    summarized_report <- r_summarized_report()
+    validate(need(summarized_report, message = "No data"),
+             need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"),
+             need(attr(summarized_report, 'taxonid_column'), message = "taxonid_data_columns NULL"),
+             need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
 
     idx_data_columns <- attr(summarized_report, 'data_columns')
-    colnames(summarized_report)[idx_data_columns] <-
-      sub(".*/", "", colnames(summarized_report)[idx_data_columns])
 
-    ## use columnDefs to convert column 2 (1 in javascript) into span elements with the class spark
-    sparklineColumnDefs <- list(
-      #list(targets = 0, searchable=TRUE,
-      #     render = htmlwidgets::JS(ifelse(input$opt_classification_level=="S",
-      #                     "function(data, type, full){ return '<i>'+data+'</i>'; }",  ## layout species names in italic
-      #                     "function(data, type, full){ return data; }"
-      #                     ))),
+    show_rownames <- FALSE
+    zero_col <- ifelse(show_rownames, 0, 1)
+
+    columnDefs <- list(
+      ## Make taxonid column link-able
       list(
-        targets = attr(summarized_report, 'taxonid_column') - 1,
+        targets = attr(summarized_report, 'taxonid_column') - zero_col,
         render = htmlwidgets::JS(
           "function(data, type, full){
           return '<a href=\"http://www.ncbi.nlm.nih.gov/genome/?term=txid'+data+'[Organism:exp]\" target=\"_blank\">' + data + '</a>'
   }"
         )
       ),
+      list(targets = attr(summarized_report, 'stat_column') - zero_col, orderSequence = c('desc', 'asc'), width = "80px" ),       ## Stat column
+      list(targets = attr(summarized_report, 'data_columns') - zero_col, orderSequence = c('desc', 'asc'), searchable = FALSE ),  ## Data columns shouldn't be searchable
       list(
-        targets = attr(summarized_report, 'mean_column') - 1,
-        width = "80px"
-      ),
-      list(
-        targets = attr(summarized_report, 'data_columns') - 1,
-        searchable = FALSE
-      ),
-      list(
-        targets = which(colnames(summarized_report) == "Overview") - 1,
+        targets = which(colnames(summarized_report) == "Overview") - zero_col,
         searchable = FALSE,
         render = htmlwidgets::JS(
           "function(data, type, full){
@@ -232,88 +297,58 @@ comparisonModule <- function(input, output, session, samples_df, reports,
       )
     )
 
+    ## parse search term from query
+    query <- parseQueryString(session$clientData$url_search)
+
     ## define a callback that initializes a sparkline on elements which have not been initialized before
     ##   this is essential for pagination
     sparklineDrawCallback = htmlwidgets::JS(
-      "function (oSettings, json) {
-      $('.spark:not(:has(canvas))').sparkline('html', {
-      type: 'bar',
-      highlightColor: 'orange'
-      });
-  }"
+      "function (oSettings, json) { $('.spark:not(:has(canvas))').sparkline('html', { type: 'bar', highlightColor: 'orange', chartRangeMin: 0 }); }"
     )
+
+    dt <- DT::datatable(summarized_report,
+                         filter = "top",
+                         escape = FALSE,
+                         rownames = show_rownames,
+                         selection = "single",
+                         extensions = c('Buttons'),
+                         options = list(columnDefs = columnDefs,
+                                        dom = 'Bfrtip',
+                                        buttons = c('pageLength', 'colvis', 'pdf', 'excel' , 'csv', 'copy'),
+                                        lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All')),
+                                        pageLength = 10,
+                                        #autoWidth = TRUE,
+                                        drawCallback = sparklineDrawCallback,
+                                        order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
+                                        search = list(
+                                          search = ifelse("search" %in% names(query), query['search'], ""),
+                                          regex = TRUE, caseInsensitive = FALSE
+                                        ))
+                         )
+
 
     ## TODO: Consider adding more information in child rows: https://rstudio.github.io/DT/002-rowdetails.html
     ##  For example: taxonomy ID, links to assemblies (e.g. www.ncbi.nlm.nih.gov/assembly/organism/821)
     ##   and organism overview http://www.ncbi.nlm.nih.gov/genome/?term=txid821[Organism:noexp]
 
-    #colnames(summarized_report) <- gsub("_","_<wbr>",colnames(summarized_report))
 
-    query <- parseQueryString(session$clientData$url_search)
-
-    # Return a string with key-value pairs
-
-    dt <-
-      DT::datatable(
-        #cbind(
-        #  Delete = shinyInput(
-        #    actionButton,
-        #    nrow(summarized_report),
-        #    'button_',
-        #    label = "Delete",
-        #    onclick = 'Shiny.onInputChange(\"select_button\",  this.id)'
-        #  ),
-        summarized_report,
-        #),
-        filter = "top",
-        escape = FALSE,
-        extensions = c('Buttons'),
-        options = c(
-          datatable_opts,
-          list(
-
-            dom = 'Bfrtip'
-            , buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy')
-            #, buttons = c('pageLength', 'colvis', 'excel', 'pdf')                             # pageLength / colvis / excel / pdf
-            , lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All'))
-            , pageLength = 10,
-            columnDefs = sparklineColumnDefs,
-            autoWidth = TRUE,
-            drawCallback = sparklineDrawCallback,
-            order = list(attr(summarized_report, 'mean_column') - 1, "desc"),
-            search = list(
-              search = ifelse("search" %in% names(query), query['search'], ""),
-              regex = TRUE,
-              caseInsensitive = FALSE
-            )   ## add regular expression search
-          )
-        ),
-        rownames = FALSE,
-        selection = 'single'
-      )
-
+    ## Give the correct format to the columns: thousands separators for numbers, and percent sign for percents
     if (!isTRUE(input$opt_display_percentage) && !isTRUE(input$opt_zscore)) {
-      dt <-
-        dt %>% DT::formatCurrency(
-          attr(summarized_report, 'mean_column'),
-          currency = '',
-          digits = 1
-        ) %>%
-        DT::formatCurrency(
-          attr(summarized_report, 'data_columns'),
-          currency = '',
-          digits = 0
-        )
+      dt <- dt %>%
+        DT::formatCurrency(attr(summarized_report, 'stat_column'), currency = '', digits = 1 ) %>%
+        DT::formatCurrency(attr(summarized_report, 'data_columns'), currency = '', digits = 0 )
     } else {
       suffix <- ifelse(isTRUE(input$opt_zscore),"","%")
-      dt <-
-        dt %>% DT::formatString(attr(summarized_report, 'mean_column'), suffix = suffix) %>%
+      dt <- dt %>%
+        DT::formatString(attr(summarized_report, 'stat_column'), suffix = suffix) %>%
         DT::formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
     }
 
+    ## Add color bar
+    str(summarized_report[,attr(summarized_report, 'data_columns')])
     dt <- dt %>% DT::formatStyle(
       attr(summarized_report, 'data_columns'),
-      background = DT::styleColorBar(summarized_report$Mean, 'lightblue'),
+      background = DT::styleColorBar(range(summarized_report[,attr(summarized_report, 'stat_column')],na.rm=TRUE), 'lightblue'),
       backgroundSize = '100% 90%',
       backgroundRepeat = 'no-repeat',
       backgroundPosition = 'center'
@@ -341,6 +376,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
                                  200 + length(selected_rows) * 15,
                                  "px"
                                ))
+    plotOutput(ns("my_pheatmap"))
   })
 
 
@@ -368,9 +404,33 @@ comparisonModule <- function(input, output, session, samples_df, reports,
       xaxis_height = 200,
       xaxis_font_size = "10pt",
       yaxis_font_size = "10pt",
-      colors = grDevices::colorRampPalette(c("blue", "white", "red"))(100)
+      colors = grDevices::colorRampPalette(rev(RColorBrewer::brewer.pal(n=7,name="RdYlBu")))(100)
     )
   })
+
+  output$my_pheatmap <- renderPlot({
+    #req(input$dt_samples_comparison_rows_current)
+    selected_rows <- input$dt_samples_comparison_rows_current
+
+    #selected_rows <- 1:50
+
+    sr <- r_summarized_report()
+    report_mat <- as.matrix(sr[, attr(sr, "data_columns")])
+    rownames(report_mat) <- gsub("^[a-z-]_", "", sr[, 1])
+
+
+    report_mat <-
+      zero_if_na(report_mat[selected_rows, ])
+    report_mat[report_mat < 0] <- 0
+
+    pheatmap::pheatmap(
+      report_mat,
+      cluster_rows = "row" %in% input$heatmap_cluster,
+      cluster_cols = "column" %in% input$heatmap_cluster,
+      scale = input$heatmap_scale
+      )
+  })
+
 
   output$cluster_plot <- renderPlot({
     my_reports <- selected_reports()
@@ -406,57 +466,45 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     )
   })
 
-  output$txt_samples_comparison <- reactive({
+  output$row_details_table <- DT::renderDataTable({
+    req(input$dt_samples_comparison_rows_selected)
+    sel <- input$dt_samples_comparison_rows_selected
+
+    data_columns <- attr(get_summarized_reportc(), "data_columns")
+
+    res <- data.frame(
+      Sample = colnames(get_summarized_reportc())[data_columns],
+      "Number of reads" = as.numeric(get_summarized_reportc()[sel, data_columns]),
+      "Percent of reads in sample" = signif(as.numeric(get_summarized_reportp()[sel, data_columns]),5),
+      check.names = FALSE
+    )
+
+    DT::datatable(res, rownames = FALSE, options=list(autoWidth = FALSE)) %>%
+      DT::formatCurrency(2, currency = '', digits = 0 ) %>%
+      DT::formatString(3, suffix = "%")
+  })
+
+  output$txt_samples_comparison <- renderUI({
     req(input$dt_samples_comparison_rows_selected)
     selected_row <-
-      zero_if_na(summarized_report()[input$dt_samples_comparison_rows_selected, ])
+      zero_if_na(r_summarized_report()[input$dt_samples_comparison_rows_selected, ])
     #is_domain <- input$opt_classification_level == "D"
     is_domain <- FALSE
     data_columns <- attr(selected_row, "data_columns")
     taxid <- selected_row[, "Taxonid"]
-    sprintf(
-      "
-      <h3>%s</h3>
-      NCBI links: <a href='http://www.ncbi.nlm.nih.gov/genome/?term=txid%s[Organism:noexp]'>Organism overview</a>, <a href='www.ncbi.nlm.nih.gov/assembly/organism/%s/latest'>Assemblies</a>
-      (taxid %s)
-      <br/>
-      Lineage: %s
-      </br>
-      <p>
-      <table>
-      <thead>
-      <tr>Sample<th></th><th>Number of reads</th></tr>
-      </thead>
-      %s
-      </table>
-      </p>
-      ",
-      selected_row$Name,
-      taxid,
-      taxid,
-      taxid,
-      ifelse(is_domain, "", gsub(
-        "\\|._",
-        "; ",
-        sub("-_root\\|", "", selected_row$Taxonstring)
-      )),
-      paste0(
-        sprintf(
-          "<tr><th>%s</th><td align='right'>%s</td><td><a href='%s'>&rarr;  align</a></td></tr>",
-          colnames(selected_row)[data_columns],
-          selected_row[, data_columns],
-          "test"
-        ),
-        collapse = "\n"
-      )
-    )
+    tagList(
+      h3(selected_row$Name),
+      "NCBI links: ",
+      a(href=sprintf('http://www.ncbi.nlm.nih.gov/genome/?term=txid%s[Organism:noexp]', taxid),"Organism overview"),", ",
+      a(href=sprintf('http://www.ncbi.nlm.nih.gov/assembly/organism/%s/latest', taxid), "Assemblies"),
+      selected_row$Taxonstring)
+
   })
 
   observeEvent(input$btn_sc_filter, {
     req(input$dt_samples_comparison_rows_selected)
     ## TODO: How to get current choices from selectizeInput?
-    taxonstring <-
-      summarized_report()[input$dt_samples_comparison_rows_selected, "Taxonstring"]
+    taxonstring <- r_summarized_report()[input$dt_samples_comparison_rows_selected, "Taxonstring"]
     selected_path <- strsplit(taxonstring, "|", fixed = TRUE)[[1]]
     selected_name <- selected_path[length(selected_path)]
     message("filtering ", selected_path[length(selected_path)])
@@ -473,8 +521,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
   observeEvent(input$btn_sc_gointo, {
     req(input$dt_samples_comparison_rows_selected)
-    taxonstring <-
-      summarized_report()[input$dt_samples_comparison_rows_selected, "Taxonstring"]
+    taxonstring <- r_summarized_report()[input$dt_samples_comparison_rows_selected, "Taxonstring"]
     selected_path <- strsplit(taxonstring, "|", fixed = TRUE)[[1]]
     selected_name <- selected_path[length(selected_path)]
 

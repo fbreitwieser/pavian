@@ -27,12 +27,24 @@ beautify_string <- function(x) {
   x
 }
 
+
+#' Beautify colnames
+#'
+#' @param x data.frame or matrix
+#'
+#' @return data.frame or matrix with nicer colnames
+#' @export
 beautify_colnames <- function(x) {
   colnames(x) <- beautify_string(colnames(x))
   x
 }
 
-## helper function that sets NAs to zeros in a supplied data.frame
+#' Helper function that sets NAs to zeros in a supplied data.frame
+#'
+#' @param df data.frame or matrix
+#'
+#' @return data.frame or matrix in which all negative and NA values are set to zero
+#' @export
 zero_if_na <- function(df) {
   df[is.na(df) | df < 0] <- 0
   return(df)

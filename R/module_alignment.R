@@ -48,6 +48,7 @@ With bowtie2
     tabsetPanel(
       tabPanel(
         title = "View alignment",
+        infoBoxOutput(ns("warn_Rsamtools"), width = 12),
         box(width = 12,
             shiny::fileInput(ns("bam_file"),"Choose BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE),
             #shinyFileTree::shinyFileTreeOutput(ns("bam_files_tree")),
@@ -67,7 +68,7 @@ With bowtie2
                 div(class="span6",
                     shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="35%"))),
             div(style = 'overflow-x: scroll', DT::dataTableOutput(ns("dt_assembly_info"))),
-            verbatimTextOutput(ns("dl_genome"))
+            htmlOutput(ns("dl_genome"))
         )
       )
     )
@@ -87,7 +88,33 @@ With bowtie2
 #' @import shinydashboard
 alignmentModule <- function(input, output, session, samples_df) {
 
+  if (!require(RSamtools, quietly=TRUE)) {
+    shinyjs::disable("bam_file")
+    shinyjs::disable("btn_get_alignment")
+    shinyjs::disable("align_loess")
+    shinyjs::disable("align_moving_avg")
+  }
+
+  output$warn_Rsamtools <- renderInfoBox({
+    if (!require(RSamtools, quietly=TRUE)) {
+      valueBox(
+        "Functionality requires package Rsamtools",
+        "See https://bioconductor.org/packages/release/bioc/html/Rsamtools.html for installation instructions.",
+        icon = icon("exclamation-triangle"),
+        color = "red", width = 12
+      )
+    }
+  })
+
+  req_bioc <- function(pkg) {
+    req(require(pkg))
+    validate(need(require(pkg, character.only=TRUE, quietly=TRUE), message=sprintf(
+      "%s is needed for this functionality. See https://bioconductor.org/packages/release/bioc/html/%s.html for information on how to install it",
+      pkg, pkg)))
+  }
+
   bam_file <- reactive({
+    req_bioc("RSamtools")
     bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
     if (!is.null(input$bam_file)) {
       validate(need(
@@ -105,6 +132,7 @@ alignmentModule <- function(input, output, session, samples_df) {
   })
 
   plot_pileup_act <- eventReactive(input$btn_get_alignment, {
+    req_bioc("RSamtools")
     plot_pileup(pileup(), nreads(), seq_lengths(),
                 input$align_loess,
                 text_size = 4
@@ -118,6 +146,7 @@ alignmentModule <- function(input, output, session, samples_df) {
 
 
   output$sample_align <- renderPlot({
+    req_bioc("RSamtools")
     plot_pileup_act()
   })
 
@@ -181,7 +210,7 @@ alignmentModule <- function(input, output, session, samples_df) {
                  fill = TRUE,
                  header = FALSE
       )
-    }, message = "Parsing assembly info ... ")
+    }, message = "Downloading and parsing assembly info ... ")
 
     ai <- ai[ai$Version == "latest", setdiff(colnames(ai), "Version")]
 
@@ -204,12 +233,11 @@ alignmentModule <- function(input, output, session, samples_df) {
 
     DT::datatable(
       ai,
-      filter = 'top',
-      selection = 'single'
+      filter = 'top'
     )
   })
 
-  output$dl_genome <- renderPrint({
+  output$dl_genome <- renderUI ({
     req(input$dt_assembly_info_rows_selected)
     res <- assembly_info()[input$dt_assembly_info_rows_selected,]
 
@@ -218,14 +246,14 @@ alignmentModule <- function(input, output, session, samples_df) {
 
     myname <- sprintf("%s-%s-%s.fna", gsub("[ \\]","_", res$Name), res$TaxId, res$AC)
 
-    cat(
-      paste(res$Name, res$Strain),
-      dl_link,
-      "",
-      "To download and build an index, execute the following commands:",
-      sprintf("curl %s | gunzip -c > %s\n# Optional: sed -i '/^>/ s/ /_/g' %s\nbowtie2-build %s %s", dl_link, myname, myname, myname, myname),
-      "",
-      sep="\n"
+    shiny::tagList(
+      h3(res$Name, res$Strain),
+      p(a(dl_link,href=dl_link)),
+      p("To download and build an index, execute the following commands:"),
+      code(
+        sprintf("curl %s | gunzip -c > %s", dl_link, myname),
+        sprintf("# Optional: sed -i '/^>/ s/ /_/g' %s", myname),
+        sprintf("bowtie2-build %s %s", myname, myname))
     )
   })
 }
