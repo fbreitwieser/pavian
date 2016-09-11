@@ -177,9 +177,24 @@ dataInputModule <- function(input, output, session,
             sum(file.exists(report_files())))
   })
 
+  ## TODO: who to implement for Kraken / Centrifuge?
+  .reports <- reactive({
+    validate(
+      need("ReportFilePath" %in% colnames(selected_dataset()), "ReportFilePath not available!"),
+      need("Name" %in% colnames(selected_dataset()), "Name not available!")
+    )
+    read_reports(selected_dataset()$ReportFilePath, selected_dataset()$Name, cache_dir = cache_dir)
+  })
+
   return(function() {
-    attr(sample_sets$val, "selected") <<- input$sample_sets
-    sample_sets
+    #attr(sample_sets$val, "selected") <<- input$sample_sets
+    #sample_sets
+
+    library(phyloseq)
+    data(GlobalPatterns)
+    res <- list(GlobalPatterns=GlobalPatterns)
+    attr(res, "selected") <- "GlobalPatterns"
+    res
   })
 }
 

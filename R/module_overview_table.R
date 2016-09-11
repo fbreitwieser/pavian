@@ -21,14 +21,16 @@ reportOverviewModuleUI <- function(id) {
 #' @param input Shiny input object.
 #' @param output Shiyn output object.
 #' @param session Shiny session object.
-#' @param samples_df Samples \code{data.frame}.
+#' @param dataset Samples \code{data.frame}.
 #' @param reports List of reports.
 #' @param datatable_opts Additional options for datatable.
 #'
 #' @return Report overview module server functionality.
 #' @export
 #' @import shiny
-reportOverviewModule <- function(input, output, session, samples_df, reports, datatable_opts = NULL) {
+reportOverviewModule <- function(input, output, session,
+                                 count_table_glom, sample_data, tax_tree,
+                                 datatable_opts = NULL) {
   #r_state <- list()
 
   observeEvent(input$opt_samples_overview_percent, {
@@ -41,20 +43,48 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
   })
 
   get_samples_summary <- reactive( {
-    validate(need(samples_df(), message = "No data available."))
+    validate(need(dataset(), message = "No data available."))
     validate(need(reports(), message = "No data available."))
 
     withProgress({
     ## Create summaries of all reports
-    samples_summary <- do.call(rbind, lapply(reports(), summarize_report))
+    samples_summary <- do.call(rbind, lapply(dataset(), summarize_report))
     samples_summary$Name <- rownames(samples_summary)
-    #samples_summary$FileName <- samples_df()[,"ReportFile"]
+    #samples_summary$FileName <- dataset()[,"ReportFile"]
     extra_cols <- c("Name")
     samples_summary <- samples_summary[,c(extra_cols, setdiff(colnames(samples_summary),extra_cols))]
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))
     samples_summary
     }, message = "Summarizing sample contents ... ")
   })
+
+  summary_table() <- reactive( {
+    sample_names <- rownames(sample_data)
+    classified_reads <- colSums(counts_table_glom, na.rm = T)
+
+    if ("LibrarySize" %in% colnames(sample_data)) {
+      lib_size < sample_data[["LibrarySize"]]
+      unclassified_reads <- lib_size - classified_reads
+    } else {
+      lib_size <- classified_reads
+      unclassified_reads <- NA
+    }
+
+    counts_df <- data.frame(
+      Name  = sample_names,
+      "Library size"=lib_sizes,
+      "Classified reads"=classified_reads,
+      "Unclassified reads"=unclassified_reads)
+
+    sel_chordata <- which(tax_tree$Level == "P" & tax_tree$Name == "Chordata")
+    if (length(sel_chordata) > 0) {
+      counts_df$Chordata <-  counts_table_glob[,sel_chordata]
+    }
+
+    sel_kingdom <- tax_tree$Level == "K"
+    cbind(counts_df, counts_table_glom[, sel_kingdom])
+
+  } )
 
   ## Samples overview output
   output$dt_samples_overview <- DT::renderDataTable({
