@@ -51,8 +51,8 @@ comparisonModuleUI <- function(id) {
                    ns("opt_show_reads_stay"),
                    label = "",
                    choices = c(
-                     "Reads at taxon" = "reads_stay",
-                     "Reads at taxon or lower" = "reads",
+                     "Reads by taxon" = "reads_stay",
+                     "Reads by taxon and children" = "reads",
                      "both"
                    ))#,
                  #checkboxInput(ns("opt_remove_root_hits"),
@@ -63,11 +63,11 @@ comparisonModuleUI <- function(id) {
       ),
       box(
         width = 6,
-        title = "Filter contaminants",
+        title = "Filter contaminant reads",
         selectizeInput(
           ns('contaminant_selector'),
           allcontaminants,
-          label = "At level",
+          label = "from taxon",
           selected = c("synthetic construct", "unclassified", "Homo sapiens"),
           multiple = TRUE,
           options = list(
@@ -79,7 +79,7 @@ comparisonModuleUI <- function(id) {
         ),
         selectizeInput(
           ns('contaminant_selector_clade'),
-          label = "At level and below",
+          label = "from taxon and its children",
           allcontaminants,
           selected = c(""),
           multiple = TRUE,
@@ -260,6 +260,10 @@ comparisonModule <- function(input, output, session, samples_df, reports,
                          choices=samples_df()[,"Name"], selected=samples_df()[,"Name"]
     )
   })
+
+  ## TODO: Consider working around heatmap issue w outputOptions
+  ##  works globally, though, and not in modules
+  ##  outputOptions(output, "dt_samples_comparison", suspendWhenHidden = FALSE)
 
   output$dt_samples_comparison <- DT::renderDataTable({
 

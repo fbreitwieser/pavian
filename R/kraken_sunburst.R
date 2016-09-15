@@ -6,7 +6,7 @@
 #' @return sunburst widget
 #' @export
 #'
-kraken_sunburst <- function(krakenres) {
+kraken_sunburst <- function(krakenres, ...) {
   if (nrow(krakenres) == 0)
     return()
 
@@ -37,5 +37,5 @@ kraken_sunburst <- function(krakenres) {
 
   sunburstR::sunburst(data.frame(V1=kk$taxonstring,V2=kk$reads_stay),
                       count=TRUE, breadcrumb=list(w=0, h=20,s=3,t=10)
-                      , legend=list(w=200, h=20, s=3, r=3))
+                      , legend=list(w=200, h=20, s=3, r=3), ...)
 }

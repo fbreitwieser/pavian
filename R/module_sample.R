@@ -1,4 +1,6 @@
 
+tax_levels <- c("D","K","P","C","O","F","G","S")
+
 #' UI part for sample module
 #'
 #' @param id Shiny namespace id
@@ -18,33 +20,32 @@ sampleModuleUI <- function(id) {
         )),
       box(width=6,
           selectizeInput(
-            ns('contaminant_selector'), label = "",
-            allcontaminants, selected = c("synthetic construct", "unclassified", "Homo sapiens"),
+            ns('contaminant_selector'), label = "Filter taxon and its children",
+            allcontaminants, selected = c("synthetic construct", "Homo sapiens"),
             multiple = TRUE,
             options = list(
               maxItems = 25, create = TRUE, placeholder = 'Filter clade'
             ),
             width = "100%"
           ),
-          checkboxInput(ns("opt_remove_root_hits"),
-                        label = "Do not show reads that stay at the root", value = TRUE))
+          shinyjs::hidden(checkboxInput(ns("opt_remove_root_hits"),
+                        label = "Do not show reads that stay at the root", value = FALSE))
+          )
     ),
     fluidRow(
       box(width=12,
-          tabsetPanel(
-            tabPanel("Flow diagram",
-                     sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
-                     #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
-                     div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%"))
-            ),
-            tabPanel("Sunburst",
-                     sunburstR::sunburstOutput(ns("sample_view_sunburst"), width = "100%")
-            ),
-            tabPanel("Table",
-                     div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_sample_view')))
-            ),
-            uiOutput(ns("view_in_samples_comparison"))
-          )
+        #tabsetPanel(position="left",
+        #  tabPanel("Flow diagram",
+                   sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
+                   checkboxGroupInput(ns("levels"),"",tax_levels,tax_levels, inline = TRUE),
+                   #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
+                   div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")),
+        #)
+        #  tabPanel("Sunburst", sunburstR::sunburstOutput(ns("sample_view_sunburst"), width = "100%"))
+        #),
+        verbatimTextOutput(ns("blu")),
+        div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_sample_view'))),
+        uiOutput(ns("view_in_samples_comparison"))
       )
     )
   )
@@ -75,8 +76,7 @@ sampleModule <- function(input, output, session, samples_df, reports,
     }
 
     my_report <- reports()[[input$sample_selector]]
-    if (is.null(my_report))
-      stop("No sample with that name")
+    validate(need(my_report, "No sample with that name"))
 
     ## filter contaminants
     for (c in input$contaminant_selector)
@@ -101,13 +101,33 @@ sampleModule <- function(input, output, session, samples_df, reports,
         length(input$sample_view_rows_all) > 0)
       my_report <- my_report[sort(input$sample_view_rows_all), ]
 
-    kraken_sunburst(my_report)
+    kraken_sunburst(my_report, colors = list(domain=all_names()))
+  })
+
+  observeEvent(input$sample_view_sankey_clicked, {
+    #update(session, "blu", input$sample_view_sankey_clicked)
+    req(dt_sample_view_proxy)
+
+    message(input$sample_view_sankey_clicked)
+    DT::updateSearch(dt_sample_view_proxy, list(global=input$sample_view_sankey_clicked))
+  })
+
+  output$blu <- renderText({
+    input$sample_view_sankey_clicked
+  })
+
+  all_names <- reactive ({
+    sub("^._","", sort(unique(unlist(sapply(reports(), function(x) x$name)))))
+  })
+
+  colourScale <- reactive({
+    colourScale <- networkD3::JS(sprintf("d3.scale.category20().domain([%s])",
+                              paste0('"',c(all_names(),"other"),'"',collapse=",")))
   })
 
   output$sample_view_sankey <- networkD3::renderSankeyNetwork({
     my_report <- sample_view_report()
-    if (length(my_report) == 0)
-      return()
+    req(my_report)
 
     # filter report with rows as selected in the table
     if (isTRUE(input$synchronize_table) &&
@@ -119,20 +139,44 @@ sampleModule <- function(input, output, session, samples_df, reports,
     #my_report$name <- sub("^._","",my_report$name)
     #eng <- get_nodes_and_links(my_report, 10)
 
-    my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth")]
     my_report <- my_report[utils::tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), ]
+    my_report <- subset(my_report, level %in% input$levels)
+    my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth", "level")]
 
     my_report <- my_report[!my_report$name %in% c('-_root','u_unclassified'), ]
     #my_report$name <- sub("^-_root.", "", my_report$name)
 
     splits <- strsplit(my_report$taxonstring, "\\|")
+
+    ## for the root nodes, we'll have to add an 'other' link to account for all reads
+    root_nodes <- sapply(splits[sapply(splits, length) ==2], function(x) x[2])
+
     sel <- sapply(splits, length) >= 3
     splits <- splits[sel]
 
-    links <- data.frame(do.call(rbind, lapply(splits, utils::tail, n=2)), stringsAsFactors = FALSE)
+    links <- data.frame(do.call(rbind,
+                                lapply(splits, function(x) utils::tail(x[x %in% my_report$name], n=2))), stringsAsFactors = FALSE)
     colnames(links) <- c("source","target")
-    links$value <- my_report$reads[sel]
-    nodes <- data.frame(name=unique(unlist(splits)),stringsAsFactors=FALSE)
+    links$value <- my_report[sel,"reads"]
+
+    my_levels <- input$levels[input$levels %in% my_report$level]
+    level_to_depth <- setNames(seq_along(my_levels)-1, my_levels)
+
+    nodes <- data.frame(name=my_report$name,
+                        depth=level_to_depth[my_report$level],
+                        value=my_report$reads,
+                        stringsAsFactors=FALSE)
+
+    for (node_name in root_nodes) {
+      diff_sum_vs_all <- my_report[my_report$name == node_name, "reads"] - sum(links$value[links$source == node_name])
+      if (diff_sum_vs_all > 0) {
+        nname <- paste("other", sub("^._","",node_name))
+        #nname <- node_name
+        #links <- rbind(links, data.frame(source=node_name, target=nname, value=diff_sum_vs_all, stringsAsFactors = FALSE))
+        #nodes <- rbind(nodes, nname)
+      }
+    }
+
     names_id = stats::setNames(seq_len(nrow(nodes)) - 1, nodes[,1])
     links$source <- names_id[links$source]
     links$target <- names_id[links$target]
@@ -140,7 +184,6 @@ sampleModule <- function(input, output, session, samples_df, reports,
 
     nodes$name <- sub("^._","", nodes$name)
     links$source_name <- nodes$name[links$source + 1]
-
 
     if (!is.null(links))
       networkD3::sankeyNetwork(
@@ -150,34 +193,47 @@ sampleModule <- function(input, output, session, samples_df, reports,
         Target = "target",
         Value = "value",
         NodeID = "name",
-        nodeWidth = 5,
+        NodeGroup = "name",
+        NodeDepth = "depth",
+        NodeValue = "value",
+        colourScale = colourScale(),
+        nodeWidth = 10,
         units = "reads",
         LinkGroup = "source_name",
         fontSize = 12,
+
         iterations = ifelse(is.null(input$iterations), 500, input$iterations),
-        sinksRight = FALSE
+        sinksRight = FALSE,
+        nodeStrokeWidth = 0,
+        zoom = T
       )
   })
 
+  dt_sample_view_proxy <- DT::dataTableProxy('sample-dt_sample_view')
   output$dt_sample_view <- DT::renderDataTable({
     my_report <- sample_view_report()
 
+    my_report$taxonstring <- sub("^-_root.","", my_report$taxonstring)
+    my_report$taxonstring <- sub("^._","", my_report$taxonstring)
     my_report$taxonstring <-
-      gsub("|", ">", my_report$taxonstring, fixed = TRUE)
+      gsub("\\|._", ">", my_report$taxonstring)
     my_report$level <- as.factor(my_report$level)
-    my_report$Percent <-
-      100 * signif(my_report$reads / sum(my_report$reads_stay, na.rm = TRUE), 3)
+    #my_report$Percent <-
+    #  100 * signif(my_report$reads / sum(my_report$reads_stay, na.rm = TRUE), 3)
     my_report$coverage <- NULL
     my_report$rankperc <- NULL
+    my_report$percentage <- NULL
+    my_report$name <- sub("^._", "", my_report$name)
 
     colnames(my_report) <- beautify_string(colnames(my_report))
     DT::datatable(
       my_report,
-      filter = 'top',
+      filter = 'none',
       selection = 'single',
-      options = datatable_opts
+      options = datatable_opts,
+      rownames = FALSE
     ) %>%
-      DT::formatString("Percent", suffix = "%") %>%
+      #DT::formatString("Percent", suffix = "%") %>%
       DT::formatCurrency(c("Reads", "Reads stay"),
                      digits = 0, currency = "")
 
