@@ -307,7 +307,13 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     ## define a callback that initializes a sparkline on elements which have not been initialized before
     ##   this is essential for pagination
     sparklineDrawCallback = htmlwidgets::JS(
-      "function (oSettings, json) { $('.spark:not(:has(canvas))').sparkline('html', { type: 'bar', highlightColor: 'orange', chartRangeMin: 0 }); }"
+      "function (oSettings, json) {
+        $('.spark:not(:has(canvas))').sparkline('html', {
+          type: 'bar',
+          highlightColor: 'orange',
+          chartRangeMin: 0
+        });
+      }"
     )
 
     dt <- DT::datatable(summarized_report,

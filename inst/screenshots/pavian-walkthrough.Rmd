@@ -1,10 +1,10 @@
 ---
 title: "Pavian walkthrough with metagenomics data from brain infections"
-date: "July 29, 2016"
+date: "August 18, 2016"
 output:
-  word_document: default
   pdf_document: default
   html_document: default
+  word_document: default
 bibliography: /home/fbreitwieser/Dropbox/work/manuscripts/pavian-manuscript/pavian-bibliography.bib
 ---
 
