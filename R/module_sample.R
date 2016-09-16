@@ -20,7 +20,7 @@ sampleModuleUI <- function(id) {
         )),
       box(width=6,
           selectizeInput(
-            ns('contaminant_selector'), label = "Filter taxon and its children",
+            ns('contaminant_selector'), label = "Filter taxons",
             allcontaminants, selected = c("synthetic construct", "Homo sapiens"),
             multiple = TRUE,
             options = list(
@@ -37,7 +37,7 @@ sampleModuleUI <- function(id) {
         #tabsetPanel(position="left",
         #  tabPanel("Flow diagram",
                    sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
-                   checkboxGroupInput(ns("levels"),"",tax_levels,tax_levels, inline = TRUE),
+                   checkboxGroupInput(ns("levels"),"",tax_levels,setdiff(tax_levels,"O"), inline = TRUE),
                    #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
                    div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")),
         #)
@@ -196,13 +196,14 @@ sampleModule <- function(input, output, session, samples_df, reports,
         NodeGroup = "name",
         NodeDepth = "depth",
         NodeValue = "value",
+        bezierLink = FALSE,
         colourScale = colourScale(),
-        nodeWidth = 10,
+        nodeWidth = 14,
         units = "reads",
         LinkGroup = "source_name",
         fontSize = 12,
 
-        iterations = ifelse(is.null(input$iterations), 500, input$iterations),
+        iterations = ifelse(is.null(input$iterations), 50, input$iterations),
         sinksRight = FALSE,
         nodeStrokeWidth = 0,
         zoom = T
