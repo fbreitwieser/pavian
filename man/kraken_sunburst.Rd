@@ -4,7 +4,7 @@
 \alias{kraken_sunburst}
 \title{kraken_sunburst: Create a}
 \usage{
-kraken_sunburst(krakenres)
+kraken_sunburst(krakenres, ...)
 }
 \arguments{
 \item{krakenres}{kraken report, read with read.krakenres}

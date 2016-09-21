@@ -36,7 +36,7 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
                           tags$a(href="http://github.com/fbreitwieser/pavian", target="_blank", tags$img(icon('github'))))
                   ),
   dashboardSidebar(
-    shinyjs::disabled(selectizeInput("def_files", choices=c("Not available"=""), label="Select sample set")),
+    shinyjs::disabled(selectizeInput("sample_set_names", choices=c("Not available"=""), label="Select sample set")),
     shinyjs::disabled(actionButton("btn_remove_cache_files", "Remove cached files ↻")),
     br(),
     #sidebarSearchForm(
@@ -95,11 +95,11 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
 server <- function(input, output, session) {
 
   output$dy_menu_overview <- renderMenu({
-    req(input$def_files)
+    req(input$sample_set_names)
     menuItem("Results Overview", tabName="Overview", icon = icon("table"))
   })
   output$dy_menu_comp <- renderMenu({
-    req(input$def_files)
+    req(input$sample_set_names)
     menuItem("Comparison", icon = icon("line-chart"),
              menuSubItem("All data", tabName="Comparison"),
              menuSubItem("Bacteria", tabName="Bacteria"),
@@ -108,7 +108,7 @@ server <- function(input, output, session) {
     )
   })
   output$sidebartext <- renderUI({
-    if (is.null(input$def_files) || input$def_files == "") {
+    if (is.null(input$sample_set_names) || input$sample_set_names == "") {
     shiny::tagList(
     br(),
     tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
@@ -118,40 +118,40 @@ server <- function(input, output, session) {
   })
 
   output$dy_menu_sample <- renderMenu({
-    req(input$def_files)
+    req(input$sample_set_names)
     menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
   })
 
 
-  observeEvent(input$def_files,{
-    if (isTRUE(input$def_files == "upload_files")) {
+  observeEvent(input$sample_set_names,{
+    if (isTRUE(input$sample_set_names == "upload_files")) {
       updateTabItems(session,"tabs","Home")
     } #else {
     #  updateTabItems(session,"tabs","Overview")
     #}
   })
 
-  sample_sets_df <- callModule(dataInputModule, "datafile", height = 800,
+  sample_sets <- callModule(dataInputModule, "datafile", height = 800,
                                example_dir = getOption("pavian.example_dir", system.file("shinyapp", "example-data", package = "pavian")))
 
 
-  observeEvent(sample_sets_df(),{
-    if (length(sample_sets_df()$val) > 0) {
-      def_files <- names(sample_sets_df()$val)
-      #def_files["Upload samples ..."] <- "upload_files"
-      shinyjs::enable("def_files")
+  observeEvent(sample_sets(),{
+    if (length(sample_sets()$val) > 0) {
+      sample_set_names <- names(sample_sets()$val)
+      #sample_set_names["Upload samples ..."] <- "upload_files"
+      shinyjs::enable("sample_set_names")
       shinyjs::enable("btn_remove_cache_files")
 
-      updateSelectizeInput(session, "def_files", choices = def_files, selected = attr(sample_sets_df()$val, "selected"))
+      updateSelectizeInput(session, "sample_set_names", choices = sample_set_names, selected = attr(sample_sets()$val, "selected"))
     } else {
-      updateSelectizeInput(session, "def_files", choices = c("Not available"=""))
-      shinyjs::disable("def_files")
+      updateSelectizeInput(session, "sample_set_names", choices = c("Not available"=""))
+      shinyjs::disable("sample_set_names")
       shinyjs::disable("btn_remove_cache_files")
     }
   })
 
-  samples_df <- reactive({
-    res <- sample_sets_df()$val[[input$def_files]]
+  sample_data <- reactive({
+    res <- sample_sets()$val[[input$sample_set_names]]
     res[res$Include, ]
   })
 
@@ -161,27 +161,28 @@ server <- function(input, output, session) {
 
   reports <- reactive({
     validate(
-      need("ReportFilePath" %in% colnames(samples_df()), "ReportFilePath not available!"),
-      need("Name" %in% colnames(samples_df()), "Name not available!")
+      need("ReportFilePath" %in% colnames(sample_data()), "ReportFilePath not available!"),
+      need("Name" %in% colnames(sample_data()), "Name not available!")
     )
-    read_reports(samples_df()$ReportFilePath, samples_df()$Name, cache_dir = cache_dir)
+    read_reports(sample_data()$ReportFilePath, sample_data()$Name, cache_dir = cache_dir)
   })
-  callModule(reportOverviewModule, "overview", samples_df, reports, datatable_opts = common_datatable_opts)
-  callModule(comparisonModule, "comparison", samples_df, reports, datatable_opts = common_datatable_opts)
-  callModule(comparisonModule, "bacteria", samples_df, reports,
+
+  callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = common_datatable_opts)
+  callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = common_datatable_opts)
+  callModule(comparisonModule, "bacteria", sample_data, reports,
              filter_func = function(x) x[grep("d_Bacteria", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
-  callModule(comparisonModule, "viruses", samples_df, reports,
+  callModule(comparisonModule, "viruses", sample_data, reports,
              filter_func = function(x) x[grep("Viruses", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
-  callModule(comparisonModule, "fungi", samples_df, reports,
+  callModule(comparisonModule, "fungi", sample_data, reports,
              filter_func = function(x)
                x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("c_Mammalia", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
 
-  callModule(sampleModule, "sample", samples_df, reports, common_datatable_opts)
+  callModule(sampleModule, "sample", sample_data, reports, common_datatable_opts)
 
-  callModule(alignmentModule, "alignment", samples_df)
+  callModule(alignmentModule, "alignment", sample_data)
 
   output$session_info <- renderPrint( { sessionInfo() } )
 }

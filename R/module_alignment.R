@@ -81,12 +81,12 @@ With bowtie2
 #' @param input Shiny input object
 #' @param output Shiny output object
 #' @param session Shiny session
-#' @param samples_df \code{data.frame} for samples
+#' @param sample_data \code{data.frame} for samples
 #'
 #' @return Alignment module server functionality
 #' @export
 #' @import shinydashboard
-alignmentModule <- function(input, output, session, samples_df) {
+alignmentModule <- function(input, output, session, sample_data) {
 
   if (!require(RSamtools, quietly=TRUE)) {
     shinyjs::disable("bam_file")

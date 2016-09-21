@@ -4,7 +4,7 @@
 \alias{sampleModule}
 \title{Server part for sample module}
 \usage{
-sampleModule(input, output, session, samples_df, reports,
+sampleModule(input, output, session, sample_data, reports,
   datatable_opts = NULL)
 }
 \arguments{
@@ -14,7 +14,7 @@ sampleModule(input, output, session, samples_df, reports,
 
 \item{session}{Shiny session object}
 
-\item{samples_df}{Samples \code{data.frame}}
+\item{sample_data}{Samples \code{data.frame}}
 
 \item{reports}{List of reports}
 

@@ -21,14 +21,14 @@ reportOverviewModuleUI <- function(id) {
 #' @param input Shiny input object.
 #' @param output Shiyn output object.
 #' @param session Shiny session object.
-#' @param samples_df Samples \code{data.frame}.
+#' @param sample_data Samples \code{data.frame}.
 #' @param reports List of reports.
 #' @param datatable_opts Additional options for datatable.
 #'
 #' @return Report overview module server functionality.
 #' @export
 #' @import shiny
-reportOverviewModule <- function(input, output, session, samples_df, reports, datatable_opts = NULL) {
+reportOverviewModule <- function(input, output, session, sample_data, reports, datatable_opts = NULL) {
   #r_state <- list()
 
   observeEvent(input$opt_samples_overview_percent, {
@@ -41,14 +41,14 @@ reportOverviewModule <- function(input, output, session, samples_df, reports, da
   })
 
   get_samples_summary <- reactive( {
-    validate(need(samples_df(), message = "No data available."))
+    validate(need(sample_data(), message = "No data available."))
     validate(need(reports(), message = "No data available."))
 
     withProgress({
     ## Create summaries of all reports
     samples_summary <- do.call(rbind, lapply(reports(), summarize_report))
     samples_summary$Name <- rownames(samples_summary)
-    #samples_summary$FileName <- samples_df()[,"ReportFile"]
+    #samples_summary$FileName <- sample_data()[,"ReportFile"]
     extra_cols <- c("Name")
     samples_summary <- samples_summary[,c(extra_cols, setdiff(colnames(samples_summary),extra_cols))]
     colnames(samples_summary) <- beautify_string(colnames(samples_summary))

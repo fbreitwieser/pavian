@@ -29,7 +29,7 @@ dataInputModuleUI <- function(id) {
     shinyjs::hidden(
       div(id = ns("sample_set_box"),
       box(width=12,
-        selectizeInput(ns("sample_sets"), label = "Select sample set", choices = NULL),
+        selectizeInput(ns("sample_set_select"), label = "Select sample set", choices = NULL),
         htmlOutput(ns("info_samples")),
         br(),
         rhandsontable::rHandsontableOutput(ns("table")),
@@ -90,9 +90,9 @@ dataInputModule <- function(input, output, session,
 
   update_sample_set_hot <- reactive({
     req(input$table)
-    req(input$sample_sets)
+    req(input$sample_set_select)
     str(rhandsontable::hot_to_r(input$table))
-    sample_sets$val[[input$sample_sets]] <<- rhandsontable::hot_to_r(input$table)
+    sample_sets$val[[input$sample_set_select]] <<- rhandsontable::hot_to_r(input$table)
   })
 
 
@@ -119,7 +119,7 @@ dataInputModule <- function(input, output, session,
 
   get_def_df <- reactive({
     validate(need(sample_sets$val, message = "Need samples sets"))
-    sample_sets$val[[input$sample_sets]]
+    sample_sets$val[[input$sample_set_select]]
   })
 
   report_files <- reactive({
@@ -153,18 +153,18 @@ dataInputModule <- function(input, output, session,
     shinyjs::toggle("txt_rename_sample_set")
 
     if (currently_renaming_sample_set) {
-      selected_item <- names(sample_sets$val) == input$sample_sets
+      selected_item <- names(sample_sets$val) == input$sample_set_select
       names(sample_sets$val)[selected_item] <<- input$txt_rename_sample_set
       updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[selected_item])
     } else {
-      updateTextInput(session, "txt_rename_sample_set", value = input$sample_sets)
+      updateTextInput(session, "txt_rename_sample_set", value = input$sample_set_select)
     }
 
     currently_renaming_sample_set <<- !currently_renaming_sample_set
   })
 
   observeEvent(input$btn_remove_sample_set, {
-    selected_item <- names(sample_sets$val) == input$sample_sets
+    selected_item <- names(sample_sets$val) == input$sample_set_select
     sample_sets$val <<- sample_sets$val[!selected_item]
     updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[1])
     if (length(sample_sets) == 0) {
@@ -178,7 +178,7 @@ dataInputModule <- function(input, output, session,
   })
 
   return(function() {
-    attr(sample_sets$val, "selected") <<- input$sample_sets
+    attr(sample_sets$val, "selected") <<- input$sample_set_select
     sample_sets
   })
 }

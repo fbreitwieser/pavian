@@ -4,7 +4,7 @@
 \alias{alignmentModule}
 \title{Server part of alignment module}
 \usage{
-alignmentModule(input, output, session, samples_df)
+alignmentModule(input, output, session, sample_data)
 }
 \arguments{
 \item{input}{Shiny input object}
@@ -13,7 +13,7 @@ alignmentModule(input, output, session, samples_df)
 
 \item{session}{Shiny session}
 
-\item{samples_df}{\code{data.frame} for samples}
+\item{sample_data}{\code{data.frame} for samples}
 }
 \value{
 Alignment module server functionality

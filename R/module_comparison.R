@@ -148,14 +148,14 @@ stat_name_to_f <- list(
 #' @param input Shiny input object.
 #' @param output Shiny output object.
 #' @param session Shiny session.
-#' @param samples_df A \code{data.frame} specifying sample names and file paths (read from a defs.csv file).
+#' @param sample_data A \code{data.frame} specifying sample names and file paths (read from a defs.csv file).
 #' @param reports A list with report \code{data.frame}s.
 #' @param datatable_opts Additional options for creating the datatable.
 #' @param filter_func If not NULL, \code{filter_func} is applied to every data.frame in \code{reports}.
 #'
 #' @return Comparison module server functionality
 #' @export
-comparisonModule <- function(input, output, session, samples_df, reports,
+comparisonModule <- function(input, output, session, sample_data, reports,
                              datatable_opts = NULL, filter_func = NULL) {
 
   now <- function() { proc.time()[3] }
@@ -197,13 +197,13 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
   observe({
     updateSelectizeInput(session, "select_samples",
-                         choices=samples_df()[,"Name"], selected=samples_df()[,"Name"])
+                         choices=sample_data()[,"Name"], selected=sample_data()[,"Name"])
   })
 
   selected_reports <- reactive({
-    selected <- unlist(lapply(input$select_samples,function(s) grep(paste0("^",s,"$"),samples_df()[,"Name"])))
+    selected <- unlist(lapply(input$select_samples,function(s) grep(paste0("^",s,"$"),sample_data()[,"Name"])))
     #updateSelectizeInput(session, "select_samples",
-    #                     selected=samples_df()[selected,"Name"])
+    #                     selected=sample_data()[selected,"Name"])
     filtered_reports()[unique(sort(selected))]
   })
 
@@ -282,9 +282,9 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
   })
 
-  observeEvent(samples_df, {
+  observeEvent(sample_data, {
     updateSelectizeInput(session, "select_samples",
-                         choices=samples_df()[,"Name"], selected=samples_df()[,"Name"]
+                         choices=sample_data()[,"Name"], selected=sample_data()[,"Name"]
     )
   })
 

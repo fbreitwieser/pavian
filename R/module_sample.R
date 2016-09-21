@@ -56,13 +56,13 @@ sampleModuleUI <- function(id) {
 #' @param input Shiny input object
 #' @param output Shiny output object
 #' @param session Shiny session object
-#' @param samples_df Samples \code{data.frame}
+#' @param sample_data Samples \code{data.frame}
 #' @param reports List of reports
 #' @param datatable_opts Additional options for datatable
 #'
 #' @return Sample module server functionality
 #' @export
-sampleModule <- function(input, output, session, samples_df, reports,
+sampleModule <- function(input, output, session, sample_data, reports,
                          datatable_opts = NULL) {
   sample_view_report <- reactive({
 

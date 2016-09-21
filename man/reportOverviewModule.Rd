@@ -4,7 +4,7 @@
 \alias{reportOverviewModule}
 \title{Shiny modules to display an overview of metagenomics reports}
 \usage{
-reportOverviewModule(input, output, session, samples_df, reports,
+reportOverviewModule(input, output, session, sample_data, reports,
   datatable_opts = NULL)
 }
 \arguments{
@@ -14,7 +14,7 @@ reportOverviewModule(input, output, session, samples_df, reports,
 
 \item{session}{Shiny session object.}
 
-\item{samples_df}{Samples \code{data.frame}.}
+\item{sample_data}{Samples \code{data.frame}.}
 
 \item{reports}{List of reports.}
 
