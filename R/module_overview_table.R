@@ -114,7 +114,7 @@ reportOverviewModule <- function(input, output, session,
     }
 
     microbial_col <- start_color_bar_at + 5
-    str(samples_summary)
+
 
     dt <- DT::datatable(
       samples_summary

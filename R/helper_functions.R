@@ -64,4 +64,5 @@ get_directory_listing <- function(my_dir) {
         stats::setNames(rep(structure('',sticon='file'),length(all_files)),all_files))
 }
 
+now <- function() proc.time()[[3]]
 

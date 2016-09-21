@@ -12,13 +12,11 @@ Imports:
     shinyjs,
     sparkline (>= 1.0),
     htmlwidgets (>= 0.5.1),
-    sunburstR (>= 0.1),
     DT (>= 0.1.56),
     RColorBrewer,
     d3heatmap (>= 0.6.1),
     pheatmap,
     networkD3 (>= 0.2),
-    gapmap (>= 0.0.2),
     ggplot2 (>= 1.0.1),
     rhandsontable,
     ggthemes,
@@ -26,8 +24,11 @@ Imports:
     htmlwidgets
 Suggests:
     phyloseq,
+    scatterD3,
+    gapmap (>= 0.0.2),
     biom,
-    Rsamtools
+    Rsamtools,
+    sunburstR (>= 0.1)
 Remotes:
     github::fbreitwieser/networkD3,
     github::fbreitwieser/sunburstR,
