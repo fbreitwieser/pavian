@@ -123,9 +123,11 @@ comparisonModuleUI <- function(id) {
                      inline = TRUE
                    )
                  )
-               )),
-      tabPanel("Samples Clustering",
-               fluidRow(shiny::plotOutput(ns("cluster_plot")))) ## end tabPanel Clustering
+               ))
+      #,tabPanel("Compare samples",
+      #         fluidRow(scatterD3::scatterD3Output(ns("compare_plot"))))
+      #,tabPanel("Samples Clustering",
+      #         fluidRow(shiny::plotOutput(ns("cluster_plot"))))
     )
   )
 }
@@ -141,8 +143,6 @@ stat_name_to_f <- list(
   "Max Z-score"=function(x) { (max(x) - median(x))/max(1,mad(x)) }
 )
 
-
-
 #' Server part of comparison module
 #'
 #' @param input Shiny input object.
@@ -157,15 +157,42 @@ stat_name_to_f <- list(
 #' @export
 comparisonModule <- function(input, output, session, samples_df, reports,
                              datatable_opts = NULL, filter_func = NULL) {
+
+  now <- function() { proc.time()[3] }
+  wait_between_calls = 10
+  rv <- reactiveValues(last_call = -wait_between_calls, res = NULL, on = FALSE, new_calc_required = TRUE, invalidate_called_already = FALSE)
+
   filtered_reports <- reactive({
+    #message("filtered_reports reactive. proc.time: ",now())
+    #time_since_last_call <- now() - rv$last_call
+    #message("time since last call: ", time_since_last_call)
+    #if (time_since_last_call < wait_between_calls) {
+    #  ## Check again at the time you normally would check again, if new calc is required
+    #  if (!rv$invalidate_called_already) {
+    #    message("invalidating it in ", (1 + (wait_between_calls - time_since_last_call)* 1000), "ms !")
+    #    rv$invalidate_called_already <- TRUE
+    #    invalidateLater(1 + (wait_between_calls - time_since_last_call)* 1000, session)
+    #  }
+
+    #  message("Returning previous res")
+    #  return(rv$res)
+    #}
+    #message("Calculating new res")
+
+    ## the meat
     my_reports <- reports()
-    withProgress(message="Loading sample reports ...",{
+    rv$res <- withProgress(message="Loading sample reports ...",{
       stats::setNames(lapply(names(my_reports), function(my_report_n) {
         setProgress(detail=my_report_n)
-        r1 <- filter_taxon(my_reports[[my_report_n]], input$contaminant_selector, rm_clade = FALSE)
-        filter_taxon(r1, input$contaminant_selector_clade, rm_clade = TRUE)
+        my_reports[[my_report_n]] %>%
+          filter_taxon(input$contaminant_selector, rm_clade = FALSE) %>%
+          filter_taxon(input$contaminant_selector_clade, rm_clade = TRUE)
       }),names(my_reports))}
     )
+    rv$last_call <- now()
+    rv$invalidate_called_already <- FALSE
+
+    rv$res
   })
 
   observe({
@@ -208,7 +235,6 @@ comparisonModule <- function(input, output, session, samples_df, reports,
   get_summarized_reportc <- reactive({
     summarized_report <- withProgress(message="Combining sample reports ...", { get_summarized_report1() })
 
-    str(summarized_report)
     if (req(input$opt_classification_level) != "-") {
       summarized_report <- summarized_report[summarized_report[["Level"]] %in% input$opt_classification_level,]
     }
@@ -237,18 +263,19 @@ comparisonModule <- function(input, output, session, samples_df, reports,
         summarized_report %>% calc_robust_zscore(min_scale=ifelse(isTRUE(input$opt_display_percentage), 0.001, 1))
         })
     }
+    str(summarized_report)
 
     validate(need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"))
     data_cols <- attr(summarized_report, "data_columns")
     round_digits <- ifelse(isTRUE(input$opt_display_percentage), 3, 1)
-    summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
+    summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols, drop=F]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
 
     colnames(summarized_report)[colnames(summarized_report) == "STAT"] <- input$opt_statistic
-    summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols]), round_digits), 1, paste0, collapse = ",")
+    summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols, drop=F]), round_digits), 1, paste0, collapse = ",")
     colnames(summarized_report)[colnames(summarized_report) == "OVERVIEW"] <- "Overview"
 
     if (isTRUE(input$opt_display_percentage) || isTRUE(input$opt_zscore)) {
-      summarized_report[,data_cols] <- signif(summarized_report[,data_cols], 3)
+      summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 3)
     }
 
     summarized_report
@@ -259,6 +286,14 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     updateSelectizeInput(session, "select_samples",
                          choices=samples_df()[,"Name"], selected=samples_df()[,"Name"]
     )
+  })
+
+  output$compare_plot <- scatterD3::renderScatterD3({
+    message("blu")
+    library(scatterD3)
+    summarized_report <- r_summarized_report()
+    scatterD3(x = summarized_report$PT1,
+              y = summarized_report$PT2)
   })
 
   ## TODO: Consider working around heatmap issue w outputOptions
@@ -355,7 +390,7 @@ comparisonModule <- function(input, output, session, samples_df, reports,
     }
 
     ## Add color bar
-    str(summarized_report[,attr(summarized_report, 'data_columns')])
+    #str(summarized_report[,attr(summarized_report, 'data_columns')])
     dt <- dt %>% DT::formatStyle(
       attr(summarized_report, 'data_columns'),
       background = DT::styleColorBar(range(summarized_report[,attr(summarized_report, 'stat_column')],na.rm=TRUE), 'lightblue'),
@@ -511,20 +546,20 @@ comparisonModule <- function(input, output, session, samples_df, reports,
 
   })
 
+  selected_row <- reactive({
+    r_summarized_report()[input$dt_samples_comparison_rows_selected,]
+  })
+
   observeEvent(input$btn_sc_filter, {
-    req(input$dt_samples_comparison_rows_selected)
-    ## TODO: How to get current choices from selectizeInput?
-    taxonstring <- r_summarized_report()[input$dt_samples_comparison_rows_selected, "Taxonstring"]
-    selected_path <- strsplit(taxonstring, "|", fixed = TRUE)[[1]]
-    selected_name <- selected_path[length(selected_path)]
-    message("filtering ", selected_path[length(selected_path)])
+    req(selected_row())
+
+    current_selection <- input$contaminant_selector
+    selected_name <- selected_row()[["Name"]]
 
     updateSelectizeInput(
       session,
       "contaminant_selector",
-      selected = unique(c(
-        input$contaminant_selector, selected_name
-      )),
+      selected = unique(c(current_selection, selected_name)),
       choices = unique(c(allcontaminants, selected_name))
     )
   })

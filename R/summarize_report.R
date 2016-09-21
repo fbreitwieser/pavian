@@ -142,15 +142,15 @@ get_summarized_report <- function(
 
 normalize_data_cols <- function(summarized_report) {
   data_columns <- attr(summarized_report, "data_columns")
-  sum_reads <- colSums(summarized_report[,data_columns], na.rm = T)
-  summarized_report[,data_columns] <- 100 * t(t(summarized_report[,data_columns]) / sum_reads)
+  sum_reads <- colSums(summarized_report[, data_columns, drop=F], na.rm = T)
+  summarized_report[, data_columns] <- 100 * t(t(summarized_report[, data_columns, drop=F]) / sum_reads)
 
   summarized_report
 }
 
 log_data_cols <- function(summarized_report) {
   data_columns <- attr(summarized_report, "data_columns")
-  summarized_report[,data_columns] <- log10(summarized_report[,data_columns] + 1)
+  summarized_report[, data_columns] <- log10(summarized_report[, data_columns, drop=F] + 1)
 
   summarized_report
 }
@@ -159,9 +159,9 @@ calc_robust_zscore <- function(summarized_report, min_scale = 1) {
   data_columns <- attr(summarized_report, "data_columns")
   stopifnot(!is.null(data_columns))
 
-  dp2 <- summarized_report[,data_columns]
+  dp2 <- summarized_report[, data_columns, drop=F]
   dp2[is.na(dp2)] <- 0
-  summarized_report[,data_columns] <- t(scale(t(summarized_report[,data_columns]),
+  summarized_report[, data_columns] <- t(scale(t(summarized_report[, data_columns, drop=F]),
                                            center = apply(dp2,1,median),
                                            scale  = pmax(apply(dp2,1,stats::mad), min_scale)))
 

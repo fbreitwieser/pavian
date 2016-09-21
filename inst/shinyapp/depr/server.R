@@ -409,10 +409,10 @@ shinyServer(function(input, output, clientData, session) {
     selected_sample <- sub("^s_", "species ", selected_sample)
 
     ## TODO: Add a custom search functionality
-    #actionButton("view_selected_in_samples_comparison",paste("--> View abundances of ",selected_sample,"across samples"))
+    #actionButton("btn_view_selected_in_samples_comparison",paste("--> View abundances of ",selected_sample,"across samples"))
   })
 
-  observeEvent(input$view_selected_in_samples_comparison, {
+  observeEvent(input$btn_view_selected_in_samples_comparison, {
     my_report <- sample_view_report()
     selected_sample <-
       my_report[input$sample_view_rows_selected, "name"]

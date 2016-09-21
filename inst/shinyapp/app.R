@@ -37,7 +37,7 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
                   ),
   dashboardSidebar(
     shinyjs::disabled(selectizeInput("def_files", choices=c("Not available"=""), label="Select sample set")),
-    shinyjs::disabled(actionButton("remove_cache_files", "Remove cached files ↻")),
+    shinyjs::disabled(actionButton("btn_remove_cache_files", "Remove cached files ↻")),
     br(),
     #sidebarSearchForm(
     #  textId = "txt_sidebarSearch",
@@ -140,13 +140,13 @@ server <- function(input, output, session) {
       def_files <- names(sample_sets_df()$val)
       #def_files["Upload samples ..."] <- "upload_files"
       shinyjs::enable("def_files")
-      shinyjs::enable("remove_cache_files")
+      shinyjs::enable("btn_remove_cache_files")
 
       updateSelectizeInput(session, "def_files", choices = def_files, selected = attr(sample_sets_df()$val, "selected"))
     } else {
       updateSelectizeInput(session, "def_files", choices = c("Not available"=""))
       shinyjs::disable("def_files")
-      shinyjs::disable("remove_cache_files")
+      shinyjs::disable("btn_remove_cache_files")
     }
   })
 
@@ -155,7 +155,7 @@ server <- function(input, output, session) {
     res[res$Include, ]
   })
 
-  observeEvent(input$remove_cache_files, {
+  observeEvent(input$btn_remove_cache_files, {
     file.remove(list.files(cache_dir,full.names = T))
   })
 
