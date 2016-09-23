@@ -78,7 +78,7 @@ dataInputModule <- function(input, output, session,
 
     validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
     sample_sets$val <<- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
-    updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(new_sample_sets)[1])
+    updateSelectizeInput(session, "sample_set_select", choices = names(sample_sets$val), selected = names(new_sample_sets)[1])
   }
 
   observeEvent(input$btn_load_server_dir, {
@@ -155,7 +155,7 @@ dataInputModule <- function(input, output, session,
     if (currently_renaming_sample_set) {
       selected_item <- names(sample_sets$val) == input$sample_set_select
       names(sample_sets$val)[selected_item] <<- input$txt_rename_sample_set
-      updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[selected_item])
+      updateSelectizeInput(session, "sample_set_select", choices = names(sample_sets$val), selected = names(sample_sets$val)[selected_item])
     } else {
       updateTextInput(session, "txt_rename_sample_set", value = input$sample_set_select)
     }
@@ -166,7 +166,7 @@ dataInputModule <- function(input, output, session,
   observeEvent(input$btn_remove_sample_set, {
     selected_item <- names(sample_sets$val) == input$sample_set_select
     sample_sets$val <<- sample_sets$val[!selected_item]
-    updateSelectizeInput(session, "sample_sets", choices = names(sample_sets$val), selected = names(sample_sets$val)[1])
+    updateSelectizeInput(session, "sample_set_select", choices = names(sample_sets$val), selected = names(sample_sets$val)[1])
     if (length(sample_sets) == 0) {
       shinyjs::hide("sample_set_box")
     }
