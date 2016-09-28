@@ -29,15 +29,10 @@ comparisonModuleUI <- function(id) {
                                 choices = c("Mean", "Median", "Max", "Sd",
                                             "Maximum absolute deviation", "Max Z-score"),
                                 selected = "Mean"),
-                 checkboxInput(ns("opt_display_percentage"),
-                               label = "Normalize by sample reads",
-                               value = FALSE),
-                 checkboxInput(ns("opt_log_data"),
-                               label = "Apply variance-stabilizing transformation",
-                               value = FALSE),
-                 checkboxInput(ns("opt_zscore"),
-                               label = " Robust z-score",
-                               value = FALSE)
+                 checkboxGroupInput("opts_normalization", label = "",
+                                    choices = c("Normalize by total # of reads"="opt_display_percentage",
+                                                "Apply VST"="opt_log_data",
+                                                "Robust z-score"="opt_zscore"))
                  ),
           column(6,
                  selectizeInput(
@@ -248,19 +243,19 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
   r_summarized_report <- reactive({
 
-    if (isTRUE(input$opt_display_percentage)) {
+    if ("opt_display_percentage" %in% input$opts_normalization) {
       summarized_report <- get_summarized_reportp()
     } else {
       summarized_report <- get_summarized_reportc()
     }
 
-    if (isTRUE(input$opt_log_data)) {
+    if ("opt_log_data" %in% input$opts_normalization) {
       summarized_report <- withProgress(message="Logging data ...", { summarized_report %>% log_data_cols() })
     }
 
-    if (isTRUE(input$opt_zscore)) {
+    if ("opt_zscore" %in% input$opts_normalization) {
       summarized_report <- withProgress(message="Calculating z-score ...", {
-        summarized_report %>% calc_robust_zscore(min_scale=ifelse(isTRUE(input$opt_display_percentage), 0.001, 1))
+        summarized_report %>% calc_robust_zscore(min_scale=ifelse("opt_display_percentage" %in% input$opts_normalization, 0.001, 1))
         })
     }
     str(summarized_report)

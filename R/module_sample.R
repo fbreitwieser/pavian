@@ -112,8 +112,22 @@ sampleModule <- function(input, output, session, sample_data, reports,
     DT::updateSearch(dt_sample_view_proxy, list(global=input$sample_view_sankey_clicked))
   })
 
+  tbx <- reactive({
+    dat <- sample_data()
+    if (!"CentrifugeOutFilePath" %in% colnames(dat))
+      return()
+
+    cf_out <- dat[dat$Name == input$sample_selector,"CentrifugeOutFilePath"]
+    if (!file.exists(cf_out) || !file.exists(paste0(cf_out,".tbi")))
+      return()
+
+    return(Rsamtools::TabixFile(cf_out))
+  })
+
   output$blu <- renderText({
-    input$sample_view_sankey_clicked
+    req(tbx())
+    scanTabix(tbx(), GRanges(c("561"), IRanges(c(50), width=100000)))
+    #input$sample_view_sankey_clicked
   })
 
   all_names <- reactive ({

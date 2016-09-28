@@ -1,7 +1,26 @@
 
+.body {
+  line-height: inherit;
+}
+body {
+  line-height: inherit;
+}
+
+.selectize-control {
+    margin-bottom: 5px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.box-header {
+  padding: 10px 0px 0px 10px;
+}
+
 .main-header .logo {
   font-family: "Georgia", serif;
-  font-weight: "bold";
+  font-weight: bold;
   font-size: 24px;
 }
 

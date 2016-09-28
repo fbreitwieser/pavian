@@ -30,6 +30,9 @@ get_reports_def_df <- function(my_dir, def_filename = "defs.csv", report_extensi
   if (!"ReportFilePath" %in% colnames(def_df))
     def_df$ReportFilePath <- file.path(my_dir, def_df$ReportFile)
 
+  if ("CentrifugeOutFile" %in% colnames(def_df) && !"CentrifugeOutFilePath" %in% colnames(def_df))
+    def_df$CentrifugeOutFilePath <- file.path(my_dir, def_df$CentrifugeOutFile)
+
   if ("KrakenFile" %in% colnames(def_df) && ! "KrakenFilePath" %in% colnames(def_df))
     def_df$KrakenFilePath <- file.path(my_dir, def_df$KrakenFile)
 
