@@ -1,31 +1,39 @@
 # start pavian in the background
-system('R -e "pavian::runApp(port=5000)"', wait=FALSE)
+system('R -e "pavian::runApp(port=5004)"', wait=FALSE)
 
 DISPLAY = FALSE
 
+setwd("~/projects/pavian/vignettes")
+library(RSelenium)
+
 #install.packages("RSelenium")
-RSelenium::checkForServer()
-RSelenium::startServer()
-require(RSelenium)
-remDr <- remoteDriver(remoteServerAddr = "localhost", port = 4444, browserName = "firefox")
+#RSelenium::checkForServer()
+#RSelenium::startServer()
+#selSrv <- startServer(invisible = FALSE, log = FALSE , args = c("-port 3333"))
+## run Selenium with 'java -jar /usr/share/selenium-server/selenium-server-standalone.jar -port 6656 -debug' in separate terminal
+remDr <- remoteDriver(remoteServerAddr = "localhost", port = 6656, browserName = "chrome")
 remDr$open()
 remDr$getStatus()
 remDr$navigate("http://www.google.com")
-remDr$navigate("http://127.0.0.1:5000")
-remDr$setWindowSize(900,600)
+remDr$navigate("http://127.0.0.1:5004")
+remDr$setWindowSize(900,650)
 remDr$screenshot(display = DISPLAY, useViewer = FALSE, file="main-page.png")
 
-
-btn_load_example <- remDr$findElement(using="css selector","#datafile-btn_load_example")
-btn_load_example$clickElement()
 remDr$setWindowSize(900,1000)
+btn_load_example <- remDr$findElement(using="css selector","#datafile-btn_load_server_dir")
+btn_load_example$clickElement()
+
 remDr$screenshot(display = DISPLAY, useViewer = FALSE, file="load-data-set.png")
+
+system("convert load-data-set.png -crop 180x230+0+180 side-bar.png")
 
 menu_results <- remDr$findElement(using="css selector","#dy_menu_overview > a:nth-child(1)")
 menu_results$clickElement()
 # ... wait until samples are loaded
-remDr$setWindowSize(1200,600)
+## hide menu bar
+remDr$setWindowSize(1000,650)
 remDr$screenshot(display = DISPLAY, useViewer = FALSE, file="results-overview.png")
+## show menu bar
 
 menu_comp <- remDr$findElement(using="css selector","#dy_menu_comp > a:nth-child(1)")
 menu_comp$clickElement()
@@ -51,7 +59,7 @@ remDr$screenshot(display = DISPLAY, file="flow-pt1.png")
 remDr$screenshot(display = DISPLAY, file="flow-pt5.png")
 
 ## Click sunburst, screenshot
-remDr$findElement(using="css selector","div.tabbable:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)")$clickElement()
+#remDr$findElement(using="css selector","div.tabbable:nth-child(1) > ul:nth-child(1) > li:nth-child(2) > a:nth-child(1)")$clickElement()
 # TODO: Screenshot
 
 ## Click alignment viewer - show alignment pileup - select area

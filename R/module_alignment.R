@@ -48,7 +48,7 @@ With bowtie2
     tabsetPanel(
       tabPanel(
         title = "View alignment",
-        infoBoxOutput(ns("warn_Rsamtools"), width = 12),
+        uiOutput(ns("warn_Rsamtools"), width = 12),
         box(width = 12,
             shiny::fileInput(ns("bam_file"),"Choose BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE),
             #shinyFileTree::shinyFileTreeOutput(ns("bam_files_tree")),
@@ -88,16 +88,16 @@ With bowtie2
 #' @import shinydashboard
 alignmentModule <- function(input, output, session, sample_data) {
 
-  if (!require(RSamtools, quietly=TRUE)) {
+  if (!require(Rsamtools, quietly=TRUE)) {
     shinyjs::disable("bam_file")
     shinyjs::disable("btn_get_alignment")
     shinyjs::disable("align_loess")
     shinyjs::disable("align_moving_avg")
   }
 
-  output$warn_Rsamtools <- renderInfoBox({
-    if (!require(RSamtools, quietly=TRUE)) {
-      valueBox(
+  output$warn_Rsamtools <- renderUI({
+    if (!require(Rsamtools, quietly=TRUE)) {
+      infoBox(
         "Functionality requires package Rsamtools",
         "See https://bioconductor.org/packages/release/bioc/html/Rsamtools.html for installation instructions.",
         icon = icon("exclamation-triangle"),
@@ -107,14 +107,14 @@ alignmentModule <- function(input, output, session, sample_data) {
   })
 
   req_bioc <- function(pkg) {
-    req(require(pkg))
+    #req(require(pkg, character.only=TRUE))
     validate(need(require(pkg, character.only=TRUE, quietly=TRUE), message=sprintf(
       "%s is needed for this functionality. See https://bioconductor.org/packages/release/bioc/html/%s.html for information on how to install it",
       pkg, pkg)))
   }
 
   bam_file <- reactive({
-    req_bioc("RSamtools")
+    req_bioc("Rsamtools")
     bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
     if (!is.null(input$bam_file)) {
       validate(need(
@@ -132,7 +132,7 @@ alignmentModule <- function(input, output, session, sample_data) {
   })
 
   plot_pileup_act <- eventReactive(input$btn_get_alignment, {
-    req_bioc("RSamtools")
+    req_bioc("Rsamtools")
     plot_pileup(pileup(), nreads(), seq_lengths(),
                 input$align_loess,
                 text_size = 4
@@ -146,7 +146,7 @@ alignmentModule <- function(input, output, session, sample_data) {
 
 
   output$sample_align <- renderPlot({
-    req_bioc("RSamtools")
+    req_bioc("Rsamtools")
     plot_pileup_act()
   })
 
