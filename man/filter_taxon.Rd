@@ -4,10 +4,10 @@
 \alias{filter_taxon}
 \title{Filter lines from a kraken report result based on the taxonomy name}
 \usage{
-filter_taxon(krakenres, filter_taxon, rm_clade = TRUE, do_message = FALSE)
+filter_taxon(report, filter_taxon, rm_clade = TRUE, do_message = FALSE)
 }
 \arguments{
-\item{krakenres}{Report \code{data.frame}.}
+\item{report}{Report \code{data.frame}.}
 
 \item{filter_taxon}{Name of entry to remove.}
 
@@ -16,7 +16,7 @@ filter_taxon(krakenres, filter_taxon, rm_clade = TRUE, do_message = FALSE)
 \item{do_message}{If \code{TRUE}, report how many rows and reads were deleted.}
 }
 \value{
-filtered krakenres
+filtered report
 }
 \description{
 It updates the read_stay counts, and removes any children below the

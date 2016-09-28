@@ -63,7 +63,7 @@ comparisonModuleUI <- function(id) {
           ns('contaminant_selector'),
           allcontaminants,
           label = "from taxon",
-          selected = c("synthetic construct", "unclassified", "Homo sapiens"),
+          selected = c("synthetic construct", "unclassified", "Homo sapiens", "root"),
           multiple = TRUE,
           options = list(
             maxItems = 25,

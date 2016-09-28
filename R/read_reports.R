@@ -24,7 +24,7 @@ read_reports <- function(report_files, report_names, cache_dir = "cache") {
                              detail = paste(n_reports - i, "left ..."))
                  load_or_create(
                    function()
-                     read_krakenres(report_files[i]),
+                     read_report(report_files[i]),
                    sprintf("%s.rds", basename(report_files[i])),
                    cache_dir = cache_dir
                  )
