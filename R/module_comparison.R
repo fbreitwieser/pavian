@@ -29,7 +29,7 @@ comparisonModuleUI <- function(id) {
                                 choices = c("Mean", "Median", "Max", "Sd",
                                             "Maximum absolute deviation", "Max Z-score"),
                                 selected = "Mean"),
-                 checkboxGroupInput("opts_normalization", label = "",
+                 checkboxGroupInput(ns("opts_normalization"), label = "",
                                     choices = c("Normalize by total # of reads"="opt_display_percentage",
                                                 "Apply VST"="opt_log_data",
                                                 "Robust z-score"="opt_zscore"))
@@ -242,6 +242,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
 
   r_summarized_report <- reactive({
+    str(input$opts_normalization)
 
     if ("opt_display_percentage" %in% input$opts_normalization) {
       summarized_report <- get_summarized_reportp()
@@ -302,6 +303,8 @@ comparisonModule <- function(input, output, session, sample_data, reports,
              need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"),
              need(attr(summarized_report, 'taxonid_column'), message = "taxonid_data_columns NULL"),
              need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
+
+    summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
 
     idx_data_columns <- attr(summarized_report, 'data_columns')
 

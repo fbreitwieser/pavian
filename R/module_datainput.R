@@ -57,7 +57,7 @@ dataInputModuleUI <- function(id) {
 dataInputModule <- function(input, output, session,
                             ...,
                             example_dir = NULL,
-                            pattern = "defs.csv$",
+                            pattern = "sample_data.csv$",
                             cache_tree = TRUE) {
 
   if (is.null(example_dir))

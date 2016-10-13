@@ -55,8 +55,8 @@ With bowtie2
             shiny::actionButton(ns("btn_get_alignment"), "Show alignment pileup"),
             shiny::checkboxInput(ns("align_loess"), "Show smoothed LOESS curve"),
             shiny::checkboxInput(ns("align_moving_avg"), "Show moving average", value = TRUE),
-            shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE)),
-            shiny::plotOutput(ns("plot_brush"))
+            shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
+            shiny::plotOutput(ns("plot_brush"), height = "200px")
         )
       ),
       tabPanel(

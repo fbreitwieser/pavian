@@ -384,7 +384,7 @@ read_report <- function(myfile, has_header=NULL) {
   report$taxonstring <- report$name
 
   n <- nrow(report)
-  depths <- report[current_row,"depth"]
+  depths <- report$depth
   taxonstrings <- report$name
 
   prev_row <- 2

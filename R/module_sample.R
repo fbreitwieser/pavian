@@ -1,4 +1,5 @@
 
+## TODOL Make Sankey work for '-' levels
 tax_levels <- c("D","K","P","C","O","F","G","S")
 
 #' UI part for sample module
@@ -37,7 +38,7 @@ sampleModuleUI <- function(id) {
         #tabsetPanel(position="left",
         #  tabPanel("Flow diagram",
                    sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
-                   checkboxGroupInput(ns("levels"),"",tax_levels,setdiff(tax_levels,"O"), inline = TRUE),
+                   checkboxGroupInput(ns("levels"),"",tax_levels,setdiff(tax_levels,c("O","-")), inline = TRUE),
                    #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
                    div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")),
         #)
@@ -45,7 +46,8 @@ sampleModuleUI <- function(id) {
         #),
         verbatimTextOutput(ns("blu")),
         div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_sample_view'))),
-        uiOutput(ns("view_in_samples_comparison"))
+        uiOutput(ns("view_in_samples_comparison")),
+        uiOutput(ns("blastn"))
       )
     )
   )
@@ -64,16 +66,19 @@ sampleModuleUI <- function(id) {
 #' @export
 sampleModule <- function(input, output, session, sample_data, reports,
                          datatable_opts = NULL) {
+
+  observeEvent(reports(), {
+    updateSelectInput(session, 'sample_selector',
+                      choices = names(reports()),
+                      selected = names(reports())[1])
+  })
+
   sample_view_report <- reactive({
 
     validate(need(reports(),
                   "No reports"))
 
-    if (!input$sample_selector %in% names(reports())) {
-      updateSelectInput(session, 'sample_selector',
-                          choices = names(reports()),
-                          selected = names(reports())[1])
-    }
+    req(input$sample_selector)
 
     my_report <- reports()[[input$sample_selector]]
     validate(need(my_report, "No sample with that name"))
@@ -98,8 +103,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
     # filter report with rows as selected in the table
     if (isTRUE(input$synchronize_table) &&
-        length(input$sample_view_rows_all) > 0)
-      my_report <- my_report[sort(input$sample_view_rows_all), ]
+        length(input$dt_sample_view_rows_all) > 0)
+      my_report <- my_report[sort(input$dt_sample_view_rows_all), ]
 
     kraken_sunburst(my_report, colors = list(domain=all_names()))
   })
@@ -121,13 +126,27 @@ sampleModule <- function(input, output, session, sample_data, reports,
     if (!file.exists(cf_out) || !file.exists(paste0(cf_out,".tbi")))
       return()
 
-    return(Rsamtools::TabixFile(cf_out))
+    return(Rsamtools::TabixFile(cf_out, yieldSize = 100))
+  })
+
+  tbx_results <- reactive({
+    req(tbx)
+    req(sample_view_report())
+    req(input$dt_sample_view_rows_selected)
+    str(sample_view_report())
+
+    scanTabix(tbx(),
+              GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxonid"], IRanges(c(50), width=100000)))[[1]]
+  })
+
+  tbx_results_df <- reactive({
+    req(tbx_results())
+    read.delim(tbx_results(), header=F,
+               col.names = c("readID","seqID","taxID","score","2ndBestScore","hitLength","queryLength","numMatches","readSeq"))
   })
 
   output$blu <- renderText({
-    req(tbx())
-    scanTabix(tbx(), GRanges(c("561"), IRanges(c(50), width=100000)))
-    #input$sample_view_sankey_clicked
+    input$sample_view_sankey_clicked
   })
 
   all_names <- reactive ({
@@ -139,14 +158,15 @@ sampleModule <- function(input, output, session, sample_data, reports,
                               paste0('"',c(all_names(),"other"),'"',collapse=",")))
   })
 
+
   output$sample_view_sankey <- networkD3::renderSankeyNetwork({
     my_report <- sample_view_report()
     req(my_report)
 
     # filter report with rows as selected in the table
     if (isTRUE(input$synchronize_table) &&
-        length(input$sample_view_rows_all) > 0)
-      my_report <- my_report[sort(input$sample_view_rows_all), ]
+        length(input$dt_sample_view_rows_all) > 0)
+      my_report <- my_report[sort(input$dt_sample_view_rows_all), ]
 
     #my_report$name <- sub("._", "", my_report$name)
     #my_report <- my_report[, c("depth", "reads", "name")]
@@ -157,7 +177,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     my_report <- subset(my_report, level %in% input$levels)
     my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth", "level")]
 
-    my_report <- my_report[!my_report$name %in% c('-_root','u_unclassified'), ]
+    my_report <- my_report[!my_report$name %in% c('-_root'), ]
     #my_report$name <- sub("^-_root.", "", my_report$name)
 
     splits <- strsplit(my_report$taxonstring, "\\|")
@@ -175,6 +195,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
     my_levels <- input$levels[input$levels %in% my_report$level]
     level_to_depth <- setNames(seq_along(my_levels)-1, my_levels)
+
 
     nodes <- data.frame(name=my_report$name,
                         depth=level_to_depth[my_report$level],
@@ -228,10 +249,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
   output$dt_sample_view <- DT::renderDataTable({
     my_report <- sample_view_report()
 
-    my_report$taxonstring <- sub("^-_root.","", my_report$taxonstring)
-    my_report$taxonstring <- sub("^._","", my_report$taxonstring)
-    my_report$taxonstring <-
-      gsub("\\|._", ">", my_report$taxonstring)
+    my_report$taxonstring <- beautify_taxonstring(my_report$taxonstring)
+
     my_report$level <- as.factor(my_report$level)
     #my_report$Percent <-
     #  100 * signif(my_report$reads / sum(my_report$reads_stay, na.rm = TRUE), 3)
@@ -256,13 +275,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   ## When a row (i.e. a taxonomical entry) gets selected in the sample view table, an action button appears to view the species in the overview
   output$view_in_samples_comparison <- renderUI({
-    selected_row <- input$sample_view_rows_selected
-    if (length(selected_row) != 1)
-      return()
+    req(input$dt_sample_view_rows_selected)
+    selected_row <- input$dt_sample_view_rows_selected
 
     my_report <- sample_view_report()
     selected_sample <-
-      my_report[input$sample_view_rows_selected, "name"]
+      my_report[input$dt_sample_view_rows_selected, "name"]
     selected_sample <- sub("^u_", "", selected_sample)
     selected_sample <- sub("^-_", "", selected_sample)
     selected_sample <- sub("^d_", "domain ", selected_sample)
@@ -277,10 +295,20 @@ sampleModule <- function(input, output, session, sample_data, reports,
     #actionButton("view_selected_in_samples_comparison",paste("--> View abundances of ",selected_sample,"across samples"))
   })
 
+  output$blastn <- renderUI({
+    req(tbx_results_df())
+
+    str(tbx_results_df())
+
+    ## TODO: Add a custom search functionality
+    #actionButton("view_selected_in_samples_comparison",paste("--> View abundances of ",selected_sample,"across samples"))
+  })
+
+
   observeEvent(input$view_selected_in_samples_comparison, {
     my_report <- sample_view_report()
     selected_sample <-
-      my_report[input$sample_view_rows_selected, "name"]
+      my_report[input$dt_sample_view_rows_selected, "name"]
 
     updateTabsetPanel(session, "main_page", selected = "Sample comparison")
   }, ignoreNULL = TRUE)

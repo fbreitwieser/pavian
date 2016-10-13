@@ -27,6 +27,13 @@ beautify_string <- function(x) {
   x
 }
 
+beautify_taxonstring <- function(x) {
+  x %>%
+    sub("^-_root.","", .) %>%
+    sub("^._","", .) %>%
+    gsub("\\|._", ">", .)
+}
+
 
 #' Beautify colnames
 #'

@@ -76,17 +76,12 @@ Click 'Alignment viewer' to get to Pavian's two functionalities to help in this 
 
 ![Pavian provides an intuitive interface to RefSeq genome assembly data](download-genome-jcv.png)
 
-With a BAM file and BAM index (BAI) available, we can use the genome viewer. Click 'View alignment'. Normally, the two files have to be uploaded by clicking the 'Browse' button. Pavian includes the alignment of the sequences of PT5 to the reference genome of JC polyomavirus, and it is loaded by clicking 'Show alignment pileup' when no files are uploaded. Upon loading the files, the coverage over the genome is displayed (Figure 7). You can select a region to zoom into. For this genome we see that the reads align pretty randomly across the genome, but certain small region are not covered. As the reference genome is a strain that was isolated in 1993, it is very likely that this patient does have a different strain. However, it provides confidence that it is the same species.
+With a BAM file and BAM index (BAI) available, we can use the genome viewer. Click 'View alignment'. Normally, the two files have to be uploaded by clicking the 'Browse' button. Pavian includes the alignment of the sequences of PT5 to the reference genome of JC polyomavirus, and it is loaded by clicking 'Show alignment pileup' when no files are uploaded. Upon loading the files, the coverage over the genome is displayed (Figure 7). You can select a region to zoom into. For this genome we see that the reads align pretty randomly across the genome, but certain small region are not covered. As the reference genome is a strain that was isolated in 1993, it is very likely that this patient does have a different strain. Still, the coverage of this genome provides confidence that it is the same species.
 
 ![The alignment of the reads of sample PT5 to JC polyomavirus reference genome can be explored with the alignment viewer. There is a high coverage of most regions of the genome.](alignment_viewer-pt5.png)
 
 \clearpage
 
-%## Session information
-%```{r, echo=FALSE}
-%suppressPackageStartupMessages(library(pavian))
-%sessionInfo()
-%```
 
 ## References
 
