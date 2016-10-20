@@ -1,0 +1,12 @@
+Name;Class;Engine;ReportFile
+PT1;patient 1;kraken;PT1-DNA.report
+PT2;patient 2;kraken;PT2-DNA.report
+PT3;patient 3;kraken;PT3-RNA.report
+PT4;patient 4;kraken;PT4-RNA.report
+PT5;patient 5;kraken;PT5-RNA.report
+PT6;patient 6;kraken;PT6-RNA.report
+PT7;patient 7;kraken;PT7-DNA.report
+PT8-S1;patient 8;kraken;PT8-DNA-S1.report
+PT8-S2;patient 8;kraken;PT8-DNA-S2.report
+PT9;patient 9;kraken;PT9-DNA.report
+PT10;patient 10;kraken;PT10-DNA.report
