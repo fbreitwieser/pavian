@@ -2,15 +2,17 @@ FROM r-base:latest
 
 MAINTAINER Florian Breitwieser "florian.bw@gmail.com"
 
+## based on https://hub.docker.com/r/rocker/shiny/~/dockerfile/ by Winston Chang
+
 RUN apt-get update && apt-get install -y \
     sudo \
     gdebi-core \
-    pandoc \
-    pandoc-citeproc \
     libcurl4-gnutls-dev \
     libcairo2-dev/unstable \
     libxt-dev \
     libssl-dev
+#    pandoc \             ## do not need pandoc currently
+#    pandoc-citeproc \
 
 # Download and install shiny server
 RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/VERSION -O "version.txt" && \

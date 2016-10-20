@@ -3,3 +3,4 @@
 .RData
 *.swp
 *.orig
+inst/doc
