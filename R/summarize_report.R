@@ -191,14 +191,15 @@ get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
   }
   my_reports <- lapply(names(my_reports), function(report_name) {
     my_report <- my_reports[[report_name]]
-    if (length(my_report) == 0)
-      stop("Report ",report_name," is empty")
+    my_report <- my_report[ ,c(id_cols, numeric_col), drop=FALSE]
 
-    sel_val <- apply(my_report[,numeric_col, drop=FALSE] > 0, 1, any)
-    my_report <- my_report[sel_val, c(id_cols, numeric_col), drop=FALSE]
-
-    ## set the basename of the report file as name for the numeric column
     idx_of_numeric_col <- seq(from = length(id_cols) + 1, to = ncol(my_report))
+    if (nrow(my_report) > 0) {
+      sel_val <- apply(my_report[,numeric_col, drop=FALSE] > 0, 1, any)
+      my_report <- my_report[sel_val, ]
+    }
+
+      ## set the basename of the report file as name for the numeric column
     colnames(my_report)[idx_of_numeric_col] <- sub(".*/(.*).report", "\\1", report_name)
     if (length(numeric_col) > 1) {
       colnames(my_report)[idx_of_numeric_col] <-
@@ -217,8 +218,8 @@ get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
 
   summarized_report <- cbind(
         beautify_colnames(summarized_report[, id_cols_before, drop = FALSE]),
-        OVERVIEW = NA,
-        STAT = NA,  ## Placeholder
+        OVERVIEW = rep(NA, nrow(summarized_report)),
+        STAT = rep(NA, nrow(summarized_report)),  ## Placeholder
         summarized_report[, seq(from = length(id_cols) + 1, to = ncol(summarized_report)), drop = FALSE],
         beautify_colnames(summarized_report[, id_cols_after, drop = FALSE])
       )

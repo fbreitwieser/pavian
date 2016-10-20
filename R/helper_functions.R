@@ -53,7 +53,9 @@ beautify_colnames <- function(x) {
 #' @return data.frame or matrix in which all negative and NA values are set to zero
 #' @export
 zero_if_na <- function(df) {
-  df[is.na(df) | df < 0] <- 0
+  if (nrow(df) > 0) {
+    df[is.na(df) | df < 0] <- 0
+  }
   return(df)
 }
 

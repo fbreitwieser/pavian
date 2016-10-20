@@ -4,6 +4,8 @@ library(rhandsontable)
 library(magrittr)
 library(shinydashboard)
 library(shinyjs)
+library(DT)
+library(shinyBS)
 
 options(shiny.maxRequestSize=50*1024^2)
 cache_dir <- tempdir()
@@ -59,7 +61,8 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
   dashboardBody(
     useShinyjs(),
     tags$head(
-      tags$style(HTML(paste(readLines(system.file("shinyapp","style.css",package="pavian")),collapse = "\n")))
+      tags$style("style.css"),
+      tags$script(src="tooltips.js")
     ),
     tabItems(
       tabItem("Home",
@@ -73,6 +76,7 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
       tabItem("Comparison", comparisonModuleUI("comparison")),
       tabItem("Bacteria", comparisonModuleUI("bacteria")),
       tabItem("Viruses", comparisonModuleUI("viruses")),
+      tabItem("Fungi_and_Protists", comparisonModuleUI("fungi")),
       tabItem("Sample", sampleModuleUI("sample")),
       tabItem("Alignment", alignmentModuleUI("alignment")),
       tabItem(
@@ -177,7 +181,7 @@ server <- function(input, output, session) {
              datatable_opts = common_datatable_opts)
   callModule(comparisonModule, "fungi", sample_data, reports,
              filter_func = function(x)
-               x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("c_Mammalia", x[["taxonstring"]]), , drop=F],
+               x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("p_Chordata", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
 
   callModule(sampleModule, "sample", sample_data, reports, common_datatable_opts)

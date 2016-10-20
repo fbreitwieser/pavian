@@ -7,7 +7,8 @@ body {
 }
 
 .selectize-control {
-    margin-bottom: 5px;
+  margin-bottom: 0px;
+  margin-top: 0px;
 }
 
 .form-group {
@@ -148,4 +149,14 @@ div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
 .sidebartext {
     padding: 10px !important;
     color: #ccc;
+}
+
+table.dataTable tr.selected td, table.dataTable td.selected {
+    background-color: white-space !important;
+    font-weight: bold;
+}
+
+table.dataTable thead .sorting {
+  background-image: none;
+  padding: 2px 2px 2px 2px !important;
 }

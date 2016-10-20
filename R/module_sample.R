@@ -40,7 +40,9 @@ sampleModuleUI <- function(id) {
                    sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
                    checkboxGroupInput(ns("levels"),"",tax_levels,setdiff(tax_levels,c("O","-")), inline = TRUE),
                    #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
-                   div(style = 'overflow-x: scroll', networkD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")),
+                   shinyjs::hidden(sliderInput(ns("curvature"),"curvature", value = .5, min = 0, max = 1, step=.01)),
+                   shinyjs::hidden(radioButtons(ns("linkType"), "linkType", selected = "trapez", choices = c("bezier", "l-bezier", "trapez"), inline = TRUE)),
+                   div(style = 'overflow-x: scroll', sankeyD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")),
         #)
         #  tabPanel("Sunburst", sunburstR::sunburstOutput(ns("sample_view_sunburst"), width = "100%"))
         #),
@@ -154,12 +156,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
 
   colourScale <- reactive({
-    colourScale <- networkD3::JS(sprintf("d3.scale.category20().domain([%s])",
+    colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20).domain([%s])",
                               paste0('"',c(all_names(),"other"),'"',collapse=",")))
   })
 
 
-  output$sample_view_sankey <- networkD3::renderSankeyNetwork({
+  output$sample_view_sankey <- sankeyD3::renderSankeyNetwork({
     my_report <- sample_view_report()
     req(my_report)
 
@@ -221,7 +223,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     links$source_name <- nodes$name[links$source + 1]
 
     if (!is.null(links))
-      networkD3::sankeyNetwork(
+      sankeyD3::sankeyNetwork(
         Links = links,
         Nodes = nodes,
         Source = "source",
@@ -229,23 +231,26 @@ sampleModule <- function(input, output, session, sample_data, reports,
         Value = "value",
         NodeID = "name",
         NodeGroup = "name",
-        NodeDepth = "depth",
+        NodePosX = "depth",
         NodeValue = "value",
-        bezierLink = FALSE,
         colourScale = colourScale(),
         nodeWidth = 14,
         units = "reads",
+        linkType = input$linkType,
+        curvature = input$curvature,
         LinkGroup = "source_name",
         fontSize = 12,
-
         iterations = ifelse(is.null(input$iterations), 50, input$iterations),
-        sinksRight = FALSE,
-        nodeStrokeWidth = 0,
+        align = "none",
+        nodeStrokeWidth = 0.1,
+        highlightChildLinks = TRUE,
+        orderByPath = TRUE,
+        scaleNodeBreadthsByString = TRUE,
         zoom = T
       )
   })
 
-  dt_sample_view_proxy <- DT::dataTableProxy('sample-dt_sample_view')
+  dt_sample_view_proxy <- DT::dataTableProxy('dt_sample_view', session = session)
   output$dt_sample_view <- DT::renderDataTable({
     my_report <- sample_view_report()
 
