@@ -4,8 +4,8 @@
 \alias{plot_pileup}
 \title{Plot a pileup}
 \usage{
-plot_pileup(pileup, nreads, seq_lengths, show_loess, show_step = TRUE,
-  nwin = 1000, text_size = 4)
+plot_pileup(pileup, nreads = NULL, seq_lengths = NULL, show_loess = FALSE,
+  show_step = TRUE, nwin = 500, span = 0.1, text_size = 4)
 }
 \arguments{
 \item{pileup}{The output from \code{\link{get_pileup}}}

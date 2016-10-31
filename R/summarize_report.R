@@ -9,7 +9,6 @@ normalize_data_cols <- function(summarized_report) {
   sum_reads <- colSums(summarized_report[, reads_stay_columns, drop=F], na.rm = T)
   sum_reads <- rep(sum_reads, each = length(data_columns) / length(reads_stay_columns))
 
-  print(sum_reads)
   summarized_report[, data_columns] <- 100*scale(summarized_report[, data_columns],
                                                  center = rep(0, length(sum_reads)),
                                                  scale = sum_reads)
