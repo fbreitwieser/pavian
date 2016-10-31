@@ -88,7 +88,7 @@ With bowtie2
 #' @import shinydashboard
 alignmentModule <- function(input, output, session, sample_data) {
 
-  if (!require(Rsamtools, quietly=TRUE)) {
+  if (!requireNamespace("Rsamtools")) {
     shinyjs::disable("bam_file")
     shinyjs::disable("btn_get_alignment")
     shinyjs::disable("align_loess")
@@ -96,7 +96,7 @@ alignmentModule <- function(input, output, session, sample_data) {
   }
 
   output$warn_Rsamtools <- renderUI({
-    if (!require(Rsamtools, quietly=TRUE)) {
+    if (!requireNamespace("Rsamtools")) {
       infoBox(
         "Functionality requires package Rsamtools",
         "See https://bioconductor.org/packages/release/bioc/html/Rsamtools.html for installation instructions.",
@@ -108,7 +108,7 @@ alignmentModule <- function(input, output, session, sample_data) {
 
   req_bioc <- function(pkg) {
     #req(require(pkg, character.only=TRUE))
-    validate(need(require(pkg, character.only=TRUE, quietly=TRUE), message=sprintf(
+    validate(need(requireNamespace(pkg), message=sprintf(
       "%s is needed for this functionality. See https://bioconductor.org/packages/release/bioc/html/%s.html for information on how to install it",
       pkg, pkg)))
   }

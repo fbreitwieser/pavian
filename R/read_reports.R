@@ -2,10 +2,11 @@
 #'
 #' @param report_files character vector with files
 #' @param report_names character vector with names
+#' @param cache_dir cache directory path
 #'
 #' @return List of reports
 #' @export
-read_reports <- function(report_files, report_names, cache_dir = "cache") {
+read_reports <- function(report_files, report_names, cache_dir = NULL) {
   if (length(report_files) == 0) {
     return()
   }
@@ -23,8 +24,11 @@ read_reports <- function(report_files, report_names, cache_dir = "cache") {
                  setProgress(value = i,
                              detail = paste(n_reports - i, "left ..."))
                  load_or_create(
-                   function()
-                     read_report(report_files[i]),
+                   function() {
+                     tryCatch({
+                      read_report(report_files[i])
+                     }, error = function(e) print(e))
+                    },
                    sprintf("%s.rds", basename(report_files[i])),
                    cache_dir = cache_dir
                  )
@@ -33,10 +37,6 @@ read_reports <- function(report_files, report_names, cache_dir = "cache") {
     )
 
   names(my_reports) <- report_names
-  lapply(my_reports, function(my_report) {
-    #my_report$name <- sub("[a-z-]_", "", my_report$name)
-    #my_report$taxonstring <-
-    #  gsub("[a-z-]_", "", my_report$taxonstring)
-    my_report
-  })
+
+  my_reports[sapply(my_reports, length) > 0]
 }

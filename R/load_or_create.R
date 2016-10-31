@@ -17,7 +17,7 @@
 #' }
 load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
   if (is.null(cache_dir))
-    cache_dir <- "cache"
+    return(f())
 
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE)

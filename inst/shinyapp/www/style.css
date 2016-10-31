@@ -160,3 +160,113 @@ table.dataTable thead .sorting {
   background-image: none;
   padding: 2px 2px 2px 2px !important;
 }
+
+.treeview-menu {
+  display: block !important;
+}
+
+
+/* from https://github.com/daattali/advanced-shiny/tree/master/plot-spinner */
+#plot-container {
+  position: relative;
+}
+#loading-spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  margin-top: -33px;  /* half of the spinner's height */
+  margin-left: -33px; /* half of the spinner's width */
+}
+.recalculating {
+  z-index: -2;
+}
+
+/* from https://github.com/daattali/advanced-shiny/tree/master/busy-indicator */
+.btn-loading-container {
+  margin-left: 10px;
+  font-size: 1.2em;
+}
+.btn-done-indicator {
+  color: green;
+}
+.btn-err {
+  margin-top: 10px;
+  color: red;
+}
+
+/* from http://stackoverflow.com/questions/24335274/how-to-rotate-text-vertically-at-table-column-header */
+table.dataTable th.dt-right {
+             filter:  progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);  /* IE6,IE7 */
+         -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083)"; /* IE8 */
+     -moz-transform: rotate(-90.0deg);  /* FF3.5+ */
+      -ms-transform: rotate(-90.0deg);  /* IE9+ */
+       -o-transform: rotate(-90.0deg);  /* Opera 10.5 */
+  -webkit-transform: rotate(-90.0deg);  /* Safari 3.1+, Chrome */
+          transform: rotate(-90.0deg);  /* Standard */
+    height: 150px;
+    padding: 0 !important;
+    border-bottom: none!important;
+    border-left: 1px solid #111;
+}
+
+tbody td {
+  padding: 0 !important;
+}
+
+
+.box {
+  border-top: none;
+  box-shadow: none;
+}
+
+.box.box-solid>.box-header {
+  display: none;
+}
+
+.box.box-solid>.box-header>h3 {
+  display: none;
+}
+
+.box.box-solid.collapsed-box>.box-header>h3 {
+  display: block;
+}
+
+p.sidebartext {
+    padding-left: 10px;
+}
+.row {
+    margin-left: -5px;
+}
+
+      .form-group {
+        margin-bottom: 0px;
+        display: inline-block;
+        background: lightgreen;
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-bottom: 2px;
+        margin-bottom: 2px;
+      }
+      .shiny-input-container:not(.shiny-input-container-inline) {
+        width: initial;
+      }
+      .irs {
+        width: 200px;
+      }
+
+/*
+th {
+  word-break: break-all;
+  line-height: 1;
+}
+*/
+/*
+label.control-label, .selectize-control.single{ display: table-cell; text-align: center; vertical-align: middle; }
+.form-group { display: table-row;}
+
+
+.form-group.shiny-input-container {
+    display: inline-block!important;
+}
+*/

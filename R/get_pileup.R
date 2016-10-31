@@ -18,6 +18,7 @@
 #' head(get_pileup(bam_file))
 #' head(get_pileup(bam_file, summarize = TRUE))
 get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, ...) {
+  req(requireNamespace("Rsamtools"))
   pileup <- Rsamtools::pileup(bam_file)
 
   if (!is.null(top_n)) {
@@ -96,6 +97,7 @@ get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, .
 #' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
 #' get_nreads(bam_file)
 get_nreads <- function(bam_file) {
+  req(requireNamespace("Rsamtools"))
   p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth"))
   bam <- Rsamtools::scanBam(bam_file, param = p2)
   res <- tapply(bam[[1]]$qname, bam[[1]]$rname, function(x) length(unique(x)))
@@ -114,6 +116,7 @@ get_nreads <- function(bam_file) {
 #' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
 #' get_seqlengths(bam_file)
 get_seqlengths <- function(bam_file) {
+  req(requireNamespace("Rsamtools"))
   bamHeader <- Rsamtools::scanBamHeader(bam_file)
   bamHeader[[1]][["targets"]]
 }

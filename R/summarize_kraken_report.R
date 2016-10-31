@@ -10,6 +10,11 @@ extract_from_report <- function(my_report,name,level=NULL) {
   my_report
 }
 
+zero_if_na1 <- function(x) {
+  x[is.na(x)] <- 0
+  x
+}
+
 
 #' Summarize the result of a metagenomics report
 #'
@@ -27,10 +32,9 @@ summarize_report <- function(my_report) {
   row.names(my_report) <- my_report[["name"]]
   unidentified_reads <- my_report["u_unclassified","reads"]
   identified_reads <- my_report["-_root","reads"]
-  artificial_reads <- my_report["s_synthetic construct","reads"]
-  s_cerevisiae_reads <- my_report["s_Saccharomyces cerevisiae","reads"]
-  human_reads <- my_report["s_Homo sapiens","reads"]
-  mammal_reads <- my_report["c_Mammalia","reads"]
+  artificial_reads <- zero_if_na1(my_report["s_synthetic construct","reads"])
+  human_reads <- zero_if_na1(my_report["s_Homo sapiens","reads"])
+  mammal_reads <- zero_if_na1(my_report["c_Mammalia","reads"])
 
   #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"reads"])
   #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"reads"])
@@ -43,45 +47,9 @@ summarize_report <- function(my_report) {
     artificial_reads=artificial_reads,
     unclassified_reads=unidentified_reads,
     microbial_reads=identified_reads-mammal_reads-artificial_reads,
-    bacterial_reads=my_report["d_Bacteria","reads"],
-    viral_reads=my_report["d_Viruses","reads"],
-    fungal_reads=my_report["k_Fungi","reads"]
-    #s_cerevisia_reads=s_cerevisiae_reads,
-    #eupath_reads=eupath_reads,
-    #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],
-    #o_kinetoplastida_reads=my_report["o_Kinetoplastida","reads"],
-    #Amoebozoa_reads=my_report["-_Amoebozoa","reads"],
-    #Heterolobosea_reads=my_report["c_Heterolobosea","reads"],
-    #Fornicata_reads=my_report["-_Fornicata","reads"],
-    #nonhuman_reads_at_species_level=sum(my_report$reads[my_report$level=="S"])-my_report["s_Homo sapiens","reads"]-artificial_reads
-  )
-}
-
-
-summarize_report2 <- function(my_report) {
-  my_report <- my_report[!duplicated(my_report$name),]
-  row.names(my_report) <- my_report[["name"]]
-  unidentified_reads <- my_report["unclassified","reads"]
-  identified_reads <- my_report["root","reads"]
-  artificial_reads <- my_report["synthetic construct","reads"]
-  s_cerevisiae_reads <- my_report["Saccharomyces cerevisiae","reads"]
-  human_reads <- my_report["Homo sapiens","reads"]
-  mammal_reads <- my_report["Mammalia","reads"]
-
-  #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"reads"])
-  #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"reads"])
-  #eupath_reads <- my_report["d_Eukaryota","reads"] - my_report["d_Eukaryota","reads_stay"] - my_report["-_Opisthokonta","reads"]
-
-  data.frame(
-    number_of_raw_reads=unidentified_reads+identified_reads,
-    classified_reads=identified_reads,
-    mammal_reads=mammal_reads,
-    artificial_reads=artificial_reads,
-    unclassified_reads=unidentified_reads,
-    microbial_reads=identified_reads-mammal_reads-artificial_reads,
-    bacterial_reads=my_report["Bacteria","reads"],
-    viral_reads=my_report["Viruses","reads"],
-    fungal_reads=my_report["Fungi","reads"]
+    bacterial_reads=zero_if_na1(my_report["d_Bacteria","reads"]) + zero_if_na1(my_report["k_Bacteria","reads"]), ## MetaPhLan reports bacteria as kingdom; Kraken as domain. Sum them
+    viral_reads=zero_if_na1(my_report["d_Viruses","reads"]) + zero_if_na1(my_report["k_Viruses","reads"]), ## same as for Bacteria
+    fungal_reads=zero_if_na1(my_report["k_Fungi","reads"])
     #s_cerevisia_reads=s_cerevisiae_reads,
     #eupath_reads=eupath_reads,
     #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],
