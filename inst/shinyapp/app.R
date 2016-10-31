@@ -10,11 +10,11 @@ library(shinyBS)
 options(shiny.maxRequestSize=50*1024^2)
 cache_dir <- tempdir()
 
-common_datatable_opts <- list(saveState = TRUE)
+common_datatable_opts <- list(saveState = TRUE, searchHighlight = TRUE)
 
 intro <- fluidRow(
-  column(width = 8, includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
-  column(width = 4, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
+  column(width = 11, includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
+  column(width = 1, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
 )
 
 ui <- dashboardPage(skin="blue", title = "Pavian",
@@ -38,14 +38,14 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
                           tags$a(href="http://github.com/fbreitwieser/pavian", target="_blank", tags$img(icon('github'))))
                   ),
   dashboardSidebar(
-    shinyjs::disabled(selectizeInput("sample_set_names", choices=c("Not available"=""), label="Select sample set")),
-    shinyjs::disabled(actionButton("btn_remove_cache_files", "Remove cached files ↻")),
+    shinyjs::disabled(selectInput("sample_set_names", choices=c("Not available"=""), label="Select sample set", selectize = TRUE)),
+    shinyjs::hidden(shinyjs::disabled(actionButton("btn_remove_cache_files", "Remove cached files ↻"))),
+    sidebarSearchForm(
+      textId = "txt_sidebarSearch",
+      buttonId = "btn_sidebarSearch",
+      label = "Search microbes ..."
+    ),
     br(),
-    #sidebarSearchForm(
-    #  textId = "txt_sidebarSearch",
-    #  buttonId = "btn_sidebarSearch",
-    #  label = "Search ..."
-    #),
     sidebarMenu(
       id = "tabs",
       menuItem("Data Input", tabName="Home", icon = icon("cloud-upload"), selected = TRUE),
@@ -55,14 +55,29 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
       menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
       menuItem("About", tabName = "About")),
     uiOutput("sidebartext"),
+    div(class = "busy", style="padding-left: 10px;",
+        p("Calculation in progress.."),
+        img(src="default.gif")
+    ),
+
     br(),
-    tags$p(class="sidebartext", "@fbreitw, 2016")
+    tags$p(class="sidebartext", style="padding-left: 10px;","@fbreitw, 2016")
     ),
   dashboardBody(
     useShinyjs(),
     tags$head(
       tags$style("style.css"),
-      tags$script(src="tooltips.js")
+      tags$script(HTML("
+setInterval(function(){
+  if ($('html').attr('class')=='shiny-busy') {
+    $('div.busy').show()
+  } else {
+    $('div.busy').hide()
+  }
+},100);
+
+/*$(document).ready(function() { $('#dy_menu_comp').children[0].click(); })*/
+"))
     ),
     tabItems(
       tabItem("Home",
@@ -104,11 +119,13 @@ server <- function(input, output, session) {
   })
   output$dy_menu_comp <- renderMenu({
     req(input$sample_set_names)
+    shiny::tagList(
     menuItem("Comparison", icon = icon("line-chart"),
              menuSubItem("All data", tabName="Comparison"),
              menuSubItem("Bacteria", tabName="Bacteria"),
              menuSubItem("Viruses", tabName="Viruses"),
              menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
+    )
     )
   })
   output$sidebartext <- renderUI({
@@ -126,6 +143,10 @@ server <- function(input, output, session) {
     menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
   })
 
+  observeEvent(input$btn_sidebarSearch, {
+
+  })
+
 
   observeEvent(input$sample_set_names,{
     if (isTRUE(input$sample_set_names == "upload_files")) {
@@ -136,7 +157,7 @@ server <- function(input, output, session) {
   })
 
   sample_sets <- callModule(dataInputModule, "datafile", height = 800,
-                               example_dir = getOption("pavian.example_dir", system.file("shinyapp", "example-data", package = "pavian")))
+                               server_dir = getOption("pavian.example_dir", system.file("shinyapp", "example-data", package = "pavian")))
 
 
   observeEvent(sample_sets(),{
@@ -146,9 +167,11 @@ server <- function(input, output, session) {
       shinyjs::enable("sample_set_names")
       shinyjs::enable("btn_remove_cache_files")
 
-      updateSelectizeInput(session, "sample_set_names", choices = sample_set_names, selected = attr(sample_sets()$val, "selected"))
+      #updateSelectizeInput(session, "sample_set_names", choices = sample_set_names, selected = attr(sample_sets()$val, "selected"))
+      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = attr(sample_sets()$val, "selected"))
     } else {
-      updateSelectizeInput(session, "sample_set_names", choices = c("Not available"=""))
+      #updateSelectizeInput(session, "sample_set_names", choices = c("Not available"=""))
+      updateSelectInput(session, "sample_set_names", choices = c("Not available"=""))
       shinyjs::disable("sample_set_names")
       shinyjs::disable("btn_remove_cache_files")
     }
@@ -168,23 +191,30 @@ server <- function(input, output, session) {
       need("ReportFilePath" %in% colnames(sample_data()), "ReportFilePath not available!"),
       need("Name" %in% colnames(sample_data()), "Name not available!")
     )
-    read_reports(sample_data()$ReportFilePath, sample_data()$Name, cache_dir = cache_dir)
+    res <- read_reports(sample_data()$ReportFilePath, sample_data()$Name, cache_dir = cache_dir)
+    validate(need(length(res) > 0, message = "There are no valid reports in this sample set!"))
+    res
+  })
+
+  sample_module_selected <- callModule(sampleModule, "sample", sample_data, reports, common_datatable_opts)
+
+  observeEvent(sample_module_selected(), {
+    req(sample_module_selected())
+    updateTabItems(session, "tabs", "Comparison")
   })
 
   callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = common_datatable_opts)
-  callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = common_datatable_opts)
+  callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = common_datatable_opts)#, search = sample_module_selected)
   callModule(comparisonModule, "bacteria", sample_data, reports,
-             filter_func = function(x) x[grep("d_Bacteria", x[["taxonstring"]]), , drop=F],
+             filter_func = function(x) x[grep("[dk]_Bacteria", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
   callModule(comparisonModule, "viruses", sample_data, reports,
-             filter_func = function(x) x[grep("Viruses", x[["taxonstring"]]), , drop=F],
+             filter_func = function(x) x[grep("[dk]_Viruses", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
   callModule(comparisonModule, "fungi", sample_data, reports,
              filter_func = function(x)
                x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("p_Chordata", x[["taxonstring"]]), , drop=F],
              datatable_opts = common_datatable_opts)
-
-  callModule(sampleModule, "sample", sample_data, reports, common_datatable_opts)
 
   callModule(alignmentModule, "alignment", sample_data)
 

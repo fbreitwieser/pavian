@@ -2,17 +2,21 @@
 % Please edit documentation in R/runApp.R
 \name{runApp}
 \alias{runApp}
-\title{Run Centrifuger web interface}
+\title{Run Pavian web interface}
 \usage{
-runApp(cache_dir = "cache", example_dir = system.file("shinyapp",
-  "example-data", package = "pavian"), ...)
+runApp(cache_dir = "cache", server_dir = system.file("shinyapp",
+  "example-data", package = "pavian"), allow_change_server_dir = TRUE, ...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files.}
 
+\item{server_dir}{Directory for sample files.}
+
+\item{allow_change_server_dir}{Allow users to change server directory}
+
 \item{...}{Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.}
 }
 \description{
-Run Centrifuger web interface
+Run Pavian web interface
 }
 

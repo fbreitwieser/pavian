@@ -169,7 +169,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O",
   }
 
   if (has_header) {
-    report <- utils::read.table(file,sep="\t",header = T,
+    report <- utils::read.table(myfile,sep="\t",header = T,
                             quote = "",stringsAsFactors=FALSE)
     #colnames(report) <- c("percentage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
@@ -187,7 +187,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_levels=c("D","K","P","C","O",
     colnames(report)[colnames(report)=="tax"] <- "taxonid"
 
   } else {
-    report <- utils::read.table(file,sep="\t",header = F,
+    report <- utils::read.table(myfile,sep="\t",header = F,
                             col.names = c("percentage","reads","reads_stay","level","taxonid","name"),
                             quote = "",stringsAsFactors=FALSE)
   }
@@ -342,19 +342,15 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
 #' @export
 #'
 read_report <- function(myfile, has_header=NULL) {
-  if (is.null(myfile))
-    file = "~/work/support/Patient_29Jan_CSF-identify-pathogen/JH64778849.report"
-  else
-    file <- myfile
 
   if (is.null(has_header)) {
     first.line <- readLines(myfile,n=1)
-    has_header <- grepl("^[a-zA-Z]",first.line)
+    has_header <- grepl("^[a-zA-Z#]",first.line)
   }
 
   if (has_header) {
-    report <- utils::read.table(file,sep="\t",header = T,
-                                quote = "",stringsAsFactors=FALSE)
+    report <- utils::read.table(myfile,sep="\t",header = T,
+                                quote = "",stringsAsFactors=FALSE, comment.char = "")
     #colnames(report) <- c("percentage","reads","reads_stay","level","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
@@ -371,37 +367,68 @@ read_report <- function(myfile, has_header=NULL) {
     colnames(report)[colnames(report)=="tax"] <- "taxonid"
 
   } else {
-    report <- utils::read.table(file,sep="\t",header = F,
+    report <- utils::read.table(myfile,sep="\t",header = F,
                                 col.names = c("percentage","reads","reads_stay","level","taxonid","name"),
                                 quote = "",stringsAsFactors=FALSE)
   }
 
-  report$depth <- nchar(gsub("\\S.*","",report$name))/2
-  report$name <- gsub("^ *","",report$name)
-  report$name <- paste(tolower(report$level),report$name,sep="_")
-
-  rownames(report) <- NULL
-  report$taxonstring <- report$name
-
-  n <- nrow(report)
-  depths <- report$depth
-  taxonstrings <- report$name
-
-  prev_row <- 2
-
-  for (current_row in seq(from=3, nrow(report))) {
-    while (depths[current_row] != depths[prev_row] + 1) {
-      # find previous row with correct depth
-      prev_row <- prev_row - 1
-    }
-    taxonstrings[current_row] <- paste0(taxonstrings[prev_row], "|", taxonstrings[current_row])
-
-    prev_row <- current_row
+  if (!any(c("name","X.SampleID") %in% colnames(report))) {
+    return(NULL)
   }
 
-  report$depth <- depths
-  report$taxonstring <- taxonstrings
+  ## For metaphlan
+  if (colnames(report)[1] == "X.SampleID") {
+    colnames(report) <- c("taxonstring", "reads")
+    report <- report[order(report$taxonstring), ]
+    report$taxonstring <- gsub("_"," ",report$taxonstring)
+    report$taxonstring <- gsub("  ","_",report$taxonstring)
+    report$taxonstring <- paste0("-_root|", report$taxonstring)
 
+    report <- rbind(
+      data.frame(taxonstring=c("u_unclassified","-_root"),reads=c(0,100), stringsAsFactors = F),
+      report)
+
+    report$taxonid <- 0
+    taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
+    report$depth <- sapply(taxonstrings, length) - 1
+    report$name <- sapply(taxonstrings, function(x) x[length(x)])
+    report$level <- toupper(substr(report$name, 0, 1))
+
+    ## fix reads_stay
+    report$parent <- sapply(taxonstrings, function(x) x[length(x) - 1])
+    report$reads_stay <- report$reads - sapply(report$name, function(x) sum(report$reads[report$parent == x]))
+    #report$reads_stay[sapply(report$reads_stay, function(x) isTRUE(all.equal(x, 0)))] <- 0
+    report$reads_stay[report$reads_stay <= 0.00001] <- 0  # fix for rounding in percentages by MetaPhlAn
+
+
+  } else {
+    report$depth <- nchar(gsub("\\S.*","",report$name))/2
+    report$name <- gsub("^ *","",report$name)
+    report$name <- paste(tolower(report$level),report$name,sep="_")
+
+    rownames(report) <- NULL
+
+    ## make taxonstring path
+    report$taxonstring <- report$name
+    n <- nrow(report)
+    depths <- report$depth
+    taxonstrings <- report$name
+
+    prev_row <- 2
+
+    for (current_row in seq(from=3, nrow(report))) {
+      while (depths[current_row] != depths[prev_row] + 1) {
+        # find previous row with correct depth
+        prev_row <- prev_row - 1
+      }
+      taxonstrings[current_row] <- paste0(taxonstrings[prev_row], "|", taxonstrings[current_row])
+
+      prev_row <- current_row
+    }
+
+    report$taxonstring <- taxonstrings
+
+  }
   report$percentage <- signif(report$reads/sum(report$reads_stay),6) * 100
   if ('n_unique_kmers'  %in% colnames(report))
     report$kmerpercentage <- round(report$n_unique_kmers/sum(report$n_unique_kmers,na.rm=T),6) * 100

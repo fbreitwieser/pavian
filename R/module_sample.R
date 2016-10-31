@@ -19,38 +19,33 @@ sampleModuleUI <- function(id) {
           choices = NULL, multiple = FALSE,
           width = '100%'
         )),
-      box(width=6,
+      column(width=6,
           selectizeInput(
             ns('contaminant_selector'), label = "Filter taxons",
-            allcontaminants, selected = c("synthetic construct", "Homo sapiens"),
-            multiple = TRUE,
-            options = list(
-              maxItems = 25, create = TRUE, placeholder = 'Filter clade'
-            ),
+            allcontaminants, selected = c("artificial sequences", "Homo sapiens"),
+            multiple = TRUE, options = list(maxItems = 25, create = TRUE, placeholder = 'Filter clade'),
             width = "100%"
           ),
           shinyjs::hidden(checkboxInput(ns("opt_remove_root_hits"),
-                        label = "Do not show reads that stay at the root", value = FALSE))
-          )
+                        label = "Do not show reads that stay at the root", value = FALSE)),
+          column(4,checkboxInput(ns("side_by_side"),"Show reads across samples on hover", value = TRUE)),
+          column(4, column(2,(checkboxInput(ns("show_numbers"),"Show Numbers", value = TRUE)))),
+          column(4,actionLink(ns("sankey_opts"), "Hide Sankey options"))
+      )
     ),
     fluidRow(
-      box(width=12,
-        #tabsetPanel(position="left",
-        #  tabPanel("Flow diagram",
-                   sliderInput(ns("sankey_maxn"), "Number of taxons to show", 10, 100, value = 50, step = 5),
-                   checkboxGroupInput(ns("levels"),"",tax_levels,setdiff(tax_levels,c("O","-")), inline = TRUE),
-                   #shinyjs::hidden(sliderInput(ns("iterations"), "Number of iterations", 50, 1000, value = 250, step = 50)),
-                   shinyjs::hidden(sliderInput(ns("curvature"),"curvature", value = .5, min = 0, max = 1, step=.01)),
-                   shinyjs::hidden(radioButtons(ns("linkType"), "linkType", selected = "trapez", choices = c("bezier", "l-bezier", "trapez"), inline = TRUE)),
-                   div(style = 'overflow-x: scroll', sankeyD3::sankeyNetworkOutput(ns("sample_view_sankey"), width = "100%")),
-        #)
-        #  tabPanel("Sunburst", sunburstR::sunburstOutput(ns("sample_view_sunburst"), width = "100%"))
-        #),
-        verbatimTextOutput(ns("blu")),
-        div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_sample_view'))),
-        uiOutput(ns("view_in_samples_comparison")),
-        uiOutput(ns("blastn"))
-      )
+      column(3,checkboxGroupInput(ns("levels"),"Taxonomical levels",tax_levels,setdiff(tax_levels,c("O","-")), inline = TRUE)),
+      column(2,(sliderInput(ns("sankey_maxn"), "Number of taxons", 1, 25, value = 10, step = 1))),
+      column(2,(sliderInput(ns("curvature"),"Curvature", value = .5, min = 0, max = 1, step=.01))),
+      column(2,(sliderInput(ns("height"),"Height", value = 600, min = 300, max = 1200, step=50))),
+      column(2,(sliderInput(ns("scalingFactor"),"Scaling", value = 1, min = .5, max = 1.5, step=.1))),
+      #column(2,(checkboxInput(ns("sync_table"),"Synchronize table", value = TRUE))),
+      column(2,shinyjs::hidden(radioButtons(ns("linkType"), "linkType", selected = "path2", choices = c("bezier", "l-bezier", "trapez", "path1","path2"), inline = TRUE)))
+    ),
+    fluidRow(
+      uiOutput(ns("dynamic_sankey")),
+      #uiOutput(ns("view_in_samples_comparison")),
+      uiOutput(ns("blastn"))
     )
   )
 }
@@ -69,7 +64,23 @@ sampleModuleUI <- function(id) {
 sampleModule <- function(input, output, session, sample_data, reports,
                          datatable_opts = NULL) {
 
+  sankey_opts_state <- reactiveValues(visible = TRUE)
+
+  observeEvent(input$sankey_opts, {
+    sankey_opts_state$visible <- !sankey_opts_state$visible
+    toggle_elems <- c("scalingFactor","curvature","sankey_maxn","height","levels","sync_table")
+
+    if (sankey_opts_state$visible) {
+      lapply(toggle_elems, shinyjs::show)
+      updateActionButton(session, "sankey_opts", label = "Hide Sankey options")
+    } else {
+      lapply(toggle_elems, shinyjs::hide)
+      updateActionButton(session, "sankey_opts", label = "Show Sankey options ...")
+    }
+  })
+
   observeEvent(reports(), {
+    #shinyjs::show("iterations")
     updateSelectInput(session, 'sample_selector',
                       choices = names(reports()),
                       selected = names(reports())[1])
@@ -98,25 +109,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
   #############################################################################
   ##  Sample viewer outputs
 
-  output$sample_view_sunburst <- sunburstR::renderSunburst({
-    my_report <- sample_view_report()
-    if (length(my_report) == 0)
-      return()
 
-    # filter report with rows as selected in the table
-    if (isTRUE(input$synchronize_table) &&
-        length(input$dt_sample_view_rows_all) > 0)
-      my_report <- my_report[sort(input$dt_sample_view_rows_all), ]
-
-    kraken_sunburst(my_report, colors = list(domain=all_names()))
-  })
-
-  observeEvent(input$sample_view_sankey_clicked, {
-    #update(session, "blu", input$sample_view_sankey_clicked)
+  observeEvent(input$sankey_clicked, {
+    #update(session, "txt_selected_name", input$sankey_clicked)
+    req(input$sync_table)
     req(dt_sample_view_proxy)
-
-    message(input$sample_view_sankey_clicked)
-    DT::updateSearch(dt_sample_view_proxy, list(global=input$sample_view_sankey_clicked))
+    DT::updateSearch(dt_sample_view_proxy, list(global=input$sankey_clicked))
   })
 
   tbx <- reactive({
@@ -128,6 +126,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     if (!file.exists(cf_out) || !file.exists(paste0(cf_out,".tbi")))
       return()
 
+    req(requireNamespace("Rsamtools"))
     return(Rsamtools::TabixFile(cf_out, yieldSize = 100))
   })
 
@@ -135,7 +134,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     req(tbx)
     req(sample_view_report())
     req(input$dt_sample_view_rows_selected)
-    str(sample_view_report())
+    #str(sample_view_report())
 
     scanTabix(tbx(),
               GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxonid"], IRanges(c(50), width=100000)))[[1]]
@@ -147,8 +146,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
                col.names = c("readID","seqID","taxID","score","2ndBestScore","hitLength","queryLength","numMatches","readSeq"))
   })
 
-  output$blu <- renderText({
-    input$sample_view_sankey_clicked
+  output$txt_selected_name <- renderText({
+    input$sankey_clicked
   })
 
   all_names <- reactive ({
@@ -156,12 +155,17 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
 
   colourScale <- reactive({
-    colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20).domain([%s])",
+    colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20b).domain([%s])",
                               paste0('"',c(all_names(),"other"),'"',collapse=",")))
   })
 
+  output$save_sankey <- downloadHandler(filename = function() { paste0("sankey-",input$sample_selector,".html") },
+                                        content = function(con) { sankey_network() %>%
+                                            htmlwidgets::saveWidget(file=con) })
 
-  output$sample_view_sankey <- sankeyD3::renderSankeyNetwork({
+
+  sankey_network <- reactive({
+
     my_report <- sample_view_report()
     req(my_report)
 
@@ -175,8 +179,11 @@ sampleModule <- function(input, output, session, sample_data, reports,
     #my_report$name <- sub("^._","",my_report$name)
     #eng <- get_nodes_and_links(my_report, 10)
 
-    my_report <- my_report[utils::tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), ]
     my_report <- subset(my_report, level %in% input$levels)
+    #my_report <- my_report[utils::tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), , drop = FALSE]
+    my_report <- plyr::ddply(my_report, "level", function(x) x[utils::tail(order(x$reads,-x$depth), n=input$sankey_maxn), , drop = FALSE])
+
+    #my_report <- subset(my_report, level %in% input$levels)
     my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth", "level")]
 
     my_report <- my_report[!my_report$name %in% c('-_root'), ]
@@ -196,7 +203,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     links$value <- my_report[sel,"reads"]
 
     my_levels <- input$levels[input$levels %in% my_report$level]
-    level_to_depth <- setNames(seq_along(my_levels)-1, my_levels)
+    level_to_depth <- stats::setNames(seq_along(my_levels)-1, my_levels)
 
 
     nodes <- data.frame(name=my_report$name,
@@ -234,20 +241,169 @@ sampleModule <- function(input, output, session, sample_data, reports,
         NodePosX = "depth",
         NodeValue = "value",
         colourScale = colourScale(),
-        nodeWidth = 14,
+        xAxisDomain = my_levels,
+        xScalingFactor = input$scalingFactor,
+        numberFormat = "pavian",
+        title = input$sample_selector,
+        nodeWidth = 15,
+        nodePadding = ifelse(input$show_numbers, 13, 8),
+        height = input$height,
+        nodeCornerRadius = 5,
+        showNodeValues = input$show_numbers,
         units = "reads",
         linkType = input$linkType,
         curvature = input$curvature,
         LinkGroup = "source_name",
         fontSize = 12,
-        iterations = ifelse(is.null(input$iterations), 50, input$iterations),
+        iterations = input$sankey_maxn * 100,
         align = "none",
-        nodeStrokeWidth = 0.1,
+        nodeStrokeWidth = 1,
         highlightChildLinks = TRUE,
         orderByPath = TRUE,
         scaleNodeBreadthsByString = TRUE,
         zoom = T
       )
+  })
+
+  output$sankey_hover_plots <- renderUI({
+    ns <- session$ns
+    shiny::tagList(h3(input$sankey_hover),
+                   strong(textOutput(ns("header1"))),
+                   plotOutput(ns("plot1"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
+                   strong(textOutput(ns("header2"))),
+                   plotOutput(ns("plot2"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
+                   conditionalPanel("typeof input.sankey_hover != 'undefined'", actionLink(ns("show_in_comparison"),"Show in comparison table"))
+                   )
+  })
+
+  output$dynamic_sankey <- renderUI({
+    ns <- session$ns
+    if (input$side_by_side) {
+      tagList(
+        fluidRow(
+        column(8,
+               sankeyD3::sankeyNetworkOutput(session$ns("sankey"),
+                                             width = "100%",
+                                             height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
+               downloadLink(ns("save_sankey"),"Save Network")
+          ),
+          column(4,
+                 br(),
+                 uiOutput(ns("sankey_hover_plots"))
+          )
+        ),
+        fluidRow(
+          div(style = 'overflow-x: scroll',DT::dataTableOutput(session$ns('dt_sample_view')))
+        )
+        )
+    } else {
+      tagList(
+        sankeyD3::sankeyNetworkOutput(session$ns("sankey"), width = "100%", height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
+        downloadLink(ns("save_sankey"),"Save Network"),
+        div(style = 'overflow-x: scroll', DT::dataTableOutput(session$ns('dt_sample_view')))
+      )
+    }
+
+
+  })
+
+  sum_reads <- reactive({
+    sapply(reports(), function(x) {
+      sel_rows <- sub("^._","",x$name) %in% input$contaminant_selector
+      ## select also child rows - as we always remove the whole clade here
+      for (ts in x$taxonstring[sel_rows])
+        sel_rows <- sel_rows | startsWith(x$taxonstring,ts)
+
+      sel_rows <- sel_rows | x$name %in% c("-_root","u_unclassified")
+      sum(x$reads_stay[!sel_rows], na.rm=T)
+    }
+  )
+  })
+
+  hover_reads <- reactive({
+    res <- lapply(reports(), function(x) x$reads[sub("^._", "", x$name) == input$sankey_hover])
+    sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
+  })
+
+  hover_reads_stay <- reactive({
+    res <- lapply(reports(), function(x) x$reads_stay[sub("^._", "", x$name) == input$sankey_hover])
+    sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
+  })
+
+  plot_it <- function(normalize) {
+    req(input$sankey_hover)
+    req(sum_reads())
+    len <- length(sum_reads())
+    stopifnot(length(hover_reads()) == len)
+    stopifnot(length(hover_reads_stay()) == len)
+    mydf <- data.frame(reads=c(hover_reads() - hover_reads_stay(),hover_reads_stay()),
+                       type=rep(c("reads", "reads_stay"), each = len),
+                       sample=rep(names(sum_reads()),2))
+
+    mydf <- mydf[mydf$type == "reads" || mydf$reads > 0, ]
+
+    my_names <- names(sum_reads())
+    colvec <- ifelse(my_names == input$sample_selector, "red","black")
+
+    mydf$sample <- factor(mydf$sample, names(sum_reads()) ,my_names)
+
+    mydf$type <- factor(mydf$type, levels = c("reads_stay", "reads"),
+                        labels = c("at taxon", "at children"))
+
+    mydf <- mydf[order(mydf$sample, mydf$type),]
+    if (normalize)
+      mydf$reads <- 100*mydf$reads / rep(sum_reads(), each = 2)
+
+    mydf$pos <- unlist(tapply(mydf$reads, mydf$sample, function(reads) cumsum(reads)))
+
+    ## TODO: Replace by D3 graph?
+    ##   See e.g. http://eyeseast.github.io/visible-data/2013/08/28/responsive-charts-with-d3/
+    #str(names(sum_reads()))
+    ggplot(mydf, aes(x=sample)) +
+      geom_bar(aes(y=reads,fill=type), stat="identity", position="stack") +
+      xlab("") + ylab("") +
+      scale_y_continuous(limits=c(0,max(mydf$pos)*1.1), expand=c(0,0)) +
+      theme_bw() +
+      theme(
+        panel.grid.major.y = element_line(colour = "black"),
+        panel.border = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(colour=colvec, angle=90, vjust=1,hjust=1),
+        legend.position = "none"
+      )
+  }
+
+
+  output$header1 <- renderText({
+    req(input$sankey_hover)
+    #paste("Number of reads for ", input$sankey_hover, "across all samples")
+    paste("Number of reads across all samples")
+  })
+  output$plot1 <- renderPlot({
+    plot_it(FALSE) +
+      geom_text(aes(label = f2si2(pos), y=pos), hjust = 0.5, vjust = -.1)
+  },  bg="transparent")
+
+  output$header2 <- renderText({
+    req(input$sankey_hover)
+    #paste0("Percent of reads for ", input$sankey_hover, " (excluding filtered clades)")
+    paste0("Percent of reads (excluding filtered clades)")
+  })
+  output$plot2 <- renderPlot({
+    plot_it(TRUE) +
+      geom_text(aes(label = f2si2(pos), y=pos),  hjust = 0.5, vjust = -.1)
+  },  bg="transparent")
+
+
+  observeEvent(input$plot_click, {
+    str(input$plot_click)
+    if (round(input$plot_click$x) %in% seq_along(names(reports())))
+      updateSelectizeInput(session, "sample_selector", selected = names(reports())[round(input$plot_click$x)])
+  })
+
+  output$sankey <- sankeyD3::renderSankeyNetwork({
+    sankey_network()
   })
 
   dt_sample_view_proxy <- DT::dataTableProxy('dt_sample_view', session = session)
@@ -269,7 +425,11 @@ sampleModule <- function(input, output, session, sample_data, reports,
       my_report,
       filter = 'none',
       selection = 'single',
-      options = datatable_opts,
+      options = c(datatable_opts,
+                  pagelength = 25,
+                  lengthMenu = c(10, 25, 50, 100),
+                  scrollX = TRUE
+                  ),
       rownames = FALSE
     ) %>%
       #DT::formatString("Percent", suffix = "%") %>%
@@ -303,7 +463,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   output$blastn <- renderUI({
     req(tbx_results_df())
 
-    str(tbx_results_df())
+    #str(tbx_results_df())
 
     ## TODO: Add a custom search functionality
     #actionButton("view_selected_in_samples_comparison",paste("--> View abundances of ",selected_sample,"across samples"))
@@ -317,5 +477,11 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
     updateTabsetPanel(session, "main_page", selected = "Sample comparison")
   }, ignoreNULL = TRUE)
+
+
+  reactive({
+    req(input$show_in_comparison)
+    return(isolate(input$sankey_hover));
+  })
 
 }

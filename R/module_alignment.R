@@ -88,15 +88,13 @@ With bowtie2
 #' @import shinydashboard
 alignmentModule <- function(input, output, session, sample_data) {
 
-  if (!require(Rsamtools, quietly=TRUE)) {
-    shinyjs::disable("bam_file")
-    shinyjs::disable("btn_get_alignment")
-    shinyjs::disable("align_loess")
-    shinyjs::disable("align_moving_avg")
-  }
-
   output$warn_Rsamtools <- renderUI({
-    if (!require(Rsamtools, quietly=TRUE)) {
+    if (!requireNamespace("Rsamtools")) {
+      shinyjs::disable("bam_file")
+      shinyjs::disable("btn_get_alignment")
+      shinyjs::disable("align_loess")
+      shinyjs::disable("align_moving_avg")
+
       infoBox(
         "Functionality requires package Rsamtools",
         "See https://bioconductor.org/packages/release/bioc/html/Rsamtools.html for installation instructions.",
@@ -108,13 +106,13 @@ alignmentModule <- function(input, output, session, sample_data) {
 
   req_bioc <- function(pkg) {
     #req(require(pkg, character.only=TRUE))
-    validate(need(require(pkg, character.only=TRUE, quietly=TRUE), message=sprintf(
+    validate(need(requireNamespace(pkg), message=sprintf(
       "%s is needed for this functionality. See https://bioconductor.org/packages/release/bioc/html/%s.html for information on how to install it",
       pkg, pkg)))
   }
 
   bam_file <- reactive({
-    req_bioc("Rsamtools")
+    #req_bioc("Rsamtools")
     bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
     if (!is.null(input$bam_file)) {
       validate(need(
@@ -131,24 +129,47 @@ alignmentModule <- function(input, output, session, sample_data) {
     bam_file
   })
 
-  plot_pileup_act <- eventReactive(input$btn_get_alignment, {
+  #plot_pileup_act <- eventReactive(input$btn_get_alignment, {
+  plot_pileup_act <- reactive ({
     req_bioc("Rsamtools")
     plot_pileup(pileup(), nreads(), seq_lengths(),
-                input$align_loess,
-                text_size = 4
+                TRUE,
+                text_size = 3
     )
   })
 
-  pileup <- reactive({ get_pileup(bam_file(), input$align_moving_avg) })
+  pileup <- reactive({ get_pileup(bam_file(), FALSE) })
   pileup_nm <- reactive({ get_pileup(bam_file(), FALSE) })
   nreads <- reactive({ get_nreads(bam_file()) })
+
+  nreads_all <- reactive({ get_nreads(bam_file()) })
+  bam2 <- reactive( {
+    get_bam2(bam_file())
+  })
+
+  nreads_range_x <- reactive({
+    bam <- bam2()
+    order1 <- order(bam[[1]]$pos)
+    sel <- findInterval(bam[[1]]$pos[order1], ranges$x)==1
+    res <- tapply(bam[[1]]$qname[order1][sel], bam[[1]]$rname[order1][sel], function(x) length(unique(x)))
+    res[is.na(res)] <- 0
+    res
+  })
+
+
   seq_lengths <- reactive({ get_seqlengths(bam_file()) })
+  seq_lengths_range_x <- reactive({
+    rr <- ranges$x[2] - ranges$x[1]
+    a <- get_seqlengths(bam_file())
+    sapply(a, function(x) rr)
+  })
 
 
   output$sample_align <- renderPlot({
     req_bioc("Rsamtools")
+    #ranges$x <- NULL
     plot_pileup_act()
-  })
+  }, res = 72)
 
   ranges <- reactiveValues(x = NULL)
 
@@ -165,12 +186,20 @@ alignmentModule <- function(input, output, session, sample_data) {
     #req(pileup())
     #req(length(nreads()) == 1)
     req(ranges$x)
-    plot_pileup(pileup_nm(), nreads(), seq_lengths(),
+    pileup_nm1 <- pileup_nm()
+    pileup_nm1 <- pileup_nm1[findInterval(pileup_nm1$pos,ranges$x) == 1, ]
+    pileup_nm2 <- pileup_nm1[pileup_nm1$count > 0, ]
+    validate(need(nrow(pileup_nm2) > 0,
+                  message = "No reads in selected region"))
+    attr(pileup_nm1, "covered_bp") = tapply(pileup_nm2$pos, pileup_nm2$seqnames, function(x) length(unique(x)))
+    attr(pileup_nm1, "sum_count") = tapply(pileup_nm2$count, pileup_nm2$seqnames, sum)
+
+    plot_pileup(pileup_nm1, nreads_range_x(), seq_lengths_range_x(),
                 input$align_loess,
-                text_size = 4,
-                show_step = FALSE
+                text_size = 3,
+                show_step = TRUE
     ) + coord_cartesian(xlim = ranges$x)
-  })
+  }, res=72)
 
   assembly_info <- eventReactive(input$btn_load_assembly_info, {
     url <- input$cbo_assemblies

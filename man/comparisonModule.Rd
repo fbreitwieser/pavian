@@ -5,7 +5,7 @@
 \title{Server part of comparison module}
 \usage{
 comparisonModule(input, output, session, sample_data, reports,
-  datatable_opts = NULL, filter_func = NULL)
+  datatable_opts = NULL, filter_func = NULL, search = NULL)
 }
 \arguments{
 \item{input}{Shiny input object.}
@@ -21,6 +21,8 @@ comparisonModule(input, output, session, sample_data, reports,
 \item{datatable_opts}{Additional options for creating the datatable.}
 
 \item{filter_func}{If not NULL, \code{filter_func} is applied to every data.frame in \code{reports}.}
+
+\item{search}{Search term to initialize table with.}
 }
 \value{
 Comparison module server functionality

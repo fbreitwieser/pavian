@@ -4,12 +4,14 @@
 \alias{read_reports}
 \title{Read report files, with Shiny progress bar}
 \usage{
-read_reports(report_files, report_names, cache_dir = "cache")
+read_reports(report_files, report_names, cache_dir = NULL)
 }
 \arguments{
 \item{report_files}{character vector with files}
 
 \item{report_names}{character vector with names}
+
+\item{cache_dir}{cache directory path}
 }
 \value{
 List of reports

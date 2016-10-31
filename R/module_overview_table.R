@@ -46,6 +46,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
 
     withProgress({
     ## Create summaries of all reports
+    #str(reports())
     samples_summary <- do.call(rbind, lapply(reports(), summarize_report))
     samples_summary$Name <- rownames(samples_summary)
     #samples_summary$FileName <- sample_data()[,"ReportFile"]
@@ -69,7 +70,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
       start_color_bar_at <- start_color_bar_at + 1
       number_range <- c(0, 100)
       samples_summary[, start_color_bar_at:ncol(samples_summary)] <-
-        100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, start_color_bar_at], `/`), 2)
+        100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, start_color_bar_at], `/`), 4)
 
       ## TODO: Define columnDefs and give read counts on mouse-over
     }

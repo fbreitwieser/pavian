@@ -53,6 +53,7 @@ beautify_colnames <- function(x) {
 #' @return data.frame or matrix in which all negative and NA values are set to zero
 #' @export
 zero_if_na <- function(df) {
+  stopifnot(!is.null(df))
   if (nrow(df) > 0) {
     df[is.na(df) | df < 0] <- 0
   }
@@ -75,3 +76,26 @@ get_directory_listing <- function(my_dir) {
 
 now <- function() proc.time()[[3]]
 
+# from http://stackoverflow.com/questions/11340444/is-there-an-r-function-to-format-number-using-unit-prefix
+f2si2<-function (number)
+{
+  lut <- c(1e-24, 1e-21, 1e-18, 1e-15, 1e-12, 1e-09, 1e-06,
+           0.001, 1, 1000, 1e+06, 1e+09, 1e+12, 1e+15, 1e+18, 1e+21,
+           1e+24)
+  pre <- c("y", "z", "a", "f", "p", "n", "u", "m", "", "k",
+           "M", "G", "T", "P", "E", "Z", "Y")
+  sel <- lut >= 1
+  lut <- lut[sel]
+  pre <- pre[sel]
+  ix <- findInterval(number, lut)
+  ix[ix == 0] <- 1
+
+
+  number2 <- signif(number/lut[ix],3)
+  number2[number2 < 1] <- signif(number2[number2 < 1], 2)
+  number2[number2 < .1] <- signif(number2[number2 < .1], 1)
+
+  sistring <- sub("^0", "", paste0(number2,pre[ix]))
+
+  return(sistring)
+}
