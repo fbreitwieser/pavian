@@ -23,7 +23,7 @@ RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubu
 
 RUN R -e "install.packages('devtools', repos='http://cran.rstudio.com/')"
 RUN R -e "source('https://bioconductor.org/biocLite.R'); biocLite('Rsamtools')"
-RUN R -e "devtools::install_bitbucket('florianbw/pavian')"
+RUN R -e "devtools::install_github('fbreitwieser/pavian')"
 
 COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
 RUN rm -f /srv/shiny-server/*

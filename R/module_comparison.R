@@ -140,10 +140,10 @@ stat_name_to_f <- list(
 comparisonModule <- function(input, output, session, sample_data, reports,
                              datatable_opts = NULL, filter_func = NULL, search = NULL) {
 
-  observe({
-    updateSelectizeInput(session, "sample_selector",
-                         choices=sample_data()[,"Name"], selected=sample_data()[,"Name"])
-    })
+  #observe({
+  #  updateSelectizeInput(session, "sample_selector",
+  #                       choices=sample_data()[,"Name"], selected=sample_data()[,"Name"])
+  #  })
 
   observeEvent(input$comparison_type, {
     if (input$comparison_type == "table") {
