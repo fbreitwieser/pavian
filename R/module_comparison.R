@@ -44,7 +44,7 @@ comparisonModuleUI <- function(id) {
                            placement = "left", trigger = "hover"),
                  checkboxGroupInput(ns("opts_normalization"), label = "",
                                     choices = c("Normalize by total # of reads"="opt_display_percentage",
-                                                "Apply VST"="opt_vst_data",
+                                                "Log data"="opt_vst_data", ## TODO: Change to VST
                                                 "Robust z-score"="opt_zscore"),
                                     inline = TRUE)
                  ),
@@ -457,7 +457,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                                         drawCallback = sparklineDrawCallback,
                                         order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
                                         search = list(
-                                          search = dt_options$search,
+                                          search = isolate(dt_options$search),
                                           regex = TRUE, caseInsensitive = FALSE
                                         ))
                          )
