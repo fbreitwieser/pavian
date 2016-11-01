@@ -2,6 +2,14 @@ info_message <- function(...) {
   message("INFO [",format(Sys.time(), "%m/%d %H:%M"),"]: ",...)
 }
 
+startsWith <- function(x, prefix) {
+  if (exists("startsWith", "package:base") ) {
+    base::startsWith(x, prefix)
+  } else {
+    substring(x, 1, nchar(prefix)) == prefix
+  }
+}
+
 ## helper functions for loading the files reactively
 ##   file_glob_pattern contains %s, which is to be replaced by the sample names
 list_kraken_files <- function(data_dir, file_names,file_extension,sample_name=NULL) {
