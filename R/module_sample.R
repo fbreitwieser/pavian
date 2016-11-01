@@ -109,6 +109,147 @@ sampleModule <- function(input, output, session, sample_data, reports,
   #############################################################################
   ##  Sample viewer outputs
 
+  output$sankey_hover_plots <- renderUI({
+    ns <- session$ns
+    shiny::tagList(h3(input$sankey_hover),
+                   strong(textOutput(ns("header1"))),
+                   plotOutput(ns("plot1"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
+                   strong(textOutput(ns("header2"))),
+                   plotOutput(ns("plot2"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
+                   conditionalPanel("typeof input.sankey_hover != 'undefined'", actionLink(ns("show_in_comparison"),"Show in comparison table"))
+    )
+  })
+
+  output$dynamic_sankey <- renderUI({
+    ns <- session$ns
+    if (input$side_by_side) {
+      tagList(
+        fluidRow(
+          column(8,
+                 sankeyD3::sankeyNetworkOutput(session$ns("sankey"),
+                                               width = "100%",
+                                               height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
+                 downloadLink(ns("save_sankey"),"Save Network")
+          ),
+          column(4,
+                 br(),
+                 uiOutput(ns("sankey_hover_plots"))
+          )
+        ),
+        fluidRow(
+          div(style = 'overflow-x: scroll',DT::dataTableOutput(session$ns('dt_sample_view')))
+        )
+      )
+    } else {
+      tagList(
+        sankeyD3::sankeyNetworkOutput(session$ns("sankey"), width = "100%", height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
+        downloadLink(ns("save_sankey"),"Save Network"),
+        div(style = 'overflow-x: scroll', DT::dataTableOutput(session$ns('dt_sample_view')))
+      )
+    }
+
+
+  })
+
+  sum_reads <- reactive({
+    sapply(reports(), function(x) {
+      sel_rows <- sub("^._","",x$name) %in% input$contaminant_selector
+      ## select also child rows - as we always remove the whole clade here
+      for (ts in x$taxonstring[sel_rows])
+        sel_rows <- sel_rows | startsWith(x$taxonstring,ts)
+
+      sel_rows <- sel_rows | x$name %in% c("-_root","u_unclassified")
+      sum(x$reads_stay[!sel_rows], na.rm=T)
+    }
+    )
+  })
+
+  hover_reads <- reactive({
+    res <- lapply(reports(), function(x) x$reads[sub("^._", "", x$name) == input$sankey_hover])
+    sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
+  })
+
+  hover_reads_stay <- reactive({
+    res <- lapply(reports(), function(x) x$reads_stay[sub("^._", "", x$name) == input$sankey_hover])
+    sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
+  })
+
+  plot_it <- function(normalize) {
+    req(input$sankey_hover)
+    req(sum_reads())
+    len <- length(sum_reads())
+    stopifnot(length(hover_reads()) == len)
+    stopifnot(length(hover_reads_stay()) == len)
+    mydf <- data.frame(reads=c(hover_reads() - hover_reads_stay(),hover_reads_stay()),
+                       type=rep(c("reads", "reads_stay"), each = len),
+                       sample=rep(names(sum_reads()),2))
+
+    mydf <- mydf[mydf$type == "reads" || mydf$reads > 0, ]
+
+    my_names <- names(sum_reads())
+    colvec <- ifelse(my_names == input$sample_selector, "red","black")
+
+    mydf$sample <- factor(mydf$sample, names(sum_reads()) ,my_names)
+
+    mydf$type <- factor(mydf$type, levels = c("reads_stay", "reads"),
+                        labels = c("at taxon", "at children"))
+
+    mydf <- mydf[order(mydf$sample, mydf$type),]
+    if (normalize)
+      mydf$reads <- 100*mydf$reads / rep(sum_reads(), each = 2)
+
+    mydf$pos <- unlist(tapply(mydf$reads, mydf$sample, function(reads) cumsum(reads)))
+
+    ## TODO: Replace by D3 graph?
+    ##   See e.g. http://eyeseast.github.io/visible-data/2013/08/28/responsive-charts-with-d3/
+    #str(names(sum_reads()))
+    ggplot(mydf, aes(x=sample)) +
+      geom_bar(aes(y=reads,fill=type), stat="identity", position="stack") +
+      xlab("") + ylab("") +
+      scale_y_continuous(limits=c(0,max(mydf$pos)*1.1), expand=c(0,0)) +
+      theme_bw() +
+      theme(
+        panel.grid.major.y = element_line(colour = "black"),
+        panel.border = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(colour=colvec, angle=90, vjust=1,hjust=1),
+        legend.position = "none"
+      )
+  }
+
+
+  output$header1 <- renderText({
+    req(input$sankey_hover)
+    #paste("Number of reads for ", input$sankey_hover, "across all samples")
+    paste("Number of reads across all samples")
+  })
+  output$plot1 <- renderPlot({
+    plot_it(FALSE) +
+      geom_text(aes(label = f2si2(pos), y=pos), hjust = 0.5, vjust = -.1)
+  },  bg="transparent")
+
+  output$header2 <- renderText({
+    req(input$sankey_hover)
+    #paste0("Percent of reads for ", input$sankey_hover, " (excluding filtered clades)")
+    paste0("Percent of reads (excluding filtered clades)")
+  })
+  output$plot2 <- renderPlot({
+    plot_it(TRUE) +
+      geom_text(aes(label = f2si2(pos), y=pos),  hjust = 0.5, vjust = -.1)
+  },  bg="transparent")
+
+
+  observeEvent(input$plot_click, {
+    str(input$plot_click)
+    if (round(input$plot_click$x) %in% seq_along(names(reports())))
+      updateSelectizeInput(session, "sample_selector", selected = names(reports())[round(input$plot_click$x)])
+  })
+
+  output$sankey <- sankeyD3::renderSankeyNetwork({
+    sankey_network()
+  })
+
 
   observeEvent(input$sankey_clicked, {
     #update(session, "txt_selected_name", input$sankey_clicked)

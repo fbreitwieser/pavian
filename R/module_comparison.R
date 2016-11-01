@@ -235,15 +235,15 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     reports()[unique(sort(selected))]
   })
 
-  get_summarized_report_reads_stay <- reactive({
-    req(reports_filtered())
-    get_summarized_report2(reports_filtered(), "reads_stay")
-  })
+  #get_summarized_report_reads_stay <- reactive({
+  #  req(reports_filtered())
+  #  get_summarized_report2(reports_filtered(), "reads_stay")
+  #})
 
-  get_summarized_report_reads_clade <- reactive({
-    req(reports_filtered())
-    get_summarized_report2(reports_filtered(), "reads")
-  })
+  #get_summarized_report_reads_clade <- reactive({
+  #  req(reports_filtered())
+  #  get_summarized_report2(reports_filtered(), "reads")
+  #})
 
   get_summarized_report_reads_both <- reactive({
     req(reports_filtered())
@@ -493,6 +493,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     }
 
     if (nrow(summarized_report) > 0) {
+      print(head(summarized_report))
       #brks <- quantile(summarized_report[,attr(summarized_report, 'data_columns')], probs = seq(.5, .95, .05), na.rm = TRUE)
       #brks <- quantile(summarized_report[,attr(summarized_report, 'stat_column')], probs = seq(.05, .95, .05), na.rm = TRUE)
       #brks <- seq(from=0, to=max(summarized_report[,attr(summarized_report, 'stat_column')], na.rm=T), length.out = 20)
