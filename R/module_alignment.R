@@ -52,7 +52,7 @@ With bowtie2
         box(width = 12,
             shiny::fileInput(ns("bam_file"),"Choose BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE),
             #shinyFileTree::shinyFileTreeOutput(ns("bam_files_tree")),
-            shiny::actionButton(ns("btn_get_alignment"), "Show alignment pileup"),
+            shiny::actionButton(ns("btn_get_alignment"), "Load example data"),
             shiny::checkboxInput(ns("align_loess"), "Show smoothed LOESS curve"),
             shiny::checkboxInput(ns("align_moving_avg"), "Show moving average", value = TRUE),
             shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
@@ -111,9 +111,10 @@ alignmentModule <- function(input, output, session, sample_data) {
       pkg, pkg)))
   }
 
+  my_bam_file <- reactiveValues(val = NULL)
+
   bam_file <- reactive({
     #req_bioc("Rsamtools")
-    bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
     if (!is.null(input$bam_file)) {
       validate(need(
         is.data.frame(input$bam_file) &&
@@ -126,8 +127,14 @@ alignmentModule <- function(input, output, session, sample_data) {
       bam_pos <- grep(".bam$",input$bam_file$name)
       bam_file = file.path(dirname(input$bam_file$datapath[bam_pos]),input$bam_file$name[bam_pos])
     }
-    bam_file
+    my_bam_file$val <-bam_file
   })
+
+  observeEvent(input$btn_get_alignment, {
+    my_bam_file$val <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package="pavian")
+  })
+
+
 
   #plot_pileup_act <- eventReactive(input$btn_get_alignment, {
   plot_pileup_act <- reactive ({
@@ -138,13 +145,13 @@ alignmentModule <- function(input, output, session, sample_data) {
     )
   })
 
-  pileup <- reactive({ get_pileup(bam_file(), FALSE) })
-  pileup_nm <- reactive({ get_pileup(bam_file(), FALSE) })
-  nreads <- reactive({ get_nreads(bam_file()) })
+  pileup <- reactive({ get_pileup(my_bam_file$val, FALSE) })
+  pileup_nm <- reactive({ get_pileup(my_bam_file$val, FALSE) })
+  nreads <- reactive({ get_nreads(my_bam_file$val) })
 
-  nreads_all <- reactive({ get_nreads(bam_file()) })
+  nreads_all <- reactive({ get_nreads(my_bam_file$val) })
   bam2 <- reactive( {
-    get_bam2(bam_file())
+    get_bam2(my_bam_file$val)
   })
 
   nreads_range_x <- reactive({
@@ -157,15 +164,16 @@ alignmentModule <- function(input, output, session, sample_data) {
   })
 
 
-  seq_lengths <- reactive({ get_seqlengths(bam_file()) })
+  seq_lengths <- reactive({ get_seqlengths(my_bam_file$val) })
   seq_lengths_range_x <- reactive({
     rr <- ranges$x[2] - ranges$x[1]
-    a <- get_seqlengths(bam_file())
+    a <- get_seqlengths(my_bam_file$val)
     sapply(a, function(x) rr)
   })
 
 
   output$sample_align <- renderPlot({
+    req(my_bam_file$val)
     req_bioc("Rsamtools")
     #ranges$x <- NULL
     plot_pileup_act()
