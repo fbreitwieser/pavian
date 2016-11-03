@@ -386,7 +386,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
   })
 
-  observeEvent(sample_data, {
+  observeEvent(sample_data(), {
     updateSelectizeInput(session, "sample_selector",
                          choices=sample_data()[,"Name"], selected=sample_data()[,"Name"]
     )
