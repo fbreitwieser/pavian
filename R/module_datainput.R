@@ -20,7 +20,7 @@ dataInputModuleUI <- function(id, server_access = TRUE) {
         collapsible = TRUE,
         collapse = TRUE,
         HTML(
-        "Pavian supports Kraken and Centrifuge report files. You can either upload files, select a directory on the server, or load the example data set. The example data is from brain biopsies from <a style='color:white; text-decoration: underline;' href='http://nn.neurology.org/content/3/4/e251.full'>ten patients with suspected infection of the nervous system </a>."),
+        "Pavian supports Kraken, Centrifuge and MetaPhlAn report files. Please note that currently for Centrifuge you need to run the script <tt>centrifuge-kreport</tt> on the result file to get the correct format! You can either upload files, select a directory on the server, or load the example data set. The example-data/brain-biopsies from <a style='color:white; text-decoration: underline;' href='http://nn.neurology.org/content/3/4/e251.full'>ten patients with suspected infection of the nervous system</a> that were analyzed with Kraken. The example-data/hmp is a couple of samples from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a> analyzed with MetaPhlAn."),
         {if (isTRUE(server_access)) {
           radioButtons(ns('upload_or_server'), label="", inline=TRUE,
                        choices=c("Upload files"="upload",
@@ -95,7 +95,8 @@ dataInputModule <- function(input, output, session,
     read_error_msg$val
   })
 
-  read_server_directory <- function(data_dir, sample_set_name = NULL) {
+  read_server_directory <- function(data_dir, sample_set_name = NULL, 
+                                    include_base_dir = T) {
     message("reading files in ", data_dir)
     if (!dir.exists(data_dir)) {
       read_error_msg$val <- paste("Directory ", data_dir, "does not exist.")
@@ -118,16 +119,21 @@ dataInputModule <- function(input, output, session,
       sample_set_name <- paste(sample_set_name, counter)
     }
 
-    new_sample_sets <- list(read_sample_data(data_dir))
-    names(new_sample_sets) <- ifelse(!is.null(sample_set_name),
-                                     sample_set_name,
-                                     basename(data_dir))
-
+    base_name <- ifelse(!is.null(sample_set_name),
+                                       sample_set_name,
+                                       basename(data_dir))
+    new_sample_sets <- list()
+    if (include_base_dir) {
+      new_sample_sets <- list(read_sample_data(data_dir, ext=NULL))
+      names(new_sample_sets) <- base_name
+    }
 
     dirs <- list.dirs(data_dir, recursive = FALSE)
     if (length(dirs) > 0) {
-      sub_dir_sets <- lapply(list.dirs(data_dir, recursive = FALSE), read_sample_data)
-      names(sub_dir_sets) <- paste0(names(new_sample_sets),"/",basename(dirs))
+      sub_dir_sets <- lapply(list.dirs(data_dir, recursive = FALSE), 
+                             read_sample_data, 
+                             ext=NULL)
+      names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
       new_sample_sets <- c(new_sample_sets, sub_dir_sets)
     }
     new_sample_sets <- new_sample_sets[! sapply(new_sample_sets, is.null) ]
@@ -155,7 +161,8 @@ dataInputModule <- function(input, output, session,
       shinyjs::hide("read_server_dir")
 
       withProgress(message = "Reading example directory ...", {
-        read_server_directory(system.file("shinyapp", "example-data", package = "pavian"))
+        read_server_directory(system.file("shinyapp", "example-data", package = "pavian"),
+                              include_base_dir = FALSE)
       })
     }
   })
@@ -193,30 +200,56 @@ dataInputModule <- function(input, output, session,
     read_server_directory(dirname(inFile$datapath[1]), "Uploaded sample set")
   })
 
-  get_def_df <- reactive({
+  get_sample_data <- reactive({
     validate(need(sample_sets$val, message = "Need samples sets"))
     sample_sets$val[[input$sample_set_select]]
   })
 
   report_files <- reactive({
-    def_df <- get_def_df()
-    validate(need(def_df, message = "Need def df."))
-    def_df$ReportFilePath
+    sample_data <- get_sample_data()
+    validate(need(sample_data, message = "Need def df."))
+    sample_data$ReportFilePath
   })
 
   output$table <- renderRHandsontable({
-    def_df <- get_def_df()
-    validate(need(def_df, message = "Need def df."))
+    sample_data <- get_sample_data()
+    validate(need(sample_data, message = "Need def df."))
 
-    def_df$Include[! file.exists(report_files()) ] <- FALSE
+    sample_data$FormatOK <- sapply(report_files(), 
+                          function(x) length(read_report(x, check_file=T)) != 0)
+    sample_data$Include[!sample_data$FormatOK] <- FALSE
 
-    rh <- rhandsontable(def_df, readOnly = TRUE, manualRowMove = TRUE) %>%
-      hot_col("Include", readOnly = FALSE) %>%
+    #sample_data$FormatOK <- ifelse(sample_data$FormatOK, 
+    #                               "<font color='green'>&#x2713;</font>", 
+    #                               "<font color='red'>&#x2717;</font>")
+
+    sample_data <- sample_data[,c("FormatOK",setdiff(colnames(sample_data),"FormatOK"))]
+
+    rh <- rhandsontable(sample_data, readOnly = TRUE, manualRowMove = TRUE) %>%
+      hot_col("Include", renderer = "
+    function(instance, td, row, col, prop, value, cellProperties) {
+      cellProperties.readOnly = !value;
+      Handsontable.renderers.CheckboxRenderer.apply(this, arguments);
+      return td;
+    }") %>%
+     hot_col("FormatOK", renderer = "
+    function(instance, td, row, col, prop, value, cellProperties) {
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      if (value ) { 
+        value = '&#x2713'; 
+        td.style.color = 'green';
+      } else {
+        value = '&#x2717';
+        td.style.color = 'red';
+        cellProperties.comment = 'The file format does not validate. Pavian supports the outputs from kraken-report, centrifuge-kreport (but not the centrifuge --report-file!), and metaphlan2.py. You can create a valid centrifuge report with centrifuge-kreport -x IDX OUT_FILE.';
+      }
+      return td;
+    }") %>%
       hot_col("Name", readOnly = FALSE)
-    if ("Class" %in% colnames(def_df))
+    if ("Class" %in% colnames(sample_data))
       rh <- rh %>% hot_col("Class", readOnly = FALSE)
 
-    rh
+    rh %>% hot_table(enableComments = TRUE, highlightRow = TRUE)
   })
 
   observeEvent(input$btn_save_table, {
