@@ -15,8 +15,4 @@ Number of reads for each sequence.
 \description{
 Get number of aligned reads from a bam file
 }
-\examples{
-bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-get_nreads(bam_file)
-}
 

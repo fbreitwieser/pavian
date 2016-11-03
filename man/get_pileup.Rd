@@ -25,9 +25,4 @@ Returns per-base pileup statistics, or a moving average.
 TODO: Non-overlapping mean is probably the better idea, here,
 as only one value per bin is reported
 }
-\examples{
-bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-head(get_pileup(bam_file))
-head(get_pileup(bam_file, summarize = TRUE))
-}
 
