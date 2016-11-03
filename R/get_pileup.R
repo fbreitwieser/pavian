@@ -11,12 +11,6 @@
 #' @param ... Additional arguments for \code{Rsamtools::pileup}
 #'
 #' @return \code{data.frame} with sequence names, positions, strand and count information
-#' @export
-#'
-#' @examples
-#' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-#' head(get_pileup(bam_file))
-#' head(get_pileup(bam_file, summarize = TRUE))
 get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, ...) {
   req(requireNamespace("Rsamtools"))
   pileup <- Rsamtools::pileup(bam_file)
@@ -67,11 +61,6 @@ get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, .
 #' @param bam_file character(1) or BamFile; BAM file path.
 #'
 #' @return Number of reads for each sequence.
-#' @export
-#'
-#' @examples
-#' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-#' get_nreads(bam_file)
 get_nreads <- function(bam_file) {
   req(requireNamespace("Rsamtools"))
   p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth"))
@@ -92,11 +81,6 @@ get_bam2 <- function(bam_file) {
 #' @param bam_file character(1) or BamFile; BAM file path.
 #'
 #' @return named vector with lengths of each sequence.
-#' @export
-#'
-#' @examples
-#' bam_file <- system.file("shinyapp","example-data","CP4-JC_polyomavirus.bam", package = "pavian")
-#' get_seqlengths(bam_file)
 get_seqlengths <- function(bam_file) {
   req(requireNamespace("Rsamtools"))
   bamHeader <- Rsamtools::scanBamHeader(bam_file)
