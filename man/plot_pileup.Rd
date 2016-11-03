@@ -5,7 +5,7 @@
 \title{Plot a pileup}
 \usage{
 plot_pileup(pileup, nreads = NULL, seq_lengths = NULL, show_loess = FALSE,
-  show_step = TRUE, nwin = 500, span = 0.1, text_size = 4)
+  show_step = TRUE, nwin = 500, text_size = 4)
 }
 \arguments{
 \item{pileup}{The output from \code{\link{get_pileup}}}

@@ -2,19 +2,21 @@
 % Please edit documentation in R/read_report.R
 \name{read_report}
 \alias{read_report}
-\title{Read kraken and centrifuge-style reports}
+\title{Read Kraken-style and MetaPhlAn reports}
 \usage{
-read_report(myfile, has_header = NULL)
+read_report(myfile, has_header = NULL, check_file = FALSE)
 }
 \arguments{
-\item{myfile}{report file}
+\item{myfile}{Kraken-style or MetaPhlAn report file.}
 
-\item{has_header}{if the kraken report has a header or not}
+\item{has_header}{If the kraken report has a header or not.}
+
+\item{check_file}{If TRUE, only the first 5 lines of the file are loaded.}
 }
 \value{
 report data.frame
 }
 \description{
-Read kraken and centrifuge-style reports
+Read Kraken-style and MetaPhlAn reports
 }
 

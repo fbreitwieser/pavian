@@ -4,9 +4,8 @@
 \alias{dataInputModule}
 \title{Server part of pavian data input module}
 \usage{
-dataInputModule(input, output, session, ..., server_dirs = c(pavian_lib_dir =
-  system.file("shinyapp", "example-data", package = "pavian"), root =
-  "/home/fbreitwieser"), pattern = "sample_data.csv$", cache_tree = TRUE)
+dataInputModule(input, output, session, pattern = "sample_data.csv$",
+  cache_tree = TRUE)
 }
 \arguments{
 \item{input}{Scoped input.}
@@ -15,13 +14,9 @@ dataInputModule(input, output, session, ..., server_dirs = c(pavian_lib_dir =
 
 \item{session}{Shiny session.}
 
-\item{...}{Additional arguments for rhandsontable, such as height and width.}
-
 \item{pattern}{File name pattern for definition file.}
 
 \item{cache_tree}{\code{boolean}. Whether the file tree should be cached (currently not implemented).}
-
-\item{server_dir}{Directory with report files that can be loaded.}
 }
 \value{
 Shiny module server function, to be called by callModule.

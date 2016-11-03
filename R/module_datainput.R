@@ -1,15 +1,23 @@
 #' UI part of pavian data input module
 #'
-#' @param id Namespace ID
+#' @param id Namespace ID.
+#' @param server_access Whether to allow access to server directories.
+#' @param start_with One of 'example_data', 'upload', and 'server' (if server_access is TRUE).
 #'
 #' @return Shiny UI elements
 #' @export
 #' @import shiny
 #' @import shinydashboard
 #' @import rhandsontable
-dataInputModuleUI <- function(id, server_access = TRUE) {
+dataInputModuleUI <- function(id, server_access = TRUE, start_with="example_data") {
 
   ns <- NS(id)
+
+  data_options <- c("Upload files"="upload",
+                    "Use data on server"="server",
+                    "Load example data"="example_data")
+  if (!server_access)
+    data_options <- data_options[-2]
 
   #radio_placeholder <-
 
@@ -23,10 +31,8 @@ dataInputModuleUI <- function(id, server_access = TRUE) {
         "Pavian supports Kraken, Centrifuge and MetaPhlAn report files. Please note that currently for Centrifuge you need to run the script <tt>centrifuge-kreport</tt> on the result file to get the correct format! You can either upload files, select a directory on the server, or load the example data set. The example-data/brain-biopsies from <a style='color:white; text-decoration: underline;' href='http://nn.neurology.org/content/3/4/e251.full'>ten patients with suspected infection of the nervous system</a> that were analyzed with Kraken. The example-data/hmp is a couple of samples from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a> analyzed with MetaPhlAn."),
         {if (isTRUE(server_access)) {
           radioButtons(ns('upload_or_server'), label="", inline=TRUE,
-                       choices=c("Upload files"="upload",
-                                 "Use data on server"="server",
-                                 "Load example data"="example_data"),
-                       selected="example_data")
+                       choices=data_options,
+                       selected=start_with)
         } },
         fileInput(ns("file_upload"), "Select files on local machine for upload", multiple = TRUE),
         {if (isTRUE(server_access)) {
@@ -69,17 +75,14 @@ dataInputModuleUI <- function(id, server_access = TRUE) {
 #' @param input Scoped input.
 #' @param output Module output.
 #' @param session Shiny session.
-#' @param ... Additional arguments for rhandsontable, such as height and width.
-#' @param server_dir Directory with report files that can be loaded.
 #' @param pattern File name pattern for definition file.
 #' @param cache_tree \code{boolean}. Whether the file tree should be cached (currently not implemented).
 #'
 #' @return Shiny module server function, to be called by callModule.
 #' @export
 dataInputModule <- function(input, output, session,
-                            ...,
-                            server_dirs = c(pavian_lib_dir=system.file("shinyapp", "example-data", package = "pavian"),
-                                            root = "/home/fbreitwieser"),
+                            #server_dirs = c(pavian_lib_dir=system.file("shinyapp", "example-data", package = "pavian"),
+                            #                root = "/home/fbreitwieser"),
                             pattern = "sample_data.csv$",
                             cache_tree = TRUE) {
 
@@ -95,7 +98,7 @@ dataInputModule <- function(input, output, session,
     read_error_msg$val
   })
 
-  read_server_directory <- function(data_dir, sample_set_name = NULL, 
+  read_server_directory <- function(data_dir, sample_set_name = NULL,
                                     include_base_dir = T) {
     message("reading files in ", data_dir)
     if (!dir.exists(data_dir)) {
@@ -130,8 +133,8 @@ dataInputModule <- function(input, output, session,
 
     dirs <- list.dirs(data_dir, recursive = FALSE)
     if (length(dirs) > 0) {
-      sub_dir_sets <- lapply(list.dirs(data_dir, recursive = FALSE), 
-                             read_sample_data, 
+      sub_dir_sets <- lapply(list.dirs(data_dir, recursive = FALSE),
+                             read_sample_data,
                              ext=NULL)
       names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
       new_sample_sets <- c(new_sample_sets, sub_dir_sets)
@@ -215,12 +218,12 @@ dataInputModule <- function(input, output, session,
     sample_data <- get_sample_data()
     validate(need(sample_data, message = "Need def df."))
 
-    sample_data$FormatOK <- sapply(report_files(), 
+    sample_data$FormatOK <- sapply(report_files(),
                           function(x) length(read_report(x, check_file=T)) != 0)
     sample_data$Include[!sample_data$FormatOK] <- FALSE
 
-    #sample_data$FormatOK <- ifelse(sample_data$FormatOK, 
-    #                               "<font color='green'>&#x2713;</font>", 
+    #sample_data$FormatOK <- ifelse(sample_data$FormatOK,
+    #                               "<font color='green'>&#x2713;</font>",
     #                               "<font color='red'>&#x2717;</font>")
 
     sample_data <- sample_data[,c("FormatOK",setdiff(colnames(sample_data),"FormatOK"))]
@@ -235,8 +238,8 @@ dataInputModule <- function(input, output, session,
      hot_col("FormatOK", renderer = "
     function(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
-      if (value ) { 
-        value = '&#x2713'; 
+      if (value ) {
+        value = '&#x2713';
         td.style.color = 'green';
       } else {
         value = '&#x2717';

@@ -4,10 +4,14 @@
 \alias{dataInputModuleUI}
 \title{UI part of pavian data input module}
 \usage{
-dataInputModuleUI(id, server_access = TRUE)
+dataInputModuleUI(id, server_access = TRUE, start_with = "example_data")
 }
 \arguments{
-\item{id}{Namespace ID}
+\item{id}{Namespace ID.}
+
+\item{server_access}{Whether to allow access to server directories.}
+
+\item{start_with}{One of 'example_data', 'upload', and 'server' (if server_access is TRUE).}
 }
 \value{
 Shiny UI elements

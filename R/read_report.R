@@ -338,10 +338,11 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
 }
 
 
-#' Read kraken and centrifuge-style reports
+#' Read Kraken-style and MetaPhlAn reports
 #'
-#' @param myfile report file
-#' @param has_header if the kraken report has a header or not
+#' @param myfile Kraken-style or MetaPhlAn report file.
+#' @param has_header If the kraken report has a header or not.
+#' @param check_file If TRUE, only the first 5 lines of the file are loaded.
 #'
 #' @return report data.frame
 #' @export
@@ -369,7 +370,7 @@ message(myfile)
   if (has_header) {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = T,
-                                quote = "",stringsAsFactors=FALSE, 
+                                quote = "",stringsAsFactors=FALSE,
                                 comment.char = "", nrows = nrows)
      }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
@@ -461,7 +462,7 @@ message(myfile)
     print(head(report))
     return(NULL)
   }
- 
+
 
   if (!"taxonid" %in% colnames(report))
     report$taxonid <- 0

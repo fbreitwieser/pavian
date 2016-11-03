@@ -8,6 +8,8 @@
 #' @return list of dependencies
 #' @export
 #'
+#' @importFrom yaml yaml.load_file
+#' @importFrom htmltools htmlDependency
 #' @examples
 #' getDependency('sparkline')
 getDependency <- function (name, package = name) {

@@ -275,7 +275,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
   }
 
   get_summarized_reportc <- reactive({
-    requireNamespace("dplyr")
+    #requireNamespace("dplyr")
     summarized_report <-  get_summarized_report1()
 
     ## Remove taxons or clades
@@ -504,6 +504,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
 
     if (requireNamespace("sparkline")) {
+      req(requireNamespace("htmltools"))
       ## use the sparkline package and the getDependencies function in htmlwidgets to get the
       ## dependencies required for constructing sparklines and then inject it into the dependencies
       ## needed by datatable

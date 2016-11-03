@@ -156,8 +156,7 @@ server <- function(input, output, session) {
     #}
   })
 
-  sample_sets <- callModule(dataInputModule, "datafile", height = 800,
-                               server_dir = getOption("pavian.example_dir", system.file("shinyapp", "example-data", package = "pavian")))
+  sample_sets <- callModule(dataInputModule, "datafile", height = 800)
 
 
   observeEvent(sample_sets(),{
