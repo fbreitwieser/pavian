@@ -7,7 +7,7 @@ interactive tables, heatmaps and flow diagrams. Pavian also provides an alignmen
     devtools::install_github("fbreitwieser/pavian")
     pavian::runApp(port=5000)
 
-With Docker:
+With Docker [**there's an issue in the Docker image currently - will be fixed soon**]:
 
     docker pull 'florianbw/pavian'
     docker run --rm -p 5000:80 florianbw/pavian
