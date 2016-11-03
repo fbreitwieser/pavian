@@ -27,9 +27,7 @@ Imports:
     Rsamtools
 Suggests:
     phyloseq,
-    knitr, 
     rmarkdown
-VignetteBuilder: knitr
 Remotes:
     github::fbreitwieser/sankeyD3,
     github::htmlwidgets/sparkline,
