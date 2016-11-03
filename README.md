@@ -1,5 +1,10 @@
+# Pavian - Interactive analysis of metagenomics data
+[![Build Status](https://travis-ci.org/fbreitwieser/pavian.svg?branch=master)](https://travis-ci.org/fbreitwieser/pavian)
+
 Pavian is a web application for exploring metagenomics classification results, with a special focus on infectious disease diagnosis. Pinpointing pathogens in metagenomics classification results is often complicated by host and laboratory contaminants as well as many non-pathogenic microbiota. With Pavian, researchers can analyze, display and transform results from the Kraken and Centrifuge classifiers using
 interactive tables, heatmaps and flow diagrams. Pavian also provides an alignment viewer for validation of matches to a particular genome.
+
+**Preprint now available at http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html**
 
 ## Installing and running Pavian
 
