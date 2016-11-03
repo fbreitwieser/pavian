@@ -156,7 +156,7 @@ server <- function(input, output, session) {
     #}
   })
 
-  sample_sets <- callModule(dataInputModule, "datafile", height = 800)
+  sample_sets <- callModule(dataInputModule, "datafile")
 
 
   observeEvent(sample_sets(),{
