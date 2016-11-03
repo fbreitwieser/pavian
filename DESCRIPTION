@@ -30,7 +30,7 @@ Suggests:
 Remotes:
     github::fbreitwieser/sankeyD3,
     github::htmlwidgets/sparkline,
-    github::rstudio/DT
+    github::rstudio/DT,
     bioc::Rsamtools
 License: GPL-3
 LazyData: TRUE
