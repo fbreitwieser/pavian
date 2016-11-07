@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y -t unstable \
     pandoc \
     pandoc-citeproc \
     libcurl4-gnutls-dev \
+    libssl-dev/unstable \
     libcairo2-dev/unstable \
+    svn \
     libxt-dev
 
 # Download and install shiny server
@@ -18,13 +20,15 @@ RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubu
     VERSION=$(cat version.txt)  && \
     wget --no-verbose "https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/shiny-server-$VERSION-amd64.deb" -O ss-latest.deb && \
     gdebi -n ss-latest.deb && \
-    rm -f version.txt ss-latest.deb && \
-    R -e "install.packages(c('shiny', 'rmarkdown', 'devtools'), repos='https://cran.rstudio.com/')"
+    rm -f version.txt ss-latest.deb 
 
-
-RUN R -e "install.packages('devtools')"
-RUN R -e "source('https://bioconductor.org/biocLite.R'); biocLite('Rsamtools');\
-          devtools::install_github('fbreitwieser/pavian')"
+RUN wget https://github.com/ropensci/git2r/archive/master.zip; \
+unzip master.zip && mv git2r-master git2r; \
+cd git2r; \
+make install
+RUN R -e " install.packages(c('shiny', 'rmarkdown', 'devtools'))"
+RUN R -e " source('https://bioconductor.org/biocLite.R'); biocLite('Rsamtools')"
+RUN R -e " devtools::install_github('fbreitwieser/pavian')"
 
 COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
 RUN rm -f /srv/shiny-server/*

@@ -5,13 +5,16 @@
 
 PORT=5000
 
-all:
+build:
 	docker build -t florianbw/pavian .
 
 run:
 	docker run --rm -p $(PORT):80 florianbw/pavian
 
-interactive:
+push:
+	docker push florianbw/pavian
+
+inspect:
 	docker run --rm -i -t --entrypoint /bin/bash -p $(PORT):80 florianbw/pavian
 
 # vim:ft=make
