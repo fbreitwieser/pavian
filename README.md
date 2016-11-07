@@ -8,11 +8,13 @@ interactive tables, heatmaps and flow diagrams. Pavian also provides an alignmen
 
 ## Installing and running Pavian
 
+In R / RStudio:
+
     # install.packages("devtools")
     devtools::install_github("fbreitwieser/pavian")
     pavian::runApp(port=5000)
 
-With Docker [**there's an issue in the Docker image currently - will be fixed soon**]:
+With Docker:
 
     docker pull 'florianbw/pavian'
     docker run --rm -p 5000:80 florianbw/pavian
