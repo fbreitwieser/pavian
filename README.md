@@ -6,6 +6,8 @@ interactive tables, heatmaps and flow diagrams. Pavian also provides an alignmen
 
 **Preprint now available at http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html**
 
+![image](https://cloud.githubusercontent.com/assets/516060/20188595/5c8b9808-a747-11e6-9235-296a2314659a.png)
+
 ## Installing and running Pavian
 
 In R / RStudio:
