@@ -32,7 +32,7 @@ plot_pileup <- function(pileup, seq_info_df, show_loess=FALSE,
 
   is_avg <- FALSE
   if (!is.null(nwin)) {
-      pileup2 <- ddply(pileup, c("seqnames","strand"), function(x) {
+      pileup2 <- plyr::ddply(pileup, c("seqnames","strand"), function(x) {
         if (round(nrow(x)/nwin) > 1) {
           is_avg <<- TRUE
           min_pos <- min(x$pos,na.rm=T)
