@@ -9,6 +9,7 @@ Description: R package to visualize and analyse metagenomics classification resu
     Kraken, Centrifuge and MetaPhlAn.
 Imports:
     shiny (>= 0.1.12),
+    markdown,
     shinydashboard,
     shinyjs,
     shinyBS,
