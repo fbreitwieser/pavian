@@ -9,6 +9,7 @@ Description: R package to visualize and analyse metagenomics classification resu
     Kraken, Centrifuge and MetaPhlAn.
 Imports:
     shiny (>= 0.1.12),
+    markdown,
     shinydashboard,
     shinyjs,
     shinyBS,
@@ -31,8 +32,7 @@ Suggests:
 Remotes:
     github::fbreitwieser/sankeyD3,
     github::htmlwidgets/sparkline,
-    github::rstudio/DT,
-    bioc::Rsamtools
+    github::rstudio/DT
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 5.0.1
