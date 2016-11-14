@@ -13,27 +13,11 @@
 #' @return ggplot of pileup
 #' @export
 #' @import ggplot2
-plot_pileup <- function(pileup, nreads=NULL, seq_lengths=NULL, show_loess=FALSE,
+plot_pileup <- function(pileup, seq_info_df, show_loess=FALSE,
                         show_step = TRUE, nwin = 500, text_size = 4) {
   if (nrow(pileup) == 0)
     return(NULL)
 
-
-  covered_bp <- attr(pileup,"covered_bp")
-  covered_bp[setdiff(names(seq_lengths),names(covered_bp))] <- 0
-  sum_count <- attr(pileup,"sum_count")
-  sum_count[setdiff(names(seq_lengths),names(sum_count))] <- 0
-
-  seq_info_df <- do.call(rbind,lapply(names(seq_lengths), function(name) {
-    data.frame(seqnames=name,
-               genome_size=seq_lengths[name],
-               avg_coverage=sum_count[name]/seq_lengths[name],
-               covered_bp=covered_bp[name],
-               n_reads=nreads[name]
-               )
-  }))
-
-  seq_info_df$perc_covered = seq_info_df$covered_bp / seq_info_df$genome_size
 
   round2 = function(x, n=0) {
     ## R rounds to the nearest even digit
@@ -46,31 +30,33 @@ plot_pileup <- function(pileup, nreads=NULL, seq_lengths=NULL, show_loess=FALSE,
     z*posneg
   }
 
-
+  is_avg <- FALSE
   if (!is.null(nwin)) {
-    pileup <- plyr::ddply(pileup, c("seqnames","strand"), function(x) {
-      step_size <- round(nrow(x)/nwin)
-      if (step_size > 1) {
-        count2 <- rep(0, nwin)
-        for (i in 1:nwin) {
-          count2[i] <- sum(x$count[x$pos >= i*step_size & x$pos < (i+1)*step_size])/step_size
-        }
-        #pos_fact <- round2(x$pos / fact)*fact
-        #res <- tapply(x$count, pos_fact, sum)
-        #return(cbind(pos=as.numeric(names(res)), count = as.numeric(res)))
-        return(cbind(pos=(seq(from=0, to=nwin-1)*step_size + 1), count = count2))
+      pileup2 <- ddply(pileup, c("seqnames","strand"), function(x) {
+        if (round(nrow(x)/nwin) > 1) {
+          is_avg <<- TRUE
+          min_pos <- min(x$pos,na.rm=T)
+          max_pos <- max(x$pos,na.rm=T)
+
+          sel <- x$pos > min_pos & x$pos < max_pos
+          interval_size = (max_pos - min_pos)/nwin
+          pos <- seq(from=min_pos,to=max_pos, length.out=nwin)
+          counts <- c(x$count[1], rep(0, length(pos)), x$count[nrow(x)])
+          intervals <- findInterval(x$pos[sel], pos)
+          counts2 <- tapply(x$count[sel], intervals, sum)/interval_size
+          counts[as.numeric(names(counts2))] <- counts2
+
+          return(cbind(pos = pos, count = counts))
       } else {
         return(cbind(pos=x$pos, count = x$count))
       }
-
     })
-
   }
 
   g <- ggplot(pileup, aes(x = pos, y = count))
   #if (!isTRUE(show_loess))
     {
-  if (show_step)
+  if (!is_avg)
     g <- g + geom_step(aes(color = strand),alpha=.8)
   else
     g <- g + geom_line(aes(color = strand),alpha=.8)
@@ -118,8 +104,10 @@ plot_pileup <- function(pileup, nreads=NULL, seq_lengths=NULL, show_loess=FALSE,
   )
   }
 
-  g + theme(strip.background = element_blank(),
+  g +
+    theme(strip.background = element_blank(),
             panel.grid.major.x = element_blank(),
             panel.grid.major.y = element_line(colour='#D0D0D0',size=.2),
-            axis.text = element_text(size = theme.size, colour="black"))
+            axis.text = element_text(size = theme.size, colour="black")) +
+    scale_color_manual(values=c("-"="#377eb8","+"="#e41a1c"))
 }

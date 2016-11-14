@@ -48,7 +48,6 @@ get_combinations <- function(...) {
   for (num.elements in length(x):1) {
 
     apply(utils::combn(my_names,num.elements),2,function(y) {
-      print(y)
       my_name <- paste(y,collapse="&")
       comn_elements <- Reduce(intersect,x[y])
       if (length(comn_elements) > 0) {

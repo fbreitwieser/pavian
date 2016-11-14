@@ -493,7 +493,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     }
 
     if (nrow(summarized_report) > 0) {
-      print(head(summarized_report))
       #brks <- quantile(summarized_report[,attr(summarized_report, 'data_columns')], probs = seq(.5, .95, .05), na.rm = TRUE)
       #brks <- quantile(summarized_report[,attr(summarized_report, 'stat_column')], probs = seq(.05, .95, .05), na.rm = TRUE)
       #brks <- seq(from=0, to=max(summarized_report[,attr(summarized_report, 'stat_column')], na.rm=T), length.out = 20)

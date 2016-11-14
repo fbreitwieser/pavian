@@ -459,7 +459,6 @@ message(myfile)
       nrow(report) < 2 ||
       report[1,"name"] != "u_unclassified" ||
       report[2,"name"] != "-_root") {
-    print(head(report))
     return(NULL)
   }
 

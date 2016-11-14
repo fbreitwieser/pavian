@@ -6,14 +6,20 @@
 #'
 #' @param bam_file character(1) or BamFile; BAM file path.
 #' @param summarize boolean(1). Return average of \code{nwin} observations.
-#' @param nwin integer(1) of number of observations to average.
 #' @param top_n If not NULL, return at most the pileups of that many sequences. integer(1).
 #' @param ... Additional arguments for \code{Rsamtools::pileup}
 #'
 #' @return \code{data.frame} with sequence names, positions, strand and count information
-get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, ...) {
+get_pileup <- function(bam_file, summarize = FALSE, top_n = NULL, ...) {
   req(requireNamespace("Rsamtools"))
-  pileup <- Rsamtools::pileup(bam_file)
+
+  pileup <- Rsamtools::pileup(bam_file,
+                              pileupParam=Rsamtools::PileupParam(max_depth=2500, min_base_quality=13, min_mapq=0,
+                                          min_nucleotide_depth=1, min_minor_allele_depth=0,
+                                          distinguish_strands=TRUE, distinguish_nucleotides=FALSE,
+                                          ignore_query_Ns=TRUE, include_deletions=TRUE, include_insertions=FALSE,
+                                          left_bins=NULL, query_bins=NULL, cycle_bins=NULL)
+  )
 
   if (!is.null(top_n)) {
     best_seqs <-
@@ -34,7 +40,10 @@ get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, .
 
   pileup <- plyr::ddply(pileup, c("seqnames", "strand"), function(x) {
     genome_length <- seq_lengths[x$seqnames[1]]
-    poss <- c(x$pos + 1,x$pos - 1)
+    x <- x[x$pos < genome_length,,drop=F]
+    if (nrow(x) == 0)
+      return()
+    poss <- unique(c(x$pos + 1,x$pos - 1))
     pos_to_set_zero <-
       poss[!poss %in% x$pos & poss < genome_length & poss > 0]
     aa <- rbind(
@@ -54,7 +63,6 @@ get_pileup <- function(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, .
   attr(pileup,"sum_count") <- sum_count
   pileup
 }
-
 
 #' Get number of aligned reads from a bam file
 #'
