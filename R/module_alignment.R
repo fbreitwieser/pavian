@@ -154,14 +154,14 @@ alignmentModule <- function(input, output, session, sample_data) {
     seq_info_df <- do.call(rbind,lapply(names(seq_lengths()), function(name) {
       data.frame(seqnames=name,
                  genome_size=seq_lengths()[name],
-                 avg_coverage=sum_count[name]/seq_lengths()[name],
+                 avg_coverage=signif(sum_count[name]/seq_lengths()[name],3),
                  covered_bp=covered_bp[name],
                  n_reads=nreads()[name]
       )
     }))
 
-    seq_info_df$perc_covered = seq_info_df$covered_bp / seq_info_df$genome_size
-    seq_info_df
+    seq_info_df$perc_covered = 100*signif(seq_info_df$covered_bp / seq_info_df$genome_size,3)
+    seq_info_df[order(-seq_info_df$n_reads,-seq_info_df$perc_covered), , drop=F]
   })
 
 
@@ -170,7 +170,13 @@ alignmentModule <- function(input, output, session, sample_data) {
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
                 "Covered\nbase pairs"="covered_bp","Average\ncoverage"="avg_coverage",
-                "Percent\ncovered"="perc_covered"))
+                "Percent\ncovered"="perc_covered"),
+              options=list(columnDefs=list(
+      list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
+                              )))) %>%
+      DT::formatCurrency(2, currency = '', digits = 0 ) %>%
+      DT::formatString(3, suffix = "x") %>%
+      DT::formatString(6, suffix = "%")
   })
 
   #plot_pileup_act <- eventReactive(input$btn_get_alignment, {
@@ -178,7 +184,8 @@ alignmentModule <- function(input, output, session, sample_data) {
     req_bioc("Rsamtools")
     req(input$table_rows_selected)
     selected_row <- seqinfo_df()[input$table_rows_selected, , drop=FALSE]
-    plot_pileup(pileup() %>% dplyr::filter(seqnames == selected_row$seqnames),
+    pileup_res <- pileup() %>% dplyr::filter(seqnames %in% selected_row$seqnames)
+    plot_pileup(pileup_res,
                 selected_row,
                 text_size = 3
     )
