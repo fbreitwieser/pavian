@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y -t unstable \
     libcurl4-gnutls-dev \
     libssl-dev/unstable \
     libcairo2-dev/unstable \
-    svn \
     libxt-dev
 
 # Download and install shiny server
