@@ -189,32 +189,34 @@ sampleModule <- function(input, output, session, sample_data, reports,
     my_names <- names(sum_reads())
     colvec <- ifelse(my_names == input$sample_selector, "red","black")
 
+    type1 <- factor(mydf$type,
+                        levels = c("reads_stay","reads"),
+                        labels = c("at taxon","in total"), ordered=T)
+
     mydf$sample <- factor(mydf$sample, names(sum_reads()) ,my_names)
 
-    mydf$type <- factor(mydf$type, levels = c("reads_stay", "reads"),
-                        labels = c("at taxon", "at children"))
-
-    mydf <- mydf[order(mydf$sample, mydf$type),]
+    mydf <- mydf[order(mydf$sample, type1),]
     if (normalize)
       mydf$reads <- 100*mydf$reads / rep(sum_reads(), each = 2)
 
     mydf$pos <- unlist(tapply(mydf$reads, mydf$sample, function(reads) cumsum(reads)))
 
+    mydf$type <- factor(mydf$type,
+           levels = c("reads","reads_stay"),
+           labels = c("in total","at taxon"), ordered=T)
+
     ## TODO: Replace by D3 graph?
     ##   See e.g. http://eyeseast.github.io/visible-data/2013/08/28/responsive-charts-with-d3/
-    #str(names(sum_reads()))
-    ggplot(mydf, aes(x=sample)) +
+    ggplot(mydf %>% dplyr::arrange(type), aes(x=sample)) +
       geom_bar(aes(y=reads,fill=type), stat="identity", position="stack") +
       xlab("") + ylab("") +
       scale_y_continuous(limits=c(0,max(mydf$pos)*1.1), expand=c(0,0)) +
-      theme_bw() +
+      scale_fill_manual("", values = c("in total"="#fc8d62", "at taxon"="#66c2a5")) +
+      my_gg_theme() +
       theme(
-        panel.grid.major.y = element_line(colour = "black"),
-        panel.border = element_blank(),
-        axis.line = element_line(colour = "black"),
         axis.ticks = element_blank(),
         axis.text.x = element_text(colour=colvec, angle=90, vjust=1,hjust=1),
-        legend.position = "none"
+        legend.position = "top"
       )
   }
 
@@ -241,7 +243,6 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
 
   observeEvent(input$plot_click, {
-    str(input$plot_click)
     if (round(input$plot_click$x) %in% seq_along(names(reports())))
       updateSelectizeInput(session, "sample_selector", selected = names(reports())[round(input$plot_click$x)])
   })
@@ -275,7 +276,6 @@ sampleModule <- function(input, output, session, sample_data, reports,
     req(tbx)
     req(sample_view_report())
     req(input$dt_sample_view_rows_selected)
-    #str(sample_view_report())
 
     scanTabix(tbx(),
               GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxonid"], IRanges(c(50), width=100000)))[[1]]
