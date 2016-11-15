@@ -3,18 +3,15 @@
 #' Plot a pileup
 #'
 #' @param pileup The output from \code{\link{get_pileup}}
-#' @param nreads Number of matched reads - displayed in legend text.
-#' @param seq_lengths Lengths of reference sequences - used for legend text.
-#' @param show_loess Display a locally weighthed smoothed line
-#' @param show_step If \code{TRUE}, display data in a stairstep plot (instead of a path)
+#' @param seq_info_df Data.frame with information on sequences
 #' @param nwin Number of points to evaluated to evaluate smoother at, when \code{show_loess} is \code{TRUE}
 #' @param text_size Legend text size
 #'
 #' @return ggplot of pileup
 #' @export
 #' @import ggplot2
-plot_pileup <- function(pileup, seq_info_df, show_loess=FALSE,
-                        show_step = TRUE, nwin = 500, text_size = 5) {
+plot_pileup <- function(pileup, seq_info_df,
+                        nwin = 500, text_size = 5) {
   if (nrow(pileup) == 0)
     return(NULL)
 

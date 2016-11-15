@@ -4,19 +4,12 @@
 \alias{plot_pileup}
 \title{Plot a pileup}
 \usage{
-plot_pileup(pileup, nreads = NULL, seq_lengths = NULL, show_loess = FALSE,
-  show_step = TRUE, nwin = 500, text_size = 4)
+plot_pileup(pileup, seq_info_df, nwin = 500, text_size = 5)
 }
 \arguments{
 \item{pileup}{The output from \code{\link{get_pileup}}}
 
-\item{nreads}{Number of matched reads - displayed in legend text.}
-
-\item{seq_lengths}{Lengths of reference sequences - used for legend text.}
-
-\item{show_loess}{Display a locally weighthed smoothed line}
-
-\item{show_step}{If \code{TRUE}, display data in a stairstep plot (instead of a path)}
+\item{seq_info_df}{Data.frame with information on sequences}
 
 \item{nwin}{Number of points to evaluated to evaluate smoother at, when \code{show_loess} is \code{TRUE}}
 

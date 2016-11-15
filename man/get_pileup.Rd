@@ -4,14 +4,12 @@
 \alias{get_pileup}
 \title{Get the pileup-statistics from a bam file using Rsamtools}
 \usage{
-get_pileup(bam_file, summarize = FALSE, nwin = 1000, top_n = NULL, ...)
+get_pileup(bam_file, summarize = FALSE, top_n = NULL, ...)
 }
 \arguments{
 \item{bam_file}{character(1) or BamFile; BAM file path.}
 
 \item{summarize}{boolean(1). Return average of \code{nwin} observations.}
-
-\item{nwin}{integer(1) of number of observations to average.}
 
 \item{top_n}{If not NULL, return at most the pileups of that many sequences. integer(1).}
 
