@@ -161,18 +161,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     }
   })
 
-  observeEvent(r_summarized_report(), {
-    report <- r_summarized_report()
-    data_cols <- colnames(report)[attr(report, "data_columns")]
-    names(data_cols) <- data_cols
-    updateSelectizeInput(session, "sample_selector1",
-                         choices=data_cols, selected=data_cols[1])
-    updateSelectizeInput(session, "sample_selector2",
-                         choices=data_cols,
-                         selected=data_cols[ifelse(length(data_cols) > 1, 2,1)])
-
-  })
-
   small_report <- reactive({
     report <- r_summarized_report()
     req(all(c(input$sample_selector1,input$sample_selector2) %in% colnames(report)))
@@ -387,6 +375,14 @@ comparisonModule <- function(input, output, session, sample_data, reports,
   })
 
   observeEvent(sample_data(), {
+
+    updateSelectizeInput(session, "sample_selector1",
+                         choices=sample_data()[,"Name"], selected=sample_data()[1,"Name"])
+
+    updateSelectizeInput(session, "sample_selector2",
+                         choices=sample_data()[,"Name"],
+                         selected=sample_data()[ifelse(nrow(sample_data()) > 1, 2,1),"Name"])
+
     updateSelectizeInput(session, "sample_selector",
                          choices=sample_data()[,"Name"], selected=sample_data()[,"Name"]
     )
@@ -513,10 +509,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     }
 
     dt
-  }, options = list(initComplete = JS(
-                      "function(settings, json) {",
-                      "$(this.api().table().header()).addClass('rotate');",
-                      "}")))
+  })
 
   output$row_details_table <- DT::renderDataTable({
     req(input$dt_samples_comparison_rows_selected)
