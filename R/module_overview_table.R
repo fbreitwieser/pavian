@@ -37,7 +37,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     #  search_columns = input$dt_samples_overview_search_columns,
     #  state = input$dt_samples_overview_state
     #  )
-    utils::str(input$dt_samples_overview_state)
+    # utils::str(input$dt_samples_overview_state)
   })
 
   get_samples_summary <- reactive( {

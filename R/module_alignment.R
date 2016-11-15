@@ -41,8 +41,6 @@ alignmentModuleUI <- function(id) {
         "You have to generate a bam alignment file and bai index to be able to view it. In the
 second tab 'Download genomes for alignment, you can choose to download the genome from RefSeq
 or Genbank.
-
-With bowtie2
 "
     ),
     tabsetPanel(
@@ -50,11 +48,12 @@ With bowtie2
         title = "View alignment",
         uiOutput(ns("warn_Rsamtools"), width = 12),
         box(width = 12,
-            shiny::fileInput(ns("bam_file"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE),
-            #shinyFileTree::shinyFileTreeOutput(ns("bam_files_tree")),
-            shiny::actionButton(ns("btn_get_alignment"), "Load example data"),
+            fluidRow(
+              column(8,shiny::fileInput(ns("bam_file"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE)),
+              column(4,shiny::actionButton(ns("btn_get_alignment"), "Load example data"))),
             shinyjs::hidden(shiny::checkboxInput(ns("align_loess"), "Show smoothed LOESS curve")),
             shinyjs::hidden(shiny::checkboxInput(ns("align_moving_avg"), "Show moving average", value = TRUE)),
+            shiny::uiOutput(ns("bam_name")),
             DT::dataTableOutput(ns("table")),
             shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
             shiny::plotOutput(ns("plot_brush"), height = "200px")
@@ -90,6 +89,11 @@ With bowtie2
 alignmentModule <- function(input, output, session, sample_data) {
 
   my_bam_file <- reactiveValues(val = NULL)
+
+  output$bam_name <- renderUI({
+    req(my_bam_file$val)
+    shiny::tagList("Loaded ", shiny::strong(basename(my_bam_file$val)),". Click on a row to see pileup.")
+  })
 
   pileup <- reactive({
     req(my_bam_file$val)
@@ -171,7 +175,9 @@ alignmentModule <- function(input, output, session, sample_data) {
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
                 "Covered\nbase pairs"="covered_bp","Average\ncoverage"="avg_coverage",
                 "Percent\ncovered"="perc_covered"),
-              options=list(columnDefs=list(
+              options=list(
+                sDom  = '<"top">rt<"bottom">pl',
+                columnDefs=list(
       list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
                               )))) %>%
       DT::formatCurrency(2, currency = '', digits = 0 ) %>%
@@ -187,7 +193,7 @@ alignmentModule <- function(input, output, session, sample_data) {
     pileup_res <- pileup() %>% dplyr::filter(seqnames %in% selected_row$seqnames)
     plot_pileup(pileup_res,
                 selected_row,
-                text_size = 3
+                text_size = 4
     )
   })
 
@@ -233,11 +239,12 @@ alignmentModule <- function(input, output, session, sample_data) {
   })
 
   output$plot_brush <- shiny::renderPlot({
-    #req(pileup())
+    req(pileup())
+    req(input$table_rows_selected)
     #req(length(nreads()) == 1)
     req(ranges$x)
     selected_row <- seqinfo_df()[input$table_rows_selected, , drop=FALSE]
-    pileup_nm1 <- pileup_nm() %>% dplyr::filter(seqnames == selected_row$seqnames)
+    pileup_nm1 <- pileup_nm() %>% dplyr::filter(seqnames %in% selected_row$seqnames)
     pileup_nm1 <- pileup_nm1[findInterval(pileup_nm1$pos,ranges$x) == 1, ]
     pileup_nm2 <- pileup_nm1[pileup_nm1$count > 0, ]
     validate(need(nrow(pileup_nm2) > 0,
@@ -250,7 +257,7 @@ alignmentModule <- function(input, output, session, sample_data) {
     xlim[2] <- min(selected_row$genome_size,xlim[2])
 
     plot_pileup(pileup_nm1, selected_row,
-                text_size = 3
+                text_size = 4
     ) + coord_cartesian(xlim = xlim)
   }, res=72)
 

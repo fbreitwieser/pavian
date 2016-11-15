@@ -14,7 +14,7 @@
 #' @export
 #' @import ggplot2
 plot_pileup <- function(pileup, seq_info_df, show_loess=FALSE,
-                        show_step = TRUE, nwin = 500, text_size = 4) {
+                        show_step = TRUE, nwin = 500, text_size = 5) {
   if (nrow(pileup) == 0)
     return(NULL)
 
@@ -61,17 +61,9 @@ plot_pileup <- function(pileup, seq_info_df, show_loess=FALSE,
   else
     g <- g + geom_line(aes(color = strand),alpha=.8)
 }
-  #g <- g + geom_path(aes(color = strand),alpha=.8)
-
-#    g <- g + geom_smooth(aes(color = strand),
-                    #n = ceiling(seq_lengths[1]/1000),
-#                    span = span,
-#                    n = nwin,
-#                    se = FALSE,
-#                    method = "loess")
 
   g <- g +
-    #scale_y_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max(pileup$count) * 1.1)) +
     xlab("Position") + ylab("Coverage") +
     facet_wrap( ~ seqnames, scales = "free")
 
@@ -104,10 +96,5 @@ plot_pileup <- function(pileup, seq_info_df, show_loess=FALSE,
   )
   }
 
-  g +
-    theme(strip.background = element_blank(),
-            panel.grid.major.x = element_blank(),
-            panel.grid.major.y = element_line(colour='#D0D0D0',size=.2),
-            axis.text = element_text(size = theme.size, colour="black")) +
-    scale_color_manual(values=c("-"="#377eb8","+"="#e41a1c"))
+  g + my_gg_theme(theme.size) + scale_color_manual(values=c("-"="#377eb8","+"="#e41a1c"))
 }
