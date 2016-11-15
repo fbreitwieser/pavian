@@ -1,18 +1,11 @@
 
-.body {
-  line-height: inherit;
-}
-body {
-  line-height: inherit;
-}
-
 .selectize-control {
   margin-bottom: 0px;
   margin-top: 0px;
 }
 
 .form-group {
-  margin-bottom: 10px;
+        margin-bottom: 2px;
 }
 
 .box-header {
@@ -116,6 +109,7 @@ div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
 /* SIDEBAR */
 
 /*
+
 .sidebar {
   color: black !important;
 }
@@ -195,26 +189,6 @@ table.dataTable thead .sorting {
   color: red;
 }
 
-/* from http://stackoverflow.com/questions/24335274/how-to-rotate-text-vertically-at-table-column-header */
-table.dataTable th.dt-right {
-             filter:  progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083);  /* IE6,IE7 */
-         -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=0.083)"; /* IE8 */
-     -moz-transform: rotate(-90.0deg);  /* FF3.5+ */
-      -ms-transform: rotate(-90.0deg);  /* IE9+ */
-       -o-transform: rotate(-90.0deg);  /* Opera 10.5 */
-  -webkit-transform: rotate(-90.0deg);  /* Safari 3.1+, Chrome */
-          transform: rotate(-90.0deg);  /* Standard */
-    height: 150px;
-    padding: 0 !important;
-    border-bottom: none!important;
-    border-left: 1px solid #111;
-}
-
-tbody td {
-  padding: 0 !important;
-}
-
-
 .box {
   border-top: none;
   box-shadow: none;
@@ -239,15 +213,6 @@ p.sidebartext {
     margin-left: -5px;
 }
 
-      .form-group {
-        margin-bottom: 0px;
-        display: inline-block;
-        background: lightgreen;
-        padding-left: 10px;
-        padding-right: 10px;
-        padding-bottom: 2px;
-        margin-bottom: 2px;
-      }
       .shiny-input-container:not(.shiny-input-container-inline) {
         width: initial;
       }
@@ -270,3 +235,20 @@ label.control-label, .selectize-control.single{ display: table-cell; text-align:
     display: inline-block!important;
 }
 */
+
+.dataTables_length {
+  padding-top: 0.25em;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  padding: 1px !important
+}
+
+.checkbox input[type=checkbox], .checkbox-inline input[type=checkbox], .radio input[type=radio], .radio-inline input[type=radio] {
+    margin-left: -14px;
+}
+
+.checkbox-inline, .radio-inline {
+  display:inline-flex;
+    padding-left: 10px;
+}

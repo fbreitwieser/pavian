@@ -66,7 +66,8 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
   dashboardBody(
     useShinyjs(),
     tags$head(
-      tags$style("style.css"),
+      includeCSS(system.file(package="pavian","shinyapp","www","style.css")),
+      #tags$style(rel = "stylesheet", type = "text/css", href = "style.css"),
       tags$script(HTML("
 setInterval(function(){
   if ($('html').attr('class')=='shiny-busy') {
