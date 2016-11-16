@@ -4,10 +4,12 @@
 \alias{get_nreads}
 \title{Get number of aligned reads from a bam file}
 \usage{
-get_nreads(bam_file)
+get_nreads(bam_file, min_mapq = 0)
 }
 \arguments{
 \item{bam_file}{character(1) or BamFile; BAM file path.}
+
+\item{min_mapq}{Minimum mapping quality}
 }
 \value{
 Number of reads for each sequence.

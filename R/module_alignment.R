@@ -39,8 +39,7 @@ alignmentModuleUI <- function(id) {
         collapsible=TRUE, collapsed=TRUE,
         title="Instructions",
         "You have to generate a bam alignment file and bai index to be able to view it. In the
-second tab 'Download genomes for alignment, you can choose to download the genome from RefSeq
-or Genbank.
+second tab, you can choose to query genome assemblies from RefSeq.
 "
     ),
     tabsetPanel(
@@ -49,12 +48,15 @@ or Genbank.
         uiOutput(ns("warn_Rsamtools"), width = 12),
         box(width = 12,
             fluidRow(
-              column(8,shiny::fileInput(ns("bam_file"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE)),
-              column(4,shiny::actionButton(ns("btn_get_alignment"), "Load example data"))),
+              column(5,shiny::fileInput(ns("bam_file"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE)),
+              column(3,shiny::actionButton(ns("btn_get_alignment"), "Load example data")),
+              column(4,shiny::sliderInput(ns("mapq"),"Minimum MAPQ",0,50,0,step=1))),
             shinyjs::hidden(shiny::checkboxInput(ns("align_loess"), "Show smoothed LOESS curve")),
             shinyjs::hidden(shiny::checkboxInput(ns("align_moving_avg"), "Show moving average", value = TRUE)),
             shiny::uiOutput(ns("bam_name")),
+            br(),
             DT::dataTableOutput(ns("table")),
+            br(),
             shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
             shiny::plotOutput(ns("plot_brush"), height = "200px")
         )
@@ -88,19 +90,38 @@ or Genbank.
 #' @import shinydashboard
 alignmentModule <- function(input, output, session, sample_data) {
 
-  my_bam_file <- reactiveValues(val = NULL)
+  my_bam_file <- reactiveValues(val = NULL, txt = NULL)
 
   output$bam_name <- renderUI({
-    req(my_bam_file$val)
-    shiny::tagList("Loaded ", shiny::strong(basename(my_bam_file$val)),". Click on a row to see pileup.")
+    req(my_bam_file$txt)
+    my_bam_file$txt
   })
 
   pileup <- reactive({
     req(my_bam_file$val)
-    get_pileup(my_bam_file$val, FALSE)
-    })
-  pileup_nm <- reactive({ get_pileup(my_bam_file$val, FALSE) })
-  nreads <- reactive({ get_nreads(my_bam_file$val) })
+    my_bam_file$txt <- shiny::tagList("Loaded ", shiny::strong(basename(my_bam_file$val)),". Click on a row to see pileup.")
+    unique(get_pileup(my_bam_file$val, min_mapq = input$mapq))
+  })
+
+  pileup_brush <- reactive({
+    req(pileup())
+    req(ranges$x)
+    req(input$table_rows_selected)
+
+    selected_row <- seqinfo_df()[input$table_rows_selected, , drop=FALSE]
+
+    mypileup <- pileup() %>%
+      dplyr::filter(seqnames %in% selected_row$seqnames &
+                      findInterval(pos,ranges$x) == 1)
+
+    sel <- mypileup$count > 0
+    validate(need(sum(sel) > 0, message = "No reads in selected region"))
+
+    attr(mypileup, "covered_bp") = tapply(mypileup[sel,"pos"], mypileup[sel,"seqnames"], function(x) length(unique(x)))
+    attr(mypileup, "sum_count") = tapply(mypileup[sel,"count"], mypileup[sel,"seqnames"], sum)
+
+    mypileup
+  })
 
   output$warn_Rsamtools <- renderUI({
     if (!requireNamespace("Rsamtools")) {
@@ -127,21 +148,26 @@ alignmentModule <- function(input, output, session, sample_data) {
 
   observeEvent(input$bam_file, {
     req(input$bam_file)
-    message("in BAM file")
+    message("got BAM file")
+    bam_file <- NULL
     if (!is.null(input$bam_file)) {
-      validate(need(
-        is.data.frame(input$bam_file) &&
-          nrow(input$bam_file)== 2  &&
-          sum(grepl(".bam$",input$bam_file$name))==1 &&
-          sum(grepl(".bai$",input$bam_file$name))==1,
-        message="Need both .bam and .bai files"))
-      file.rename(input$bam_file$datapath[1], file.path(dirname(input$bam_file$datapath[1]),input$bam_file$name[1]))
-      file.rename(input$bam_file$datapath[2], file.path(dirname(input$bam_file$datapath[2]),input$bam_file$name[2]))
-      bam_pos <- grep(".bam$",input$bam_file$name)
-      bam_file = file.path(dirname(input$bam_file$datapath[bam_pos]),input$bam_file$name[bam_pos])
+      if (!is.data.frame(input$bam_file)) {
+        my_bam_file$txt <- "Upload is no data.frame."
+      } else if (nrow(input$bam_file) != 2) {
+        my_bam_file$txt <- shiny::strong(style="color:red;","Please upload exactly two files at once; one BAM file its corresponding BAI file.")
+      } else if (sum(grepl(".bam$",input$bam_file$name, ignore.case = T)) !=1 ) {
+        my_bam_file$txt <- shiny::strong(style="color:red;","Did not get a file with the extension .bam or .BAM .")
+      } else if (sum(grepl(".bai$",input$bam_file$name)) !=1 ) {
+        my_bam_file$txt <- shiny::strong(style="color:red;","Did not get a file with the extension .bai or .BAI .")
+      } else {
+        file.rename(input$bam_file$datapath[1], file.path(dirname(input$bam_file$datapath[1]),input$bam_file$name[1]))
+        file.rename(input$bam_file$datapath[2], file.path(dirname(input$bam_file$datapath[2]),input$bam_file$name[2]))
+        bam_pos <- grep(".bam$",input$bam_file$name)
+        bam_file = file.path(dirname(input$bam_file$datapath[bam_pos]),input$bam_file$name[bam_pos])
+      }
     }
     message("BAM file = ",bam_file)
-    my_bam_file$val <-bam_file
+    my_bam_file$val <- bam_file
   })
 
   observeEvent(input$btn_get_alignment, {
@@ -150,17 +176,38 @@ alignmentModule <- function(input, output, session, sample_data) {
 
   seqinfo_df <- reactive({
     req(my_bam_file$val)
+    print(head(pileup()))
     covered_bp <- attr(pileup(),"covered_bp")
     covered_bp[setdiff(names(seq_lengths()),names(covered_bp))] <- 0
     sum_count <- attr(pileup(),"sum_count")
     sum_count[setdiff(names(seq_lengths()),names(sum_count))] <- 0
 
+    seq_info_df <-
+      data.frame(seqnames=names(seq_lengths()),
+                 genome_size=seq_lengths(),
+                 avg_coverage=signif(sum_count/seq_lengths(),3),
+                 covered_bp=covered_bp,
+                 n_reads=nreads(),
+                 avg_mapq=signif(avg_mapq(),3))
+
+
+    seq_info_df$perc_covered = 100*signif(seq_info_df$covered_bp / seq_info_df$genome_size,3)
+    seq_info_df[order(-seq_info_df$n_reads,-seq_info_df$perc_covered), , drop=F]
+  })
+
+  seqinfo_df_brush <- reactive({
+    req(my_bam_file$val)
+    covered_bp <- attr(pileup_brush(),"covered_bp")
+    covered_bp[setdiff(names(seq_lengths_range_x()),names(covered_bp))] <- 0
+    sum_count <- attr(pileup_brush(),"sum_count")
+    sum_count[setdiff(names(seq_lengths_range_x()),names(sum_count))] <- 0
+
     seq_info_df <- do.call(rbind,lapply(names(seq_lengths()), function(name) {
       data.frame(seqnames=name,
-                 genome_size=seq_lengths()[name],
-                 avg_coverage=signif(sum_count[name]/seq_lengths()[name],3),
+                 genome_size=seq_lengths_range_x()[name],
+                 avg_coverage=signif(sum_count[name]/seq_lengths_range_x()[name],3),
                  covered_bp=covered_bp[name],
-                 n_reads=nreads()[name]
+                 n_reads=nreads_range_x()[name]
       )
     }))
 
@@ -169,11 +216,14 @@ alignmentModule <- function(input, output, session, sample_data) {
   })
 
 
+
+
   output$table <- DT::renderDataTable({
     datatable(seqinfo_df(), selection = 'single',
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
                 "Covered\nbase pairs"="covered_bp","Average\ncoverage"="avg_coverage",
+                "Average\nMAPQ"="avg_mapq",
                 "Percent\ncovered"="perc_covered"),
               options=list(
                 sDom  = '<"top">rt<"bottom">pl',
@@ -182,7 +232,7 @@ alignmentModule <- function(input, output, session, sample_data) {
                               )))) %>%
       DT::formatCurrency(2, currency = '', digits = 0 ) %>%
       DT::formatString(3, suffix = "x") %>%
-      DT::formatString(6, suffix = "%")
+      DT::formatString(7, suffix = "%")
   })
 
   #plot_pileup_act <- eventReactive(input$btn_get_alignment, {
@@ -197,22 +247,53 @@ alignmentModule <- function(input, output, session, sample_data) {
     )
   })
 
-  nreads_all <- reactive({ get_nreads(my_bam_file$val) })
   bam2 <- reactive( {
     get_bam2(my_bam_file$val)
   })
 
-  nreads_range_x <- reactive({
-    bam <- bam2()
-    order1 <- order(bam[[1]]$pos)
-    sel <- findInterval(bam[[1]]$pos[order1], ranges$x)==1
-    res <- tapply(bam[[1]]$qname[order1][sel], bam[[1]]$rname[order1][sel], function(x) length(unique(x)))
+  bam2_mapq <- reactive( {
+    message("bam2_mapq")
+    req(input$mapq)
+    message("bam2_mapq1")
+    #print(head(bam))
+    bam2() %>% dplyr::filter(mapq >= input$mapq)
+  })
+
+  selected_bam <- reactive( {
+    req(selected_seq())
+    bam2_mapq() %>% dplyr::filter(rname %in% selected_seq())
+  })
+
+  seq_lengths <- reactive({ get_seqlengths(my_bam_file$val) })
+
+  selected_seq <- reactive({
+    message("selected_seq")
+    req(input$table_rows_selected)
+    message("selected_seq1")
+
+    seqinfo_df()[input$table_rows_selected,"seqnames"]
+  })
+
+  nreads <- reactive({
+    bam <- bam2_mapq()
+    res <- tapply(bam$qname, bam$rname, function(x) length(unique(x)))
     res[is.na(res)] <- 0
     res
   })
 
+  avg_mapq <- reactive({
+    bam <- bam2_mapq()
+    res <- tapply(bam$mapq, bam$rname, mean)
+    res[is.na(res)] <- 0
+    res
+  })
 
-  seq_lengths <- reactive({ get_seqlengths(my_bam_file$val) })
+  nreads_range_x <- reactive({
+    bam <- selected_bam()
+    sel <- findInterval(bam$pos, ranges$x)==1
+    tapply(bam$qname[sel], bam$rname[sel], function(x) length(unique(x)))
+  })
+
   seq_lengths_range_x <- reactive({
     rr <- ranges$x[2] - ranges$x[1]
     a <- get_seqlengths(my_bam_file$val)
@@ -232,33 +313,21 @@ alignmentModule <- function(input, output, session, sample_data) {
   observe({
     brush <- input$align_brush
     if (!is.null(brush)) {
-      ranges$x <- c(brush$xmin, brush$xmax)
+      ranges$x <- round(c(brush$xmin, brush$xmax))
     } else {
       ranges$x <- NULL
     }
   })
 
   output$plot_brush <- shiny::renderPlot({
-    req(pileup())
-    req(input$table_rows_selected)
-    #req(length(nreads()) == 1)
-    req(ranges$x)
-    selected_row <- seqinfo_df()[input$table_rows_selected, , drop=FALSE]
-    pileup_nm1 <- pileup_nm() %>% dplyr::filter(seqnames %in% selected_row$seqnames)
-    pileup_nm1 <- pileup_nm1[findInterval(pileup_nm1$pos,ranges$x) == 1, ]
-    pileup_nm2 <- pileup_nm1[pileup_nm1$count > 0, ]
-    validate(need(nrow(pileup_nm2) > 0,
-                  message = "No reads in selected region"))
-    attr(pileup_nm1, "covered_bp") = tapply(pileup_nm2$pos, pileup_nm2$seqnames, function(x) length(unique(x)))
-    attr(pileup_nm1, "sum_count") = tapply(pileup_nm2$count, pileup_nm2$seqnames, sum)
+    #xlim <- ranges$x
+    #xlim[1] <- max(0,xlim[1])
+    #xlim[2] <- min(seqinfo_df_brush()$genome_size,xlim[2])
+    selected_row <- seqinfo_df_brush()[input$table_rows_selected, , drop=FALSE]
 
-    xlim <- ranges$x
-    xlim[1] <- max(0,xlim[1])
-    xlim[2] <- min(selected_row$genome_size,xlim[2])
-
-    plot_pileup(pileup_nm1, selected_row,
+    plot_pileup(pileup_brush(), selected_row,
                 text_size = 4
-    ) + coord_cartesian(xlim = xlim)
+    ) #+ coord_cartesian(xlim = xlim)
   }, res=72)
 
   assembly_info <- eventReactive(input$btn_load_assembly_info, {

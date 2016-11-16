@@ -4,7 +4,7 @@
 \alias{plot_pileup}
 \title{Plot a pileup}
 \usage{
-plot_pileup(pileup, seq_info_df, nwin = 500, text_size = 5)
+plot_pileup(pileup, seq_info_df = NULL, nwin = 500, text_size = 5)
 }
 \arguments{
 \item{pileup}{The output from \code{\link{get_pileup}}}

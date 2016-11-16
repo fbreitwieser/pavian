@@ -5,16 +5,16 @@
 #' as only one value per bin is reported
 #'
 #' @param bam_file character(1) or BamFile; BAM file path.
-#' @param summarize boolean(1). Return average of \code{nwin} observations.
 #' @param top_n If not NULL, return at most the pileups of that many sequences. integer(1).
+#' @param min_mapq Minimum mapping quality.
 #' @param ... Additional arguments for \code{Rsamtools::pileup}
 #'
 #' @return \code{data.frame} with sequence names, positions, strand and count information
-get_pileup <- function(bam_file, summarize = FALSE, top_n = NULL, ...) {
+get_pileup <- function(bam_file, min_mapq = 0, top_n = NULL, ...) {
   req(requireNamespace("Rsamtools"))
 
   pileup <- Rsamtools::pileup(bam_file,
-                              pileupParam=Rsamtools::PileupParam(max_depth=2500, min_base_quality=13, min_mapq=0,
+                              pileupParam=Rsamtools::PileupParam(max_depth=2500, min_base_quality=0, min_mapq=min_mapq,
                                           min_nucleotide_depth=1, min_minor_allele_depth=0,
                                           distinguish_strands=TRUE, distinguish_nucleotides=FALSE,
                                           ignore_query_Ns=TRUE, include_deletions=TRUE, include_insertions=FALSE,
@@ -38,27 +38,6 @@ get_pileup <- function(bam_file, summarize = FALSE, top_n = NULL, ...) {
 
   seq_lengths <- get_seqlengths(bam_file)
 
-  pileup <- plyr::ddply(pileup, c("seqnames", "strand"), function(x) {
-    genome_length <- seq_lengths[x$seqnames[1]]
-    x <- x[x$pos < genome_length,,drop=F]
-    if (nrow(x) == 0)
-      return()
-    poss <- unique(c(x$pos + 1,x$pos - 1))
-    pos_to_set_zero <-
-      poss[!poss %in% x$pos & poss < genome_length & poss > 0]
-    aa <- rbind(
-      x,
-      data.frame(
-        seqnames = x$seqnames[1],
-        pos = pos_to_set_zero,
-        strand = x$strand[1],
-        #nucleotide = NA,
-        count = 0
-      )
-    )
-    aa[order(aa$pos),]
-  })
-
   attr(pileup,"covered_bp") <- covered_bp
   attr(pileup,"sum_count") <- sum_count
   pileup
@@ -67,21 +46,24 @@ get_pileup <- function(bam_file, summarize = FALSE, top_n = NULL, ...) {
 #' Get number of aligned reads from a bam file
 #'
 #' @param bam_file character(1) or BamFile; BAM file path.
+#' @param min_mapq Minimum mapping quality
 #'
 #' @return Number of reads for each sequence.
-get_nreads <- function(bam_file) {
+get_nreads <- function(bam_file, min_mapq=0) {
   req(requireNamespace("Rsamtools"))
-  p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth"))
-  bam <- Rsamtools::scanBam(bam_file, param = p2)
-  res <- tapply(bam[[1]]$qname, bam[[1]]$rname, function(x) length(unique(x)))
+  p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth", "mapq"))
+  bam <- as.data.frame(Rsamtools::scanBam(bam_file, param = p2)[[1]]) %>% filter(mapq >= min_mapq)
+
+  res <- tapply(bam$qname, bam$rname, function(x) length(unique(x)))
   res[is.na(res)] <- 0
   res
 }
 
 get_bam2 <- function(bam_file) {
   req(requireNamespace("Rsamtools"))
-  p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth"))
-  Rsamtools::scanBam(bam_file, param = p2)
+  p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth", "mapq"))
+  res <- as.data.frame(Rsamtools::scanBam(bam_file, param = p2)[[1]])
+  res[order(res$rname, res$strand, res$pos), ]
 }
 
 #' Get sequence lengths from a bam file
