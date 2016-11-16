@@ -28,12 +28,21 @@ dataInputModuleUI <- function(id, server_access = TRUE, start_with="example_data
         collapsible = TRUE,
         collapse = TRUE,
         HTML(
-        "Pavian supports Kraken-style and MetaPhlAn report files. For Centrifuge, the script `centrifuge-kreport` creates a report in the correct format (in the future, the standard Centrifuge report will be in the right format)! Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is from <a style='color:white; text-decoration: underline;' href='http://nn.neurology.org/content/3/4/e251.full'>ten patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool from the <a style='color:white; text-decoration: underline;' href='http://hmpdacc.org/'>Human Microbiome Project</a>, analyzed with MetaPhlAn. Note that for MetaPhlAn, the 'reads' are actually percentages."),
+        "Pavian supports Kraken-style and MetaPhlAn report files. For Centrifuge, the script `centrifuge-kreport` creates
+        a report in the correct format (in the future, the standard Centrifuge report will be in the right format)!
+        Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
+        from <a style='color:white; text-decoration: underline;' href='http://nn.neurology.org/content/3/4/e251.full'>ten
+        patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
+        from the <a style='color:white; text-decoration: underline;' href='http://hmpdacc.org/'>Human Microbiome Project</a>,
+        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads.")
+    ),
+    box(width=12,
         {if (isTRUE(server_access)) {
-          radioButtons(ns('upload_or_server'), label="", inline=TRUE,
+          h4(class="radioSelect", radioButtons(ns('upload_or_server'), label="", inline=TRUE,
                        choices=data_options,
-                       selected=start_with)
+                       selected=start_with))
         } },
+        br(),
         fileInput(ns("file_upload"), "Select files on local machine for upload", multiple = TRUE),
         {if (isTRUE(server_access)) {
           shiny::tagList(
@@ -48,7 +57,7 @@ dataInputModuleUI <- function(id, server_access = TRUE, start_with="example_data
     ),
     br(),
 
-    box(width=12,
+    box(width=12, collapsible = TRUE,
         title = "Available sample sets",
         shinyjs::hidden(div(id = ns("sample_set_box"),
       radioButtons(ns("sample_set_select"), label = "", choices = list(PLACEHOLDER=1)),
