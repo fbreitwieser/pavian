@@ -1,7 +1,7 @@
-Dockerized Shiny App
+Pavian Docker image
 =======================
 
-This is the Dockerized Shiny App [Wordcloud](http://shiny.rstudio.com/gallery/word-cloud.html)
+This is the [Pavian](https://github.com/fbreitwieser/pavian)
 
 This Dockerfile is based on Debian "testing" and r-base image.
 
