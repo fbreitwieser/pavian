@@ -362,7 +362,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   }
 
   if (is.null(has_header)) {
-    has_header <- grepl("^[a-zA-Z#]",first.line)
+    has_header <- grepl("^[a-zA-Z#\"]",first.line)
   }
 
 message(myfile)
