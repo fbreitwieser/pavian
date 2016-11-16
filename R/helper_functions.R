@@ -39,7 +39,9 @@ beautify_taxonstring <- function(x) {
   x %>%
     sub("^-_root.","", .) %>%
     sub("^._","", .) %>%
-    gsub("\\|._", ">", .)
+    gsub("\\|._", ">", .) %>%
+    gsub(" ", "&nbsp;", .) %>%
+    gsub("-","&#x2011;", .)
 }
 
 
