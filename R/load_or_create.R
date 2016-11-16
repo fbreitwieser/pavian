@@ -34,7 +34,7 @@ load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
     message('loading ',name," ... ",appendLF=F)
     res <- readRDS(sav_file)
   }
-  message("finished")
+  #message("finished")
   return(res)
 }
 
