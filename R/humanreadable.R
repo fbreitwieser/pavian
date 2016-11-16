@@ -11,7 +11,7 @@
 #'
 #' @examples
 #' humanreadable(1234.567)
-humanreadable <- function(x, base = 10^3, suffix = "", signif_digits = 4)  {
+humanreadable <- function(x, base = 10^3, suffix = "", signif_digits = 3)  {
   base_suffixes <- c("k", "M", "G", "T", "P", "E", "Z", "Y")
   if (length(x) == 0)
     return()

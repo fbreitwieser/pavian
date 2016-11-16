@@ -4,7 +4,7 @@
 \alias{humanreadable}
 \title{Make a number human readable}
 \usage{
-humanreadable(x, base = 10^3, suffix = "", signif_digits = 4)
+humanreadable(x, base = 10^3, suffix = "", signif_digits = 3)
 }
 \arguments{
 \item{x}{Number.}
