@@ -28,19 +28,19 @@ sampleModuleUI <- function(id) {
           ),
           shinyjs::hidden(checkboxInput(ns("opt_remove_root_hits"),
                         label = "Do not show reads that stay at the root", value = FALSE)),
-          column(4,checkboxInput(ns("side_by_side"),"Show reads across samples on hover", value = TRUE)),
-          column(4, column(2,(checkboxInput(ns("show_numbers"),"Show Numbers", value = TRUE)))),
-          column(4,actionLink(ns("sankey_opts"), "Hide Sankey options"))
+          column(4,checkboxInput(ns("side_by_side"),"Taxon hover", value = TRUE)),
+          column(4,checkboxInput(ns("show_numbers"),"Show numbers", value = TRUE)),
+          column(4,actionLink(ns("sankey_opts"), "Hide options"))
       )
     ),
     fluidRow(
       column(3,checkboxGroupInput(ns("levels"),"Taxonomical levels",tax_levels,setdiff(tax_levels,c("O","-")), inline = TRUE)),
-      column(2,(sliderInput(ns("sankey_maxn"), "Number of taxons", 1, 25, value = 10, step = 1))),
-      column(2,(sliderInput(ns("curvature"),"Curvature", value = .5, min = 0, max = 1, step=.01))),
-      column(2,(sliderInput(ns("height"),"Height", value = 600, min = 300, max = 1200, step=50))),
-      column(2,(sliderInput(ns("scalingFactor"),"Scaling", value = 1, min = .5, max = 1.5, step=.1))),
+      column(3,(sliderInput(ns("sankey_maxn"), "No taxons", 1, 25, value = 10, step = 1))),
+      column(3,(sliderInput(ns("scalingFactor"),"Scaling", value = 1, min = .5, max = 1.5, step=.1))),
+      column(3,(sliderInput(ns("height"),"Height", value = 600, min = 300, max = 1200, step=50))),
       #column(2,(checkboxInput(ns("sync_table"),"Synchronize table", value = TRUE))),
-      column(2,shinyjs::hidden(radioButtons(ns("linkType"), "linkType", selected = "path2", choices = c("bezier", "l-bezier", "trapez", "path1","path2"), inline = TRUE)))
+      shinyjs::hidden(column(2,sliderInput(ns("curvature"),"Curvature", value = .5, min = 0, max = 1, step=.01))),
+      shinyjs::hidden(column(2,radioButtons(ns("linkType"), "linkType", selected = "path2", choices = c("bezier", "l-bezier", "trapez", "path1","path2"), inline = TRUE)))
     ),
     fluidRow(
       uiOutput(ns("dynamic_sankey")),
@@ -72,10 +72,10 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
     if (sankey_opts_state$visible) {
       lapply(toggle_elems, shinyjs::show)
-      updateActionButton(session, "sankey_opts", label = "Hide Sankey options")
+      updateActionButton(session, "sankey_opts", label = "Hide options")
     } else {
       lapply(toggle_elems, shinyjs::hide)
-      updateActionButton(session, "sankey_opts", label = "Show Sankey options ...")
+      updateActionButton(session, "sankey_opts", label = "Show options")
     }
   })
 
