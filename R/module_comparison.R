@@ -1,4 +1,4 @@
-taxon_levels <- c(
+taxon_ranks <- c(
   "Any" = "-",
   "Species" = "S",
   "Genus" = "G",
@@ -8,6 +8,33 @@ taxon_levels <- c(
   "Phylum" = "P",
   "Domain" = "D"
 )
+
+taxon_ranks <- c(
+  "Any" = "-",
+  "└ Domain" = "D",
+  " └ Phylum" = "P",
+  "  └ Class" = "C",
+  "   └ Order" = "O",
+  "    └ Family" = "F",
+  "     └ Genus" = "G",
+  "      └ Species" = "S"
+  )
+
+taxon_ranks <- c(
+  "All taxonomic ranks" = "-",
+  "└ Domain" = "D",
+  "└─ Phylum" = "P",
+  "└── Class" = "C",
+  "└─── Order" = "O",
+  "└──── Family" = "F",
+  "└───── Genus" = "G",
+  "└────── Species" = "S"
+)
+
+#taxon_ranks <- list(
+#  "At taxon" = taxon_ranks,
+#  "At taxon and children" = setNames(paste("C",taxon_ranks),paste(names(taxon_ranks),"clade"))
+#)
 
 #' UI part of the comparison module
 #'
@@ -49,12 +76,12 @@ comparisonModuleUI <- function(id) {
                                     inline = TRUE)
                  ),
           column(6,
-                 radioButtons(
-                   ns("opt_classification_level"),
-                   label = "Taxon level",
-                   choices = taxon_levels,
-                   selected = "-",
-                   inline = TRUE
+                 selectizeInput(
+                   ns("opt_classification_rank"),
+                   label = "Taxonomic rank",
+                   choices = taxon_ranks,
+                   selected = "-"
+                   #,inline = TRUE
                  ),
                  radioButtons(
                    ns("opt_show_reads_stay"),
@@ -69,10 +96,11 @@ comparisonModuleUI <- function(id) {
       ),
       box(
         width = 6,
+        column(6,
         selectizeInput(
           ns('contaminant_selector'),
           allcontaminants,
-          label = "Filter reads from taxon",
+          label = "Filter taxon",
           selected = c("unclassified", "Homo sapiens", "root"),
           multiple = TRUE,
           options = list(
@@ -81,10 +109,11 @@ comparisonModuleUI <- function(id) {
             placeholder = 'Filter clade'
           ),
           width = "100%"
-        ),
+        )),
+        column(6,
         selectizeInput(
           ns('contaminant_selector_clade'),
-          label = "Filter reads from taxon and its children",
+          label = "Filter taxon and its children",
           allcontaminants,
           selected = c("artificial sequences"),
           multiple = TRUE,
@@ -94,6 +123,7 @@ comparisonModuleUI <- function(id) {
             placeholder = 'Filter clade'
           ),
           width = "100%"
+        )
         )
       )
     ),
@@ -223,16 +253,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     reports()[unique(sort(selected))]
   })
 
-  #get_summarized_report_reads_stay <- reactive({
-  #  req(reports_filtered())
-  #  get_summarized_report2(reports_filtered(), "reads_stay")
-  #})
-
-  #get_summarized_report_reads_clade <- reactive({
-  #  req(reports_filtered())
-  #  get_summarized_report2(reports_filtered(), "reads")
-  #})
-
   get_summarized_report_reads_both <- reactive({
     req(reports_filtered())
     get_summarized_report2(reports_filtered(), c("reads", "reads_stay"))
@@ -298,15 +318,19 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
     summarized_report <- summarized_report[!sel_rm_taxons, ]
 
-    if (req(input$opt_classification_level) != "-") {
-      summarized_report <- summarized_report[summarized_report[["Level"]] %in% input$opt_classification_level,]
+    if (req(input$opt_classification_rank) != "-") {
+      summarized_report <- summarized_report[summarized_report[["Level"]] %in% input$opt_classification_rank,]
     }
 
     summarized_report
   })
 
   get_summarized_reportp <- reactive({
-    withProgress(message="Normalizing samples ...", { get_summarized_reportc() %>% normalize_data_cols() })
+    if (nrow(get_summarized_reportc()) == 0) {
+      return(get_summarized_reportc());
+    }
+    withProgress(message="Normalizing samples ...", { get_summarized_reportc() %>%
+        normalize_data_cols(normalize_col=ifelse(input$opt_classification_rank == "-", "reads_stay_columns", "reads_columns")) })
   })
 
 
@@ -344,20 +368,28 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       sav_attr[["names"]] <- sav_attr[["names"]][-attr(summarized_report,rm_col)]
 
 
-      summarized_report <- summarized_report[, -attr(summarized_report,rm_col), drop = FALSE]
-      sav_attr[["names"]][sav_attr[["data_columns"]]] <- sub(paste0(".",input$opt_show_reads_stay), "",sav_attr[["names"]][sav_attr[["data_columns"]]])
+      sav_colnames <- attr(summarized_report,sav_col)
+      #summarized_report[!is.na(summarized_report[,sav_colnames]) & summarized_report[,sav_colnames] == 0,sav_colnames] <- NA
+      #sel_rows <- apply(!is.na(summarized_report[,sav_colnames]) & summarized_report[,sav_colnames] > input$minimum_value, 1, any)
+      sel_rows <- apply(!is.na(summarized_report[,sav_colnames]), 1, any)
 
+      summarized_report <- summarized_report[sel_rows, -attr(summarized_report,rm_col), drop = FALSE]
+
+      sav_attr[["names"]][sav_attr[["data_columns"]]] <- sub(paste0(".",input$opt_show_reads_stay), "",sav_attr[["names"]][sav_attr[["data_columns"]]])
+      sav_attr[["row.names"]] <- rownames(summarized_report)
     }
     mostattributes(summarized_report) <- sav_attr
 
+    message("A")
     validate(
       need(length(summarized_report) > 0, message = "summarized report is empty"),
       need(colnames(summarized_report), message = "summarized report has no column names"),
       need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"))
-
+    message("B")
     data_cols <- attr(summarized_report, "data_columns")
     validate(need(all(sapply(summarized_report[data_cols], is.numeric)),
                   message = "Not all data columns are numeric?!"))
+    message("C")
     round_digits <- ifelse(isTRUE("opt_display_percentage" %in% input$opts_normalization), 3, 1)
 
     summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols, drop=F]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
@@ -369,6 +401,8 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     if (any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
       summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
     }
+    message("D")
+    str(summarized_report)
 
     summarized_report
 
@@ -439,12 +473,14 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     )
 
     dt <- DT::datatable(summarized_report,
-                         #filter = "top",
+                         #filter = "bottom",
                          escape = FALSE,
                          rownames = show_rownames,
                          selection = "single",
                          extensions = c('Buttons'),
-                         options = list(columnDefs = columnDefs,
+                         options = list(
+                           datatable_opts,
+                           columnDefs = columnDefs,
                                         dom = 'Bfrtip',
                                         buttons = c('pageLength', 'colvis', 'pdf', 'excel' , 'csv', 'copy'),
                                         lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All')),
@@ -454,7 +490,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                                         order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
                                         search = list(
                                           search = isolate(dt_options$search),
-                                          regex = TRUE, caseInsensitive = FALSE
+                                          regex = TRUE, caseInsensitive = TRUE
                                         ))
                          )
 
@@ -533,7 +569,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     req(input$dt_samples_comparison_rows_selected)
     selected_row <-
       zero_if_na(r_summarized_report()[input$dt_samples_comparison_rows_selected, ])
-    #is_domain <- input$opt_classification_level == "D"
+    #is_domain <- input$opt_classification_rank == "D"
     is_domain <- FALSE
     data_columns <- attr(selected_row, "data_columns")
     taxid <- selected_row[, "Taxonid"]
