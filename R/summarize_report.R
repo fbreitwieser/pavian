@@ -1,13 +1,13 @@
 
-normalize_data_cols <- function(summarized_report) {
+normalize_data_cols <- function(summarized_report, normalize_col = "reads_stay_columns") {
   data_columns <- attr(summarized_report, "data_columns")
-  reads_stay_columns <- attr(summarized_report, "reads_stay_columns")
+  normalize_columns <- attr(summarized_report, normalize_col)
 
   validate(need(data_columns, message="data_columns is NULL"),
-           need(reads_stay_columns, message="reads_stay_columns is NULL"))
+           need(normalize_columns, message=paste(normalize_col,"is NULL")))
 
-  sum_reads <- colSums(summarized_report[, reads_stay_columns, drop=F], na.rm = T)
-  sum_reads <- rep(sum_reads, each = length(data_columns) / length(reads_stay_columns))
+  sum_reads <- colSums(summarized_report[, normalize_columns, drop=F], na.rm = T)
+  sum_reads <- rep(sum_reads, each = length(data_columns) / length(normalize_columns))
 
   summarized_report[, data_columns] <- 100*scale(summarized_report[, data_columns],
                                                  center = rep(0, length(sum_reads)),
@@ -64,12 +64,10 @@ get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
     my_report <- my_report[rowSums(my_report[, numeric_col, drop=F], na.rm=T)>0, , drop=F]
     my_report <- my_report[ ,c(id_cols, numeric_col), drop=FALSE]
 
-    if (nrow(my_report) > 0) {
-      sel_val <- apply(my_report[,numeric_col, drop=FALSE] > 0, 1, any)
-      my_report <- my_report[sel_val, ]
-    }
+    ## set zeros to NA
+    my_report[numeric_col][!is.na(my_report[numeric_col]) & my_report[numeric_col] == 0] <- NA
 
-      ## set the basename of the report file as name for the numeric column
+    ## set the basename of the report file as name for the numeric column
     colnames(my_report)[idx_of_numeric_col] <- sub(".*/(.*).report", "\\1", report_name)
     if (length(numeric_col) > 1) {
       colnames(my_report)[idx_of_numeric_col] <-
