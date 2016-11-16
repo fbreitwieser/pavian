@@ -32,9 +32,16 @@
   line-height: 25px;
   width: inherit !important;
 }
-table.dataTable tbody th, table.dataTable tbody td,
-table.dataTable thead th, table.dataTable thead td {
+table.dataTable tbody th, table.dataTable thead th {
   padding: 2px 18px 2px 10px !important;
+}
+
+table.dataTable tbody td,table.dataTable thead td {
+  padding: 2px 6px !important;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 
 /*table.dataTable th.dt-right, table.dataTable td.dt-right {
@@ -153,7 +160,7 @@ table.dataTable tr.selected td, table.dataTable td.selected {
 
 table.dataTable thead .sorting {
   background-image: none;
-  padding: 2px 2px 2px 2px !important;
+  padding: 2px 8px !important;
 }
 
 .treeview-menu {
@@ -280,9 +287,30 @@ label {
 }
 
 
-button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled) {
-  padding: 0.25em .5em;
-  border: none;
+button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled), button.dt-button, div.dt-button, a.dt-button  {
+  padding: 0.25em .5em !important;
+}
+
+th {
+  text-align: center;
+}
+
+table.dataTable th.dt-right, table.dataTable td.dt-right {
+    text-align: center !important;
+}
+
+table.dataTable tfoot th, table.dataTable tfoot td {
+    padding: 4px 5px;
+    border-top: 1px solid #111;
+}
+
+.form-control[disabled], fieldset[disabled] .form-control {
+    cursor: not-allowed;
+    display: none;
+}
+
+table.dataTable thead .sorting {
+    background-image: none !important;
 }
 
 /*#datafile-upload_or_server > div > label
