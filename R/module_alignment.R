@@ -66,7 +66,7 @@ To generate a BAM file, download a genome of interest, and align to it with an a
         title = "Download genomes for alignment",
         box(width = 12,
             HTML(
-            "'Get assembly information' gathers and displays the assembly_summary.txt from the selected domain from <a target='blank' href='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq'>ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq</a>. An active internet connection is required, and currently no files are cached."),
+            "Gather and display the content of the assembly_summary.txt from the selected domain from <a target='blank' href='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq'>ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq</a>. An active internet connection is required, and currently no files are cached."),
             br(),
             br(),
             div(class="row-fluid",
@@ -351,7 +351,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
       Strain = "character",
       isolate = "NULL",
       Version = "character",
-      assembly_rank = "NULL",
+      "Assembly level" = "factor",
       release_type = "NULL",
       genome_rep = "NULL",
       Date = "Date",
@@ -398,7 +398,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
       ai,
       filter = 'bottom',
       extensions = datatable_opts$extensions,
-      class=datatable_opts$class,
+      class = paste(datatable_opts$class, "nowrap"),
       options(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'))
     )
   })
