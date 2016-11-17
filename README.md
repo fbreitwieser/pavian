@@ -12,7 +12,10 @@ interactive tables, heatmaps and flow diagrams. Pavian also provides an alignmen
 
 In R / RStudio:
 
+    # source("https://bioconductor.org/biocLite.R")
+    # biocLite("Rsamtools")
     # install.packages("devtools")
+    
     devtools::install_github("fbreitwieser/pavian")
     pavian::runApp(port=5000)
 
