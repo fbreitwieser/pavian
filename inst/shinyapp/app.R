@@ -205,10 +205,12 @@ server <- function(input, output, session) {
   })
 
   sample_data <- reactive({
+    req(sample_sets())
     req(input$sample_set_names)
     res <- sample_sets()$val[[input$sample_set_names]]
     res <- res[res$Include, ]
-    attr(res, "set_name") <- input$sample_set_names
+    if (!is.null(res))
+      attr(res, "set_name") <- input$sample_set_names
     res
   })
 
