@@ -4,7 +4,7 @@
 \alias{alignmentModule}
 \title{Server part of alignment module}
 \usage{
-alignmentModule(input, output, session, sample_data)
+alignmentModule(input, output, session, sample_data, datatable_opts)
 }
 \arguments{
 \item{input}{Shiny input object}
@@ -14,6 +14,8 @@ alignmentModule(input, output, session, sample_data)
 \item{session}{Shiny session}
 
 \item{sample_data}{\code{data.frame} for samples}
+
+\item{datatable_opts}{Additional options for creating the datatable.}
 }
 \value{
 Alignment module server functionality
