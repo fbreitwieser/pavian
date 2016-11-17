@@ -20,6 +20,8 @@ taxon_ranks <- c(
   "------- Species" = "S"
 )
 
+include_overview <- FALSE
+
 #taxon_ranks <- list(
 #  "At taxon" = taxon_ranks,
 #  "At taxon and children" = setNames(paste("C",taxon_ranks),paste(names(taxon_ranks),"clade"))
@@ -52,69 +54,69 @@ comparisonModuleUI <- function(id) {
       box(width=7, background = "green",
           column(5,
                  div(class="col-lg-5 col-md-12 lessPadding lessMargin",
-                 selectizeInput(ns("opt_statistic"), label = " Statistic",
-                                choices = c("Mean", "Median", "Max", "Sd",
-                                            "Maximum absolute deviation", "Max Z-score"),
-                                selected = "Mean"),
-                 shinyBS::bsTooltip(id=ns("opt_statistic"),
-                                    title = "Select summarization statistic used in fifth column of data table.",
-                                    placement = "left", trigger = "hover")
+                     selectizeInput(ns("opt_statistic"), label = " Statistic",
+                                    choices = c("Mean", "Median", "Max", "Sd",
+                                                "Maximum absolute deviation", "Max Z-score"),
+                                    selected = "Mean"),
+                     shinyBS::bsTooltip(id=ns("opt_statistic"),
+                                        title = "Select summarization statistic used in fifth column of data table.",
+                                        placement = "left", trigger = "hover")
                  ),
                  div(class="col-lg-7 col-md-12 lessPadding lessMargin",
-                 checkboxGroupInput(ns("opts_normalization"), label = NULL,
-                                    choices = c("Normalize by total # of reads"="opt_display_percentage",
-                                                "Log data"="opt_vst_data", ## TODO: Change to VST
-                                                "Robust z-score"="opt_zscore"),
-                                    inline = FALSE)
+                     checkboxGroupInput(ns("opts_normalization"), label = NULL,
+                                        choices = c("Normalize by total # of reads"="opt_display_percentage",
+                                                    "Log data"="opt_vst_data", ## TODO: Change to VST
+                                                    "Robust z-score"="opt_zscore"),
+                                        inline = FALSE)
                  )
           ),
           column(7,
                  div(class="col-lg-7 col-md-12 lessPadding lessMargin",
-                 selectizeInput(
-                   ns("opt_classification_rank"), label = "Select reads to display",
-                   choices = taxon_ranks, selected = "-"#,inline = TRUE
-                 )),
+                     selectizeInput(
+                       ns("opt_classification_rank"), label = "Select reads to display",
+                       choices = taxon_ranks, selected = "-"#,inline = TRUE
+                     )),
                  div(class="col-lg-5 col-md-12 lessPadding lessMargin",
-                 radioButtons(
-                   ns("opt_show_reads_stay"), label = NULL,
-                   choices = c(
-                     "by taxon" = "reads_stay",
-                     "by taxon and children" = "reads",
-                     "both"
-                   ), inline = FALSE)
+                     radioButtons(
+                       ns("opt_show_reads_stay"), label = NULL,
+                       choices = c(
+                         "by taxon" = "reads_stay",
+                         "by taxon and children" = "reads",
+                         "both"
+                       ), inline = FALSE)
                  )
           )
       ),
       box(
         width = 5,
         div(class="col-lg-6 col-md-12 lessPadding",
-               selectizeInput(
-                 ns('contaminant_selector'),
-                 allcontaminants,
-                 label = "Filter taxon",
-                 selected = c("unclassified", "Homo sapiens", "root"),
-                 multiple = TRUE,
-                 options = list(
-                   maxItems = 25,
-                   create = TRUE,
-                   placeholder = 'Filter clade'
-                 ),
-                 width = "100%"
-               )),
+            selectizeInput(
+              ns('contaminant_selector'),
+              allcontaminants,
+              label = "Filter taxon",
+              selected = c("unclassified", "Homo sapiens", "root"),
+              multiple = TRUE,
+              options = list(
+                maxItems = 25,
+                create = TRUE,
+                placeholder = 'Filter clade'
+              ),
+              width = "100%"
+            )),
         div(class="col-lg-6 col-md-12 lessPadding",
-               selectizeInput(
-                 ns('contaminant_selector_clade'),
-                 label = "Filter taxon and its children",
-                 allcontaminants,
-                 selected = c("artificial sequences"),
-                 multiple = TRUE,
-                 options = list(
-                   maxItems = 25,
-                   create = TRUE,
-                   placeholder = 'Filter clade'
-                 ),
-                 width = "100%"
-               )
+            selectizeInput(
+              ns('contaminant_selector_clade'),
+              label = "Filter taxon and its children",
+              allcontaminants,
+              selected = c("artificial sequences"),
+              multiple = TRUE,
+              options = list(
+                maxItems = 25,
+                create = TRUE,
+                placeholder = 'Filter clade'
+              ),
+              width = "100%"
+            )
         )
       )
     ),
@@ -383,8 +385,18 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols, drop=F]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
 
     colnames(summarized_report)[colnames(summarized_report) == "STAT"] <- input$opt_statistic
-    summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols, drop=F]), round_digits), 1, paste0, collapse = ",")
-    colnames(summarized_report)[colnames(summarized_report) == "OVERVIEW"] <- "Overview"
+
+    if (include_overview) {
+      summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols, drop=F]), round_digits), 1, paste0, collapse = ",")
+      colnames(summarized_report)[colnames(summarized_report) == "OVERVIEW"] <- "Overview"
+    } else {
+      summarized_report$OVERVIEW <- NULL
+      attr(summarized_report, 'data_columns') <- attr(summarized_report, 'data_columns') - 1
+      attr(summarized_report, 'stat_column') <- attr(summarized_report, 'stat_column') - 1
+      attr(summarized_report, 'data_column_start') <- attr(summarized_report, 'data_column_start') - 1
+      attr(summarized_report, 'reads_stay_columns') <- attr(summarized_report, 'reads_stay_columns') - 1
+      attr(summarized_report, 'reads_columns') <- attr(summarized_report, 'reads_columns') - 1
+    }
 
     if (any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
       summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
@@ -414,7 +426,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     summarized_report <- r_summarized_report()
     validate(need(summarized_report, message = "No data"),
              need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"),
-             need(attr(summarized_report, 'taxonid_column'), message = "taxonid_data_columns NULL"),
+             #need(attr(summarized_report, 'taxonid_column'), message = "taxonid_columns NULL"),
              need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
 
     summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
@@ -423,28 +435,35 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     show_rownames <- FALSE
     zero_col <- ifelse(show_rownames, 0, 1)
 
-    columnDefs <- list(
-      ## Make taxonid column link-able
-      list(
-        targets = attr(summarized_report, 'taxonid_column') - zero_col,
-        render = htmlwidgets::JS(
-          "function(data, type, full){
+    if (!is.na(attr(summarized_report, 'taxonid_column'))) {
+      columnDefs <- list(
+        ## Make taxonid column link-able
+        list(
+          targets = attr(summarized_report, 'taxonid_column') - zero_col,
+          render = htmlwidgets::JS(
+            "function(data, type, full){
           return '<a href=\"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id='+data+'\" target=\"_blank\">' + data + '</a>'
   }"
-        )
-      ),
-      list(targets = attr(summarized_report, 'stat_column') - zero_col, orderSequence = c('desc', 'asc'), width = "80px" ),       ## Stat column
-      list(targets = attr(summarized_report, 'data_columns') - zero_col, orderSequence = c('desc', 'asc'), searchable = FALSE ),  ## Data columns shouldn't be searchable
-      list(
-        targets = which(colnames(summarized_report) == "Overview") - zero_col,
-        searchable = FALSE,
-        render = htmlwidgets::JS(
-          "function(data, type, full){
+          )
+        ))
+    } else {
+      columnDefs <- list()
+    }
+
+    columnDefs <- c(columnDefs,
+                    list(
+                      list(targets = attr(summarized_report, 'stat_column') - zero_col, orderSequence = c('desc', 'asc'), width = "80px" ),       ## Stat column
+                      list(targets = attr(summarized_report, 'data_columns') - zero_col, orderSequence = c('desc', 'asc'), searchable = FALSE ),  ## Data columns shouldn't be searchable
+                      list(
+                        targets = which(colnames(summarized_report) == "Overview") - zero_col,
+                        searchable = FALSE,
+                        render = htmlwidgets::JS(
+                          "function(data, type, full){
     return '<span class=spark>' + data + '</span>'
   }"
-        )
-      )
-    )
+                        )
+                      )
+                    ))
 
 
     ## define a callback that initializes a sparkline on elements which have not been initialized before
@@ -472,7 +491,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                           columnDefs = columnDefs,
                           #autoWidth = TRUE,
                           buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
-                          drawCallback = sparklineDrawCallback,
+                          drawCallback = ifelse(include_overview, sparklineDrawCallback, ""),
                           order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
                           search = list(
                             search = isolate(dt_options$search)
@@ -484,12 +503,12 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     ##  For example: taxonomy ID, links to assemblies (e.g. www.ncbi.nlm.nih.gov/assembly/organism/821)
     ##   and organism overview http://www.ncbi.nlm.nih.gov/genome/?term=txid821[Organism:noexp]
 
-
     ## Give the correct format to the columns: thousands separators for numbers, and percent sign for percents
     if (!any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
       dt <- dt %>%
-        DT::formatCurrency(attr(summarized_report, 'stat_column'), currency = '', digits = 1 ) %>%
-        DT::formatCurrency(attr(summarized_report, 'data_columns'), currency = '', digits = 0 )
+        DT::formatCurrency(attr(summarized_report, 'stat_column'), currency = '', digits = 1 )
+      if (max(summarized_report[,attr(summarized_report, 'data_columns')], na.rm = TRUE) > 1000)
+        dt <- dt %>% DT::formatCurrency(attr(summarized_report, 'data_columns'), currency = '', digits = 0 )
     } else {
       suffix <- ifelse(any(c("opt_zscore", "opt_vst_data") %in% input$opts_normalization),"","%")
       dt <- dt %>%
