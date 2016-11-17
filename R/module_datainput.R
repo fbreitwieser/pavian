@@ -9,7 +9,7 @@
 #' @import shiny
 #' @import shinydashboard
 #' @import rhandsontable
-dataInputModuleUI <- function(id, server_access = FALSE, start_with="example_data") {
+dataInputModuleUI <- function(id, server_access = FALSE, start_with=getOption("pavian.startDataInputWith","Example data")) {
 
   ns <- NS(id)
 
@@ -27,12 +27,13 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
     ),
     {if (server_access) {
       tabBox(width=12,
-             title = "Data Source", selected="Example data",
-             #background = "green",
-             tabPanel("Upload files",fileInput(ns("file_upload", width = "500px"), "", multiple = TRUE)),
+             title = "Data Source", selected=start_with,
+             tabPanel("Upload files",fileInput(ns("file_upload"), width = "600px", "", multiple = TRUE)),
              tabPanel("Use data on server", id="server_dir", style=ifelse(server_access, "","display: none"),
-                      "Be careful which directory you select - if there are too many files, the process might hang.",
-                      textInput(ns("txt_data_dir"), label = "Specify directory on machine running Pavian"),
+                      "Be careful which directory you select - if there are too many files, the process might hang. Pavian will check the specified directory and its direct children for report files.",br(),
+                      textInput(ns("txt_data_dir"),  width= "100%",
+                                label = "Specify directory on machine running Pavian",
+                                value = getOption("pavian.server_dir","")),
                       actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px")
              ),
              tabPanel("Example data",
@@ -46,9 +47,8 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
              ))
     } else {
       tabBox(width=12,
-             title = "Data Source", selected="Example data",
-             #background = "green",
-             tabPanel("Upload files",fileInput(ns("file_upload"), "", multiple = TRUE)),
+             title = "Data Source", selected=start_with,
+             tabPanel("Upload files",fileInput(ns("file_upload"), width = "600px", "", multiple = TRUE)),
              tabPanel("Example data",
                       HTML("Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
         from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
@@ -111,7 +111,7 @@ dataInputModule <- function(input, output, session,
   output$upload_info <- renderUI({
     shiny::tagList(
       div(HTML(read_error_msg$val_pos), style="color:green"),
-      div(HTML(read_error_msg$val_neg), style="color:red")
+      div(HTML(paste(read_error_msg$val_neg, collapse=" ")), style="color:red")
     )
   })
 
@@ -129,6 +129,11 @@ dataInputModule <- function(input, output, session,
       read_error_msg$val_neg <- paste("No files in directory ", data_dir, ".")
       return()
     }
+    if (length(list.files(data_dir)) > 50) {
+      read_error_msg$val_neg <- paste("There are more than 50 files ", data_dir, " - please subdivide the data into smaller directories.")
+      return()
+    }
+
 
     if (!is.null(sample_set_name)) {
       old_names <- names(sample_sets$val)
@@ -150,16 +155,21 @@ dataInputModule <- function(input, output, session,
       names(new_sample_sets) <- base_name
     }
 
-    dirs <- list.dirs(data_dir, recursive = FALSE)
-    if (length(dirs) > 0) {
+    dirs <- grep("^\\.", list.dirs(data_dir, recursive = FALSE), invert = TRUE, value = TRUE)
+    if (length(dirs) > 25) {
+      read_error_msg$val_neg <- c(read_error_msg$val_neg, paste("There are more than 25 sub-directories in ", data_dir, " - specify individual directories with reports one at a time to load data."))
+    } else if (length(dirs) > 0) {
       sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
       names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
       new_sample_sets <- c(new_sample_sets, sub_dir_sets)
     }
 
+    print(new_sample_sets)
+
     bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
-    bad_sample_set_names <- names(new_sample_sets)[sapply(new_sample_sets, nrow) == 0]
-    new_sample_sets <- new_sample_sets[sapply(new_sample_sets, nrow) > 0]
+    sel_bad_sets <- sapply(new_sample_sets, function(x) is.null(x) || nrow(x) == 0)
+    bad_sample_set_names <- names(new_sample_sets)[sel_bad_sets]
+    new_sample_sets <- new_sample_sets[!sel_bad_sets]
 
     if (length(new_sample_sets) > 0) {
       read_error_msg$val_pos <- sprintf("Added sample set%s <b>%s</b> with <b>%s</b> valid reports in total.",
@@ -168,9 +178,13 @@ dataInputModule <- function(input, output, session,
                                         sum(unlist(sapply(new_sample_sets, function(x) sum(x$FormatOK)))))
     }
     if (length(bad_files) > 0) {
-      read_error_msg$val_neg <- sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",
-                                        paste(bad_files, collapse="</b><br/> - <b>"))
+      read_error_msg$val_neg <- c(read_error_msg$val_neg,
+        sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",
+                                        paste(bad_files, collapse="</b><br/> - <b>")))
     }
+
+    if (is.null(read_error_msg$val_pos))
+      return()
 
     validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
     sample_sets$val <<- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
@@ -190,7 +204,7 @@ dataInputModule <- function(input, output, session,
   observeEvent(input$read_server_dir, {
     req(input$txt_data_dir)
     withProgress(message = "Reading server directory ...", {
-      read_server_directory(input$txt_data_dir, "Sample set")
+      read_server_directory(input$txt_data_dir)
     })
   })
 

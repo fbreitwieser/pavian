@@ -177,7 +177,6 @@ alignmentModule <- function(input, output, session, sample_data) {
 
   seqinfo_df <- reactive({
     req(my_bam_file$val)
-    print(head(pileup()))
     covered_bp <- attr(pileup(),"covered_bp")
     covered_bp[setdiff(names(seq_lengths()),names(covered_bp))] <- 0
     sum_count <- attr(pileup(),"sum_count")

@@ -16,7 +16,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
     }
   }
   if (!gd_sample_data) {
-    ReportFiles <- list.files(path = my_dir)
+    ReportFiles <- setdiff(list.files(path = my_dir),list.dirs(path = my_dir, recursive = FALSE, full.names = FALSE))
     ReportFiles <- ReportFiles[ReportFiles != def_filename]
     if (!is.null(ext))
       ReportFiles <- ReportFiles[sub(".*\\.","",ReportFiles) %in% ext]

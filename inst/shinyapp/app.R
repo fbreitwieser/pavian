@@ -95,7 +95,7 @@ setInterval(function(){
     tabItems(
       tabItem("Home",
               intro,
-              dataInputModuleUI("datafile")
+              dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", FALSE))
       ),
       tabItem("Overview",
               reportOverviewModuleUI("overview"),

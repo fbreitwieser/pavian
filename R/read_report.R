@@ -161,12 +161,12 @@ delete_ranks_below <- function(report,rank="S") {
 #' @export
 #'
 read_report2 <- function(myfile,collapse=TRUE,keep_ranks=c("D","K","P","C","O","F","G","S"),min.depth=0,filter_taxon=NULL,
-                           has_header=NULL,add_rank_columns=FALSE) {
+                         has_header=NULL,add_rank_columns=FALSE) {
 
   first.line <- readLines(myfile,n=1)
   isASCII <-  function(txt) all(charToRaw(txt) <= as.raw(127))
   if (!isASCII(first.line)) {
-message(myfile," is no valid report")
+    message(myfile," is no valid report")
     return(NULL)
   }
   if (is.null(has_header)) {
@@ -175,7 +175,7 @@ message(myfile," is no valid report")
 
   if (has_header) {
     report <- utils::read.table(myfile,sep="\t",header = T,
-                            quote = "",stringsAsFactors=FALSE)
+                                quote = "",stringsAsFactors=FALSE)
     #colnames(report) <- c("percentage","reads","reads_stay","rank","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
@@ -193,8 +193,8 @@ message(myfile," is no valid report")
 
   } else {
     report <- utils::read.table(myfile,sep="\t",header = F,
-                            col.names = c("percentage","reads","reads_stay","rank","taxonid","name"),
-                            quote = "",stringsAsFactors=FALSE)
+                                col.names = c("percentage","reads","reads_stay","rank","taxonid","name"),
+                                quote = "",stringsAsFactors=FALSE)
   }
 
   report$depth <- nchar(gsub("\\S.*","",report$name))/2
@@ -332,7 +332,7 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
   }
 
   #if (rm_clade)
-    report[!rows_to_delete,]
+  report[!rows_to_delete,]
   #else
   #  report
 }
@@ -349,14 +349,15 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
 #'
 read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
-  first.line <- readLines(myfile,n=1, warn=FALSE)
+  first.line <- tryCatch( readLines(myfile,n=1, warn=FALSE),
+                          error = function(e) { warning("Error reading ",myfile); return() })
   isASCII <-  function(txt) {
     if (length(txt) == 0)
       return(FALSE)
     raw <- charToRaw(txt)
     all(raw <= as.raw(127) && (raw >= as.raw(32) | raw == as.raw(9)))
   }
-  if (!isASCII(first.line)) {
+  if (!isTRUE(isASCII(first.line))) {
     message(myfile," is not a ASCII file")
     return(NULL)
   }
@@ -365,14 +366,14 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     has_header <- grepl("^[a-zA-Z#\"]",first.line)
   }
 
-message(myfile)
+  message(myfile)
   nrows <- ifelse(check_file, 5, -1)
   if (has_header) {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = T,
-                                quote = "",stringsAsFactors=FALSE,
-                                comment.char = "", nrows = nrows)
-     }, error = function(x) NULL, warning = function(x) NULL)
+                        quote = "",stringsAsFactors=FALSE,
+                        comment.char = "", nrows = nrows)
+    }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
     #colnames(report) <- c("percentage","reads","reads_stay","rank","taxonid","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
@@ -393,10 +394,10 @@ message(myfile)
   } else {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = F,
-                                col.names = c("percentage","reads","reads_stay","rank","taxonid","name"),
-                                quote = "",stringsAsFactors=FALSE,
-				nrows = nrows)
-     }, error=function(x) NULL, warning=function(x) NULL)
+                        col.names = c("percentage","reads","reads_stay","rank","taxonid","name"),
+                        quote = "",stringsAsFactors=FALSE,
+                        nrows = nrows)
+    }, error=function(x) NULL, warning=function(x) NULL)
     if (is.null(report)) { return(NULL); }
   }
 
@@ -419,44 +420,47 @@ message(myfile)
     report$name <- sapply(taxonstrings, function(x) x[length(x)])
   }
 
-  if ("name" %in% colnames(report)) {
-  if (!"taxonstring" %in% colnames(report)) {
-    ## Kraken report
-    report$depth <- nchar(gsub("\\S.*","",report$name))/2
-    report$name <- gsub("^ *","",report$name)
-    report$name <- paste(tolower(report$rank),report$name,sep="_")
+  if (all(c("name","rank") %in% colnames(report))) {
+    if (!"taxonstring" %in% colnames(report)) {
+      ## Kraken report
+      report$depth <- nchar(gsub("\\S.*","",report$name))/2
+      report$name <- gsub("^ *","",report$name)
+      report$name <- paste(tolower(report$rank),report$name,sep="_")
 
-    rownames(report) <- NULL
+      rownames(report) <- NULL
 
-    ## make taxonstring path
-    report$taxonstring <- report$name
-    n <- nrow(report)
-    depths <- report$depth
-    taxonstrings <- report$name
+      ## make taxonstring path
+      report$taxonstring <- report$name
+      n <- nrow(report)
+      depths <- report$depth
+      taxonstrings <- report$name
 
-    prev_row <- 2
+      prev_row <- 2
 
-    for (current_row in seq(from=3, nrow(report))) {
-      while (depths[current_row] != depths[prev_row] + 1) {
-        # find previous row with correct depth
-        prev_row <- prev_row - 1
+      if (nrow(report) < 3) {
+        return(report)
       }
-      taxonstrings[current_row] <- paste0(taxonstrings[prev_row], "|", taxonstrings[current_row])
+      for (current_row in seq(from=3, nrow(report))) {
+        while (depths[current_row] != depths[prev_row] + 1) {
+          # find previous row with correct depth
+          prev_row <- prev_row - 1
+        }
+        taxonstrings[current_row] <- paste0(taxonstrings[prev_row], "|", taxonstrings[current_row])
 
-      prev_row <- current_row
-    }
+        prev_row <- current_row
+      }
 
-    report$taxonstring <- taxonstrings
+      report$taxonstring <- taxonstrings
 
-  } else {
-     taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
-     if (!"depth" %in% colnames(report)) {
-      report$depth <- sapply(taxonstrings, length) - 1
+    } else {
+      taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
+      if (!"depth" %in% colnames(report)) {
+        report$depth <- sapply(taxonstrings, length) - 1
+      }
     }
   }
-  }
 
-  if (!"name" %in% colnames(report) ||
+  if (!all(c("name","rank") %in% colnames(report)) ||
       nrow(report) < 2 ||
       report[1,"name"] != "u_unclassified" ||
       report[2,"name"] != "-_root") {
@@ -467,7 +471,7 @@ message(myfile)
   if (!"taxonid" %in% colnames(report))
     report$taxonid <- 0
 
- if (!"rank" %in% colnames(report))
+  if (!"rank" %in% colnames(report))
     report$rank <- toupper(substr(report$name, 0, 1))
 
   if (!"reads_stay" %in% colnames(report)) {

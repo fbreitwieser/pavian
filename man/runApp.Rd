@@ -4,15 +4,15 @@
 \alias{runApp}
 \title{Run Pavian web interface}
 \usage{
-runApp(cache_dir = "cache", server_dir = system.file("shinyapp",
-  "example-data", package = "pavian"), allow_change_server_dir = TRUE, ...)
+runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
+  server_access = FALSE, ...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files.}
 
 \item{server_dir}{Directory for sample files.}
 
-\item{allow_change_server_dir}{Allow users to change server directory}
+\item{server_access}{Allow users to change server directory}
 
 \item{...}{Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.}
 }
