@@ -10,25 +10,14 @@ taxon_ranks <- c(
 )
 
 taxon_ranks <- c(
-  "Any" = "-",
-  "└ Domain" = "D",
-  " └ Phylum" = "P",
-  "  └ Class" = "C",
-  "   └ Order" = "O",
-  "    └ Family" = "F",
-  "     └ Genus" = "G",
-  "      └ Species" = "S"
-)
-
-taxon_ranks <- c(
   "All taxonomic ranks" = "-",
-  "└ Domain" = "D",
-  "└─ Phylum" = "P",
-  "└── Class" = "C",
-  "└─── Order" = "O",
-  "└──── Family" = "F",
-  "└───── Genus" = "G",
-  "└────── Species" = "S"
+  "\\u2514 Domain" = "D",
+  "\\u2514\\u2500 Phylum" = "P",
+  "\\u2514\\u2500\\u2500 Class" = "C",
+  "\\u2514\\u2500\\u2500\\u2500 Order" = "O",
+  "\\u2514\\u2500\\u2500\\u2500\\u2500 Family" = "F",
+  "\\u2514\\u2500\\u2500\\u2500\\u2500\\u2500 Genus" = "G",
+  "\\u2514\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500 Species" = "S"
 )
 
 #taxon_ranks <- list(
