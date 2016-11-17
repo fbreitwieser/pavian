@@ -9,6 +9,7 @@ reportOverviewModuleUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
+    HTML("Note: The bar in the columns for bacterial, viral and fungal reads is relative to the microbial content in that sample."),
     checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = TRUE),
     DT::dataTableOutput(ns('dt_samples_overview'))
   )
@@ -62,14 +63,14 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     samples_summary <- get_samples_summary()
 
     start_color_bar_at <- 2  ## length of extra_cols + 1
-    number_range <-  c(0, max(samples_summary[, start_color_bar_at], na.rm = TRUE))
+    number_range <-  c(0, max(samples_summary[, 2], na.rm = TRUE))
 
     if (isTRUE(input$opt_samples_overview_percent)) {
       ## add a custom renderer.
       start_color_bar_at <- start_color_bar_at + 1
       number_range <- c(0, 100)
       samples_summary[, start_color_bar_at:ncol(samples_summary)] <-
-        100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, start_color_bar_at], `/`), 4)
+        100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, 2], `/`), 4)
 
       ## TODO: Define columnDefs and give read counts on mouse-over
     }
@@ -95,15 +96,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
       options(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis')),
       escape = FALSE,
       class = datatable_opts$class,
-    ) %>%
-      DT::formatStyle(
-        colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],
-        background = styleColorBar2(number_range, 'lightblue')
-      ) %>%
-       DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=ncol(samples_summary))],
-                       background = DT::styleColorBar(c(0, max(
-                         samples_summary[, microbial_col], na.rm = TRUE
-                     )), 'lightgreen'))
+    )
 
     #formatString <- function(table, columns, before="", after="") {
     #  DT:::formatColumns(table, columns, function(col, before, after)
@@ -114,6 +107,18 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
 
      if (isTRUE(input$opt_samples_overview_percent)) {
        dt <- dt %>%
+         DT::formatStyle(
+           colnames(samples_summary)[2],
+           background = styleColorBar2(c(0,max(samples_summary[[2]],na.rm=T)), 'lightblue')
+         ) %>%
+         DT::formatStyle(
+           colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],
+           background = styleColorBar2(number_range, 'lightsalmon')
+         ) %>%
+         DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=ncol(samples_summary))],
+                         background = DT::styleColorBar(c(0, max(
+                           samples_summary[, microbial_col], na.rm = TRUE
+                         )), 'lightgreen')) %>%
          DT::formatCurrency(start_color_bar_at - 1, currency = '', digits = 0) %>%
          DT::formatString(seq(from=start_color_bar_at, to=ncol(samples_summary)),
                       suffix = '%')  ## TODO: display as percent
@@ -121,7 +126,17 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     #   ## with signif.
      } else {
        dt <-
-         dt %>% DT::formatCurrency(seq(from=start_color_bar_at, to=ncol(samples_summary)),
+       dt %>%   DT::formatStyle(
+         colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],
+         background = styleColorBar2(number_range, 'lightblue')
+       ) %>%
+         DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=ncol(samples_summary))],
+                         background = DT::styleColorBar(c(0, max(
+                           samples_summary[, microbial_col], na.rm = TRUE
+                         )), 'lightgreen'))
+
+       if (max(samples_summary[,2]) > 1000)
+        dt <- dt %>% DT::formatCurrency(seq(from=start_color_bar_at, to=ncol(samples_summary)),
                                currency = '',
                                digits = 0)
      }
