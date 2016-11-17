@@ -16,5 +16,5 @@ plot_rank_reads <- function(rank_reads,value="perc",ylab="fraction of reads", la
     theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5,colour = "black",size=12),
           panel.background = element_blank(),
           axis.line = element_line(colour = "black")
-    ) + ggthemes::scale_fill_gdocs() + guides(fill=guide_legend(title=NULL))
+    ) + guides(fill=guide_legend(title=NULL))
 }

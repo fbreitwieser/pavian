@@ -85,12 +85,14 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
 
     microbial_col <- start_color_bar_at + 5
 
+    my_title <- sprintf("%s-summary-%s", basename(attr(sample_data(), "set_name")), format(Sys.time(), "%y%m%d"))
 
     dt <- DT::datatable(
       samples_summary,
       rownames = FALSE,
       selection = 'single',
       extensions = datatable_opts$extensions,
+      options(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis')),
       escape = FALSE,
       class = datatable_opts$class,
     ) %>%

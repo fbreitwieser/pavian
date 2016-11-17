@@ -164,8 +164,6 @@ dataInputModule <- function(input, output, session,
       new_sample_sets <- c(new_sample_sets, sub_dir_sets)
     }
 
-    print(new_sample_sets)
-
     bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
     sel_bad_sets <- sapply(new_sample_sets, function(x) is.null(x) || nrow(x) == 0)
     bad_sample_set_names <- names(new_sample_sets)[sel_bad_sets]

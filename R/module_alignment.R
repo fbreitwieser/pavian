@@ -65,11 +65,17 @@ To generate a BAM file, download a genome of interest, and align to it with an a
       tabPanel(
         title = "Download genomes for alignment",
         box(width = 12,
+            HTML(
+            "'Get assembly information' gathers and displays the assembly_summary.txt from the selected domain from <a target='blank' href='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq'>ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq</a>. An active internet connection is required, and currently no files are cached."),
+            br(),
+            br(),
             div(class="row-fluid",
-                div(class="span6",
-                    shiny::selectizeInput(ns("cbo_assemblies"), choices = assembly_resources, selected = "RefSeq bacteria", label = "Genome Assemblies", width="60%")),
-                div(class="span6",
-                    shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="35%"))),
+                div(class="col-sm-6 col-xs-12",
+                    shiny::selectizeInput(ns("cbo_assemblies"), choices = assembly_resources, selected = "RefSeq bacteria", label = NULL, width="100%")),
+                div(class="col-sm-6 col-xs-12",
+                    shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="100%"))),
+            br(),
+            br(),
             DT::dataTableOutput(ns("dt_assembly_info")),
             htmlOutput(ns("dl_genome"))
         )
@@ -85,11 +91,12 @@ To generate a BAM file, download a genome of interest, and align to it with an a
 #' @param output Shiny output object
 #' @param session Shiny session
 #' @param sample_data \code{data.frame} for samples
+#' @param datatable_opts Additional options for creating the datatable.
 #'
 #' @return Alignment module server functionality
 #' @export
 #' @import shinydashboard
-alignmentModule <- function(input, output, session, sample_data) {
+alignmentModule <- function(input, output, session, sample_data, datatable_opts) {
 
   my_bam_file <- reactiveValues(val = NULL, txt = NULL)
 
@@ -219,14 +226,18 @@ alignmentModule <- function(input, output, session, sample_data) {
 
 
   output$table <- DT::renderDataTable({
+    req(my_bam_file$val)
+    my_title = sprintf("%s-alignment-summary_%s", basename(my_bam_file$val), format(Sys.time(), "%y%m%d"))
     datatable(seqinfo_df(), selection = 'single',
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
-                "Covered\nbase pairs"="covered_bp","Average\ncoverage"="avg_coverage",
+                "Covered bp"="covered_bp","Average\ncoverage"="avg_coverage",
                 "Average\nMAPQ"="avg_mapq",
                 "Percent\ncovered"="perc_covered"),
+              extensions = datatable_opts$extensions,
+              class=datatable_opts$class,
               options=list(
-                sDom  = '<"top">rt<"bottom">pl',
+                buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
                 columnDefs=list(
       list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
                               )))) %>%
@@ -252,10 +263,7 @@ alignmentModule <- function(input, output, session, sample_data) {
   })
 
   bam2_mapq <- reactive( {
-    message("bam2_mapq")
     req(input$mapq)
-    message("bam2_mapq1")
-    #print(head(bam))
     bam2() %>% dplyr::filter(mapq >= input$mapq)
   })
 
@@ -267,10 +275,7 @@ alignmentModule <- function(input, output, session, sample_data) {
   seq_lengths <- reactive({ get_seqlengths(my_bam_file$val) })
 
   selected_seq <- reactive({
-    message("selected_seq")
     req(input$table_rows_selected)
-    message("selected_seq1")
-
     seqinfo_df()[input$table_rows_selected,"seqnames"]
   })
 
@@ -388,10 +393,13 @@ alignmentModule <- function(input, output, session, sample_data) {
   output$dt_assembly_info <- DT::renderDataTable({
     ai <- assembly_info()
     req(ai)
-
+    my_title <- sprintf("%s-assembly-info-%s", names(refseq_assemblies)[refseq_assemblies==input$cbo_assemblies], format(Sys.time(), "%y%m%d"))
     DT::datatable(
       ai,
-      filter = 'top'
+      filter = 'bottom',
+      extensions = datatable_opts$extensions,
+      class=datatable_opts$class,
+      options(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'))
     )
   })
 

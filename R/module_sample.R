@@ -207,10 +207,10 @@ sampleModule <- function(input, output, session, sample_data, reports,
       xlab("") + ylab("") +
       scale_y_continuous(limits=c(0,max(mydf$pos)*1.1), expand=c(0,0)) +
       scale_fill_manual("", values = c("in total"="#fc8d62", "at taxon"="#66c2a5")) +
-      my_gg_theme() +
+      my_gg_theme(12) +
       theme(
         axis.ticks = element_blank(),
-        axis.text.x = element_text(colour=colvec, angle=90, vjust=1,hjust=1),
+        axis.text.x = element_text(colour=colvec, angle=90, vjust=1,hjust=1, size = 10),
         legend.position = "top"
       )
   }
@@ -426,8 +426,9 @@ sampleModule <- function(input, output, session, sample_data, reports,
     my_report$percentage <- NULL
     my_report$name <- my_report$name %>% sub("^._", "", .) %>% gsub(" ", "&nbsp;", .)
 
+    my_title <- sprintf("%s-results_%s", input$sample_selector, format(Sys.time(), "%y%m%d"))
     colnames(my_report) <- beautify_string(colnames(my_report))
-    DT::datatable(
+    dt <- DT::datatable(
       my_report,
       filter = 'none',
       selection = 'single',
@@ -435,11 +436,14 @@ sampleModule <- function(input, output, session, sample_data, reports,
       extensions = datatable_opts$extensions,
       escape = FALSE,
       rownames = FALSE,
-      options = c(search = list(search = input$sankey_hover))
-    ) %>%
-      #DT::formatString("Percent", suffix = "%") %>%
-      DT::formatCurrency(c("Reads", "Reads stay"),
+      options = list(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'))
+    )
+    if (max(my_report$Reads) > 1000) {
+      dt <- dt %>%
+        DT::formatCurrency(c("Reads", "Reads stay"),
                          digits = 0, currency = "")
+    }
+    dt
 
   }, server = TRUE)
 

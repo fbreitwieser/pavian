@@ -27,11 +27,11 @@ load_or_create <- function(f, name, recreate=FALSE, cache_dir = "cache") {
   }
   sav_file <- sprintf("%s/%s",cache_dir, name)
   if (!file.exists(sav_file) || isTRUE(recreate)) {
-    message('creating ',name," ... ",appendLF=F)
+    message('creating ',name," ... ")
     res <- f()
     saveRDS(res,file=sav_file)
   } else {
-    message('loading ',name," ... ",appendLF=F)
+    #message('loading ',name," ... ",appendLF=F)
     res <- readRDS(sav_file)
   }
   #message("finished")

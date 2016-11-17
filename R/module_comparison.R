@@ -11,13 +11,13 @@ taxon_ranks <- c(
 
 taxon_ranks <- c(
   "All taxonomic ranks" = "-",
-  "\\u2514 Domain" = "D",
-  "\\u2514\\u2500 Phylum" = "P",
-  "\\u2514\\u2500\\u2500 Class" = "C",
-  "\\u2514\\u2500\\u2500\\u2500 Order" = "O",
-  "\\u2514\\u2500\\u2500\\u2500\\u2500 Family" = "F",
-  "\\u2514\\u2500\\u2500\\u2500\\u2500\\u2500 Genus" = "G",
-  "\\u2514\\u2500\\u2500\\u2500\\u2500\\u2500\\u2500 Species" = "S"
+  "- Domain" = "D",
+  "-- Phylum" = "P",
+  "--- Class" = "C",
+  "---- Order" = "O",
+  "----- Family" = "F",
+  "------ Genus" = "G",
+  "------- Species" = "S"
 )
 
 #taxon_ranks <- list(
@@ -316,6 +316,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
   })
 
   get_summarized_reportp <- reactive({
+    req(get_summarized_reportc())
     if (nrow(get_summarized_reportc()) == 0) {
       return(get_summarized_reportc());
     }
@@ -325,7 +326,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
 
   r_summarized_report <- reactive({
-
+    req(get_summarized_reportc())
     if ("opt_display_percentage" %in% input$opts_normalization) {
       summarized_report <- get_summarized_reportp()
     } else {
@@ -370,16 +371,13 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     }
     mostattributes(summarized_report) <- sav_attr
 
-    message("A")
     validate(
       need(length(summarized_report) > 0, message = "summarized report is empty"),
       need(colnames(summarized_report), message = "summarized report has no column names"),
       need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"))
-    message("B")
     data_cols <- attr(summarized_report, "data_columns")
     validate(need(all(sapply(summarized_report[data_cols], is.numeric)),
                   message = "Not all data columns are numeric?!"))
-    message("C")
     round_digits <- ifelse(isTRUE("opt_display_percentage" %in% input$opts_normalization), 3, 1)
 
     summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols, drop=F]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
@@ -391,8 +389,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     if (any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
       summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
     }
-    message("D")
-    str(summarized_report)
 
     summarized_report
 
@@ -463,6 +459,8 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       }"
     )
 
+    my_title = sprintf("%s-matrix-%s", basename(attr(sample_data(), "set_name")), format(Sys.time(), "%y%m%d"))
+
     dt <- DT::datatable(summarized_report,
                         #filter = "bottom",
                         escape = FALSE,
@@ -473,6 +471,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                         options = list(
                           columnDefs = columnDefs,
                           #autoWidth = TRUE,
+                          buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
                           drawCallback = sparklineDrawCallback,
                           order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
                           search = list(

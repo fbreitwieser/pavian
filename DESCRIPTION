@@ -22,7 +22,6 @@ Imports:
     ggplot2 (>= 1.0.1),
     rhandsontable,
     htmltools,
-    ggthemes,
     plyr,
     dplyr,
     yaml,

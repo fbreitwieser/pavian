@@ -16,7 +16,7 @@ options(DT.options = list(pageLength = 15,
                           searchHighlight = TRUE,
                           scrollX = TRUE,
                           dom = 'Bfrtip',
-                          buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy', 'colvis'),
+                          #buttons = list('pageLength', 'excel' , 'csv', 'copy', 'colvis'),
                           lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
                           search = list(regex = TRUE, caseInsensitive = TRUE)))
 
@@ -205,8 +205,11 @@ server <- function(input, output, session) {
   })
 
   sample_data <- reactive({
+    req(input$sample_set_names)
     res <- sample_sets()$val[[input$sample_set_names]]
-    res[res$Include, ]
+    res <- res[res$Include, ]
+    attr(res, "set_name") <- input$sample_set_names
+    res
   })
 
   observeEvent(input$btn_remove_cache_files, {
@@ -223,12 +226,12 @@ server <- function(input, output, session) {
     res
   })
 
-  sample_module_selected <- callModule(sampleModule, "sample", sample_data, reports, datatable_opts)
+  callModule(sampleModule, "sample", sample_data, reports, datatable_opts=datatable_opts)
 
-  observeEvent(sample_module_selected(), {
-    req(sample_module_selected())
-    updateTabItems(session, "tabs", "Comparison")
-  })
+  #observeEvent(sample_module_selected(), {
+  #  req(sample_module_selected())
+  #  updateTabItems(session, "tabs", "Comparison")
+  #})
 
   callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = datatable_opts)
   callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
@@ -243,7 +246,7 @@ server <- function(input, output, session) {
                x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("p_Chordata", x[["taxonstring"]]), , drop=F],
              datatable_opts = datatable_opts)
 
-  callModule(alignmentModule, "alignment", sample_data)
+  callModule(alignmentModule, "alignment", sample_data, datatable_opts = datatable_opts)
 
   output$session_info <- renderPrint( { sessionInfo() } )
 }

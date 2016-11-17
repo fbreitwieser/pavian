@@ -366,7 +366,6 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     has_header <- grepl("^[a-zA-Z#\"]",first.line)
   }
 
-  message(myfile)
   nrows <- ifelse(check_file, 5, -1)
   if (has_header) {
     report <- tryCatch({
@@ -414,51 +413,50 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
       report)
   }
 
+  if (all(c("name","rank") %in% colnames(report)) && !"taxonstring" %in% colnames(report)) {
+    ## Kraken report
+    report$depth <- nchar(gsub("\\S.*","",report$name))/2
+    report$name <- gsub("^ *","",report$name)
+    report$name <- paste(tolower(report$rank),report$name,sep="_")
 
-  if ("taxonstring" %in% colnames(report) && !"name" %in% colnames(report)) {
-    taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
-    report$name <- sapply(taxonstrings, function(x) x[length(x)])
-  }
+    rownames(report) <- NULL
 
-  if (all(c("name","rank") %in% colnames(report))) {
-    if (!"taxonstring" %in% colnames(report)) {
-      ## Kraken report
-      report$depth <- nchar(gsub("\\S.*","",report$name))/2
-      report$name <- gsub("^ *","",report$name)
-      report$name <- paste(tolower(report$rank),report$name,sep="_")
+    ## make taxonstring path
+    report$taxonstring <- report$name
+    n <- nrow(report)
+    depths <- report$depth
+    taxonstrings <- report$name
 
-      rownames(report) <- NULL
+    prev_row <- 2
 
-      ## make taxonstring path
-      report$taxonstring <- report$name
-      n <- nrow(report)
-      depths <- report$depth
-      taxonstrings <- report$name
-
-      prev_row <- 2
-
-      if (nrow(report) < 3) {
-        return(report)
-      }
-      for (current_row in seq(from=3, nrow(report))) {
-        while (depths[current_row] != depths[prev_row] + 1) {
-          # find previous row with correct depth
-          prev_row <- prev_row - 1
-        }
-        taxonstrings[current_row] <- paste0(taxonstrings[prev_row], "|", taxonstrings[current_row])
-
-        prev_row <- current_row
-      }
-
-      report$taxonstring <- taxonstrings
-
-    } else {
-      taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
-      if (!"depth" %in% colnames(report)) {
-        report$depth <- sapply(taxonstrings, length) - 1
-      }
+    if (nrow(report) < 3) {
+      return(report)
     }
+    for (current_row in seq(from=3, nrow(report))) {
+      while (depths[current_row] != depths[prev_row] + 1) {
+        # find previous row with correct depth
+        prev_row <- prev_row - 1
+      }
+      taxonstrings[current_row] <- paste0(taxonstrings[prev_row], "|", taxonstrings[current_row])
+
+      prev_row <- current_row
+    }
+
+    report$taxonstring <- taxonstrings
+
+  } else if ("taxonstring" %in% colnames(report)) {
+    taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
+
+    if (!"name" %in% colnames(report))
+      report$name <- sapply(taxonstrings, function(x) x[length(x)])
+
+    if (!"depth" %in% colnames(report)) {
+      report$depth <- sapply(taxonstrings, length) - 1
+    }
+    if (!"rank" %in% colnames(report))
+      report$rank <- toupper(substr(report$name, 0, 1))
   }
+
 
   if (!all(c("name","rank") %in% colnames(report)) ||
       nrow(report) < 2 ||
@@ -470,9 +468,6 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
   if (!"taxonid" %in% colnames(report))
     report$taxonid <- 0
-
-  if (!"rank" %in% colnames(report))
-    report$rank <- toupper(substr(report$name, 0, 1))
 
   if (!"reads_stay" %in% colnames(report)) {
     taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
