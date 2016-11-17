@@ -18,7 +18,7 @@ taxon_ranks <- c(
   "    └ Family" = "F",
   "     └ Genus" = "G",
   "      └ Species" = "S"
-  )
+)
 
 taxon_ranks <- c(
   "All taxonomic ranks" = "-",
@@ -47,98 +47,99 @@ comparisonModuleUI <- function(id) {
   ns <- NS(id)
 
   shiny::tagList(
-    fluidRow(box(width=12,collapsible=TRUE,collapsed=TRUE,title="Select samples",
-                 radioButtons(ns("comparison_type"), label = "",
+    fluidRow(box(width=12,collapsible=TRUE,collapsed=TRUE,title="Expand for further options -->",
+                 radioButtons(ns("comparison_type"), label = NULL,
                               choices = c("Comparison table"="table", "Pairwise comparison scatterplot"="scatter"),
                               selected = "table"),
                  selectizeInput(ns("sample_selector"),label="Samples to show in table", multiple=TRUE, choices=NULL,selected=NULL,
                                 options=list(create = TRUE)),
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector1"),label="Sample 1", multiple=FALSE, choices=NULL,selected=NULL,
-                                                options=list(create = TRUE)))),
+                                                          options=list(create = TRUE)))),
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector2"),label="Sample 2", multiple=FALSE, choices=NULL,selected=NULL,
-                                                options=list(create = TRUE))))
-                 )),
+                                                          options=list(create = TRUE)))),
+                 checkboxGroupInput(ns("dt_class"),label="", choices=c("Don't wrap text in table"="nowrap","Compact layout"="compact"))
+    )),
     fluidRow(
-      box(width=6, background = "green",
-          column(6,
-                 selectizeInput(ns("opt_statistic"),
-                                label = " Statistic",
+      box(width=7, background = "green",
+          column(5,
+                 div(class="col-lg-5 col-md-12 lessPadding lessMargin",
+                 selectizeInput(ns("opt_statistic"), label = " Statistic",
                                 choices = c("Mean", "Median", "Max", "Sd",
                                             "Maximum absolute deviation", "Max Z-score"),
                                 selected = "Mean"),
                  shinyBS::bsTooltip(id=ns("opt_statistic"),
                                     title = "Select summarization statistic used in fifth column of data table.",
-                           placement = "left", trigger = "hover"),
-                 checkboxGroupInput(ns("opts_normalization"), label = "",
+                                    placement = "left", trigger = "hover")
+                 ),
+                 div(class="col-lg-7 col-md-12 lessPadding lessMargin",
+                 checkboxGroupInput(ns("opts_normalization"), label = NULL,
                                     choices = c("Normalize by total # of reads"="opt_display_percentage",
                                                 "Log data"="opt_vst_data", ## TODO: Change to VST
                                                 "Robust z-score"="opt_zscore"),
-                                    inline = TRUE)
-                 ),
-          column(6,
+                                    inline = FALSE)
+                 )
+          ),
+          column(7,
+                 div(class="col-lg-7 col-md-12 lessPadding lessMargin",
                  selectizeInput(
-                   ns("opt_classification_rank"),
-                   label = "Taxonomic rank",
-                   choices = taxon_ranks,
-                   selected = "-"
-                   #,inline = TRUE
-                 ),
+                   ns("opt_classification_rank"), label = "Select reads to display",
+                   choices = taxon_ranks, selected = "-"#,inline = TRUE
+                 )),
+                 div(class="col-lg-5 col-md-12 lessPadding lessMargin",
                  radioButtons(
-                   ns("opt_show_reads_stay"),
-                   label = "",
+                   ns("opt_show_reads_stay"), label = NULL,
                    choices = c(
-                     "Reads by taxon" = "reads_stay",
-                     "Reads by taxon and children" = "reads",
+                     "by taxon" = "reads_stay",
+                     "by taxon and children" = "reads",
                      "both"
-                   ), inline = TRUE)
-
+                   ), inline = FALSE)
+                 )
           )
       ),
       box(
-        width = 6,
-        column(6,
-        selectizeInput(
-          ns('contaminant_selector'),
-          allcontaminants,
-          label = "Filter taxon",
-          selected = c("unclassified", "Homo sapiens", "root"),
-          multiple = TRUE,
-          options = list(
-            maxItems = 25,
-            create = TRUE,
-            placeholder = 'Filter clade'
-          ),
-          width = "100%"
-        )),
-        column(6,
-        selectizeInput(
-          ns('contaminant_selector_clade'),
-          label = "Filter taxon and its children",
-          allcontaminants,
-          selected = c("artificial sequences"),
-          multiple = TRUE,
-          options = list(
-            maxItems = 25,
-            create = TRUE,
-            placeholder = 'Filter clade'
-          ),
-          width = "100%"
-        )
+        width = 5,
+        div(class="col-lg-6 col-md-12 lessPadding",
+               selectizeInput(
+                 ns('contaminant_selector'),
+                 allcontaminants,
+                 label = "Filter taxon",
+                 selected = c("unclassified", "Homo sapiens", "root"),
+                 multiple = TRUE,
+                 options = list(
+                   maxItems = 25,
+                   create = TRUE,
+                   placeholder = 'Filter clade'
+                 ),
+                 width = "100%"
+               )),
+        div(class="col-lg-6 col-md-12 lessPadding",
+               selectizeInput(
+                 ns('contaminant_selector_clade'),
+                 label = "Filter taxon and its children",
+                 allcontaminants,
+                 selected = c("artificial sequences"),
+                 multiple = TRUE,
+                 options = list(
+                   maxItems = 25,
+                   create = TRUE,
+                   placeholder = 'Filter clade'
+                 ),
+                 width = "100%"
+               )
         )
       )
     ),
     div(id=ns("table_div"),
-      div(style = 'overflow-x: scroll',
-          DT::dataTableOutput(ns('dt_samples_comparison'))),
-      actionButton(ns("btn_sc_filter"), "Filter taxon"),
-      actionButton(ns("btn_sc_filter_clade"), "Filter taxon and children"),
-      actionButton(ns("btn_sc_gointo"), "Go Into")
+        DT::dataTableOutput(ns('dt_samples_comparison')),
+        actionButton(ns("btn_sc_filter"), "Filter taxon"),
+        actionButton(ns("btn_sc_filter_clade"), "Filter taxon and children"),
+        actionButton(ns("btn_sc_gointo"), "Go Into")
     ),
     shinyjs::hidden(
       div(id=ns("scatter_div"),
           column(6, scatterD3::scatterD3Output(ns("scatter_plot"))),
           column(6, scatterD3::scatterD3Output(ns("ma_plot")))
-          )
+      )
     )
   )
 }
@@ -212,10 +213,10 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     report <- small_report()
     req(all(c(input$sample_selector1,input$sample_selector2) %in% colnames(report)))
     scatterD3::scatterD3(
-              x = report[,input$sample_selector1], y = report[,input$sample_selector2],
-              lab = report$Name, tooltip_text = report$tooltip,
-              xlab = input$sample_selector1, ylab = input$sample_selector2,
-              lines = data.frame(slope = 1, intercept = 0))
+      x = report[,input$sample_selector1], y = report[,input$sample_selector2],
+      lab = report$Name, tooltip_text = report$tooltip,
+      xlab = input$sample_selector1, ylab = input$sample_selector2,
+      lines = data.frame(slope = 1, intercept = 0))
   })
 
   output$ma_plot <- scatterD3::renderScatterD3({
@@ -226,9 +227,9 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     log2_ratio[log2_ratio < -5] <- -5
 
     scatterD3::scatterD3(
-              x = log10_mean, y = log2_ratio, lab = report$Name,
-              tooltip_text = report$tooltip,
-              xlab = "log10 mean", ylab = "log2 ratio")
+      x = log10_mean, y = log2_ratio, lab = report$Name,
+      tooltip_text = report$tooltip,
+      xlab = "log10 mean", ylab = "log2 ratio")
   })
 
 
@@ -319,7 +320,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     summarized_report <- summarized_report[!sel_rm_taxons, ]
 
     if (req(input$opt_classification_rank) != "-") {
-      summarized_report <- summarized_report[summarized_report[["Level"]] %in% input$opt_classification_rank,]
+      summarized_report <- summarized_report[summarized_report[["Rank"]] %in% input$opt_classification_rank,]
     }
 
     summarized_report
@@ -432,6 +433,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
              need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
 
     summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
+    summarized_report$Name <- summarized_report$Name %>% gsub(" ", "&nbsp;", .)
 
     show_rownames <- FALSE
     zero_col <- ifelse(show_rownames, 0, 1)
@@ -442,7 +444,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
         targets = attr(summarized_report, 'taxonid_column') - zero_col,
         render = htmlwidgets::JS(
           "function(data, type, full){
-          return '<a href=\"http://www.ncbi.nlm.nih.gov/genome/?term=txid'+data+'[Organism:exp]\" target=\"_blank\">' + data + '</a>'
+          return '<a href=\"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id='+data+'\" target=\"_blank\">' + data + '</a>'
   }"
         )
       ),
@@ -473,26 +475,21 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     )
 
     dt <- DT::datatable(summarized_report,
-                         #filter = "bottom",
-                         escape = FALSE,
-                         rownames = show_rownames,
-                         selection = "single",
-                         extensions = c('Buttons'),
-                         options = list(
-                           datatable_opts,
-                           columnDefs = columnDefs,
-                                        dom = 'Bfrtip',
-                                        buttons = c('pageLength', 'colvis', 'pdf', 'excel' , 'csv', 'copy'),
-                                        lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All')),
-                                        pageLength = 10,
-                                        #autoWidth = TRUE,
-                                        drawCallback = sparklineDrawCallback,
-                                        order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
-                                        search = list(
-                                          search = isolate(dt_options$search),
-                                          regex = TRUE, caseInsensitive = TRUE
-                                        ))
-                         )
+                        #filter = "bottom",
+                        escape = FALSE,
+                        rownames = show_rownames,
+                        selection = "single",
+                        extensions = datatable_opts$extensions,
+                        class=datatable_opts$class,
+                        options = list(
+                          columnDefs = columnDefs,
+                          #autoWidth = TRUE,
+                          drawCallback = sparklineDrawCallback,
+                          order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
+                          search = list(
+                            search = isolate(dt_options$search)
+                          ))
+    )
 
 
     ## TODO: Consider adding more information in child rows: https://rstudio.github.io/DT/002-rowdetails.html
@@ -515,13 +512,13 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     ## Add color bar
     #str(summarized_report[,attr(summarized_report, 'data_columns')])
     if (0) {
-    dt <- dt %>% DT::formatStyle(
-      attr(summarized_report, 'data_columns'),
-      background = DT::styleColorBar(range(summarized_report[,attr(summarized_report, 'stat_column')],na.rm=TRUE), 'lightblue'),
-      backgroundSize = '90% 80%',
-      backgroundRepeat = 'no-repeat',
-      backgroundPosition = 'center'
-    )
+      dt <- dt %>% DT::formatStyle(
+        attr(summarized_report, 'data_columns'),
+        background = DT::styleColorBar(range(summarized_report[,attr(summarized_report, 'stat_column')],na.rm=TRUE), 'lightblue'),
+        backgroundSize = '90% 80%',
+        backgroundRepeat = 'no-repeat',
+        backgroundPosition = 'center'
+      )
     }
 
     if (nrow(summarized_report) > 0) {
@@ -616,7 +613,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     req(selected_row())
 
     DT::updateSearch(dt_proxy, list(global=selected_row()[["Name"]]
-))
+    ))
 
     #input$dt_samples_comparison_search <- selected_name
   })

@@ -16,7 +16,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
     }
   }
   if (!gd_sample_data) {
-    ReportFiles <- setdiff(list.files(path = my_dir), list.dirs(my_dir))
+    ReportFiles <- list.files(path = my_dir)
     ReportFiles <- ReportFiles[ReportFiles != def_filename]
     if (!is.null(ext))
       ReportFiles <- ReportFiles[sub(".*\\.","",ReportFiles) %in% ext]
@@ -52,8 +52,13 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
     sample_data$FastqFilePath <- file.path(my_dir, sample_data$FastqFile)
 
   if (!"Include" %in% colnames(sample_data))
-    sample_data <- cbind(Include = file.exists(sample_data$ReportFilePath), sample_data)
+    sample_data <- cbind(FormatOK = TRUE, Include = TRUE, sample_data)
 
+  good_files <- sapply(sample_data$ReportFilePath, function(x) length(read_report(x, check_file=T)) != 0)
+  bad_files <- sample_data$ReportFile[!good_files]
 
+  sample_data <- sample_data[good_files, ]
+
+  attr(sample_data, "bad_files") <- bad_files
   sample_data
 }

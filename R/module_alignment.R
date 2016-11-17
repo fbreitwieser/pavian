@@ -36,11 +36,12 @@ alignmentModuleUI <- function(id) {
   ns <- NS(id)
   tagList(
     box(width=12,
-        collapsible=TRUE, collapsed=TRUE,
+        collapsible=TRUE, collapsed=FALSE,
         title="Instructions",
-        "You have to generate a bam alignment file and bai index to be able to view it. In the
-second tab, you can choose to query genome assemblies from RefSeq.
-"
+        HTML("The alignment viewer requires a <a target='blank' href='https://genome.ucsc.edu/goldenpath/help/bam.html'>BAM alignment file and BAI index</a>.
+
+To generate a BAM file, download a genome of interest, and align to it with an aligner like <a target='blank' href='http://bowtie-bio.sourceforge.net/bowtie2/index.shtml'>Bowtie2</a> or <a target='blank' href='https://github.com/lh3/bwa'>bwa mem</a>. The resulting SAM file can be compressed into a binary BAM file and indexed with <a target='blank' href='http://www.htslib.org'>samtools</a>.
+")
     ),
     tabsetPanel(
       tabPanel(
@@ -69,7 +70,7 @@ second tab, you can choose to query genome assemblies from RefSeq.
                     shiny::selectizeInput(ns("cbo_assemblies"), choices = assembly_resources, selected = "RefSeq bacteria", label = "Genome Assemblies", width="60%")),
                 div(class="span6",
                     shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="35%"))),
-            div(style = 'overflow-x: scroll', DT::dataTableOutput(ns("dt_assembly_info"))),
+            DT::dataTableOutput(ns("dt_assembly_info")),
             htmlOutput(ns("dl_genome"))
         )
       )
@@ -346,7 +347,7 @@ alignmentModule <- function(input, output, session, sample_data) {
       Strain = "character",
       isolate = "NULL",
       Version = "character",
-      assembly_level = "NULL",
+      assembly_rank = "NULL",
       release_type = "NULL",
       genome_rep = "NULL",
       Date = "Date",
@@ -361,7 +362,7 @@ alignmentModule <- function(input, output, session, sample_data) {
     ai <- withProgress({
       # assembly_accession    bioproject  biosample   wgs_master  refseq_category
       # taxid   species_taxid   organism_name   infraspecific_name  isolate
-      # version_status  assembly_level  release_type    genome_rep  seq_rel_date    asm_name    submitter   gbrs_paired_asm paired_asm_comp ftp_path    excluded_from_refseq
+      # version_status  assembly_rank  release_type    genome_rep  seq_rel_date    asm_name    submitter   gbrs_paired_asm paired_asm_comp ftp_path    excluded_from_refseq
       utils::read.delim(url, comment.char = "#",
                  colClasses = as.character(colClasses),
                  col.names = names(colClasses),

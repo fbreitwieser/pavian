@@ -1,11 +1,11 @@
 
-extract_from_report <- function(my_report,name,level=NULL) {
+extract_from_report <- function(my_report,name,rank=NULL) {
   my_report <- my_report[cumsum(my_report$name==name)==1,,drop=FALSE]
 
   depth <- my_report[my_report$name==name,"depth"]
   my_report <- my_report[cumsum(my_report$depth <= depth)==1,,drop=FALSE]
-  if (!is.null(level))
-    my_report <- my_report[my_report$level == level,,drop=FALSE]
+  if (!is.null(rank))
+    my_report <- my_report[my_report$rank == rank,,drop=FALSE]
 
   my_report
 }
@@ -20,7 +20,7 @@ zero_if_na1 <- function(x) {
 #'
 #' @param my_report kraken report
 #'
-#' @return data.frame with number of raw read, classified at certain levels, etc
+#' @return data.frame with number of raw read, classified at certain ranks, etc
 #' @export
 #'
 #' @examples
@@ -57,6 +57,6 @@ summarize_report <- function(my_report) {
     #Amoebozoa_reads=my_report["-_Amoebozoa","reads"],
     #Heterolobosea_reads=my_report["c_Heterolobosea","reads"],
     #Fornicata_reads=my_report["-_Fornicata","reads"],
-    #nonhuman_reads_at_species_level=sum(my_report$reads[my_report$level=="S"])-my_report["s_Homo sapiens","reads"]-artificial_reads
+    #nonhuman_reads_at_species_rank=sum(my_report$reads[my_report$rank=="S"])-my_report["s_Homo sapiens","reads"]-artificial_reads
   )
 }

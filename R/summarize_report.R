@@ -36,12 +36,12 @@ calc_robust_zscore <- function(summarized_report, min_scale = 1) {
   summarized_report
 }
 
-filter_reports_to_level <- function(my_reports, classification_level) {
+filter_reports_to_rank <- function(my_reports, classification_rank) {
   lapply(my_reports, function(my_report) {
 
-    ## subset report to the requested level
-    if (!is.null(classification_level) && !(any(classification_level == "-"))) {
-      my_report[my_report$Level == classification_level, ]
+    ## subset report to the requested rank
+    if (!is.null(classification_rank) && !(any(classification_rank == "-"))) {
+      my_report[my_report$Rank == classification_rank, ]
     }
   })
 }
@@ -49,7 +49,7 @@ filter_reports_to_level <- function(my_reports, classification_level) {
 # numeric_col <- c("reads", "reads_stay")
 get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
   ## generate data.frame which has a name column (species name) and a further reads column for each sample
-  id_cols_before <- c("name", "level", "taxonid")
+  id_cols_before <- c("name", "rank", "taxonid")
 
   id_cols_after <- c("taxonstring")
   id_cols <- c(id_cols_before, id_cols_after)
@@ -60,12 +60,14 @@ get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
   idx_of_numeric_col <- seq(from = length(id_cols) + 1, to = length(id_cols) + length(numeric_col))
 
   my_reports <- lapply(names(my_reports), function(report_name) {
-    my_report <- my_reports[[report_name]]
-    my_report <- my_report[rowSums(my_report[, numeric_col, drop=F], na.rm=T)>0, , drop=F]
-    my_report <- my_report[ ,c(id_cols, numeric_col), drop=FALSE]
 
-    ## set zeros to NA
-    my_report[numeric_col][!is.na(my_report[numeric_col]) & my_report[numeric_col] == 0] <- NA
+    my_report <- my_reports[[report_name]][ ,c(id_cols, numeric_col), drop=FALSE]
+    my_report <- my_report[rowSums(my_report[, numeric_col, drop=F], na.rm=T)>0, , drop=FALSE]
+
+    if (nrow(my_report) > 0) {
+      ## set zeros to NA
+      my_report[numeric_col][!is.na(my_report[numeric_col]) & my_report[numeric_col] == 0] <- NA
+    }
 
     ## set the basename of the report file as name for the numeric column
     colnames(my_report)[idx_of_numeric_col] <- sub(".*/(.*).report", "\\1", report_name)

@@ -4,16 +4,16 @@
 \alias{read_report2}
 \title{Read kraken or centrifuge-style report}
 \usage{
-read_report2(myfile, collapse = TRUE, keep_levels = c("D", "K", "P", "C",
+read_report2(myfile, collapse = TRUE, keep_ranks = c("D", "K", "P", "C",
   "O", "F", "G", "S"), min.depth = 0, filter_taxon = NULL,
-  has_header = NULL, add_level_columns = FALSE)
+  has_header = NULL, add_rank_columns = FALSE)
 }
 \arguments{
 \item{myfile}{kraken report file}
 
-\item{collapse}{should the results be collapsed to only those levels specified in keep_levels?}
+\item{collapse}{should the results be collapsed to only those ranks specified in keep_ranks?}
 
-\item{keep_levels}{levels to keep when collapse is TRUE}
+\item{keep_ranks}{ranks to keep when collapse is TRUE}
 
 \item{min.depth}{minimum depth}
 
@@ -21,7 +21,7 @@ read_report2(myfile, collapse = TRUE, keep_levels = c("D", "K", "P", "C",
 
 \item{has_header}{if the kraken report has a header or not}
 
-\item{add_level_columns}{if TRUE, for each level columns are added}
+\item{add_rank_columns}{if TRUE, for each rank columns are added}
 }
 \value{
 report data.frame

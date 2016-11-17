@@ -9,71 +9,76 @@
 #' @import shiny
 #' @import shinydashboard
 #' @import rhandsontable
-dataInputModuleUI <- function(id, server_access = TRUE, start_with="example_data") {
+dataInputModuleUI <- function(id, server_access = FALSE, start_with="example_data") {
 
   ns <- NS(id)
 
-  data_options <- c("Upload files"="upload",
-                    "Use data on server"="server",
-                    "Load example data"="example_data")
-  if (!server_access)
-    data_options <- data_options[-2]
-
-  #radio_placeholder <-
-
   shiny::tagList(
     box(width=12,
-        title = "Data Input",
-        background = "green",
-        collapsible = TRUE,
-        collapse = TRUE,
+        #collapsible = TRUE,
+        #collapse = TRUE,
         HTML(
-        "Pavian supports Kraken-style and MetaPhlAn report files. For Centrifuge, the script `centrifuge-kreport` creates
-        a report in the correct format (in the future, the standard Centrifuge report will be in the right format)!
-        Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
-        from <a style='color:white; text-decoration: underline;' href='http://nn.neurology.org/content/3/4/e251.full'>ten
+          "<p>Pavian is a tool for interactive analysis of metagenomics data. You can read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script <tt>centrifuge-kreport</tt> that is distributed with Centrifuge.
+</p>
+
+<p>
+For help, and to report an issue with the tool, please go to <a target='blank' href='https://github.com/fbreitwieser/pavian'>https://github.com/fbreitwieser/pavian</a>.
+</p>")
+    ),
+    {if (server_access) {
+      tabBox(width=12,
+             title = "Data Source", selected="Example data",
+             #background = "green",
+             tabPanel("Upload files",fileInput(ns("file_upload", width = "500px"), "", multiple = TRUE)),
+             tabPanel("Use data on server", id="server_dir", style=ifelse(server_access, "","display: none"),
+                      "Be careful which directory you select - if there are too many files, the process might hang.",
+                      textInput(ns("txt_data_dir"), label = "Specify directory on machine running Pavian"),
+                      actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px")
+             ),
+             tabPanel("Example data",
+                      HTML("Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
+        from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
         patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
-        from the <a style='color:white; text-decoration: underline;' href='http://hmpdacc.org/'>Human Microbiome Project</a>,
-        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads.")
-    ),
-    box(width=12,
-        {if (isTRUE(server_access)) {
-          h4(class="radioSelect", radioButtons(ns('upload_or_server'), label="", inline=TRUE,
-                       choices=data_options,
-                       selected=start_with))
-        } },
-        br(),
-        fileInput(ns("file_upload"), "Select files on local machine for upload", multiple = TRUE),
-        {if (isTRUE(server_access)) {
-          shiny::tagList(
-            shinyjs::hidden(textInput(ns("txt_data_dir"), label = "Specify directory on machine running Pavian")),
-            shinyjs::hidden(actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px"))
-            #shinyFiles::shinyDirButton(ns('txt_data_dir'),
-            #                           label='Select directory on server',
-            #                           title='Please select a directory (on the server)')
-          )
-        }},
-        textOutput(ns("upload_info"))
-    ),
+        from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
+        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
+                      br(),br(),
+                      actionButton(ns("example_data"), label = "Load example datasets")
+             ))
+    } else {
+      tabBox(width=12,
+             title = "Data Source", selected="Example data",
+             #background = "green",
+             tabPanel("Upload files",fileInput(ns("file_upload"), "", multiple = TRUE)),
+             tabPanel("Example data",
+                      HTML("Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
+        from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
+        patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
+        from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
+        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
+                      br(),br(),
+                      actionButton(ns("example_data"), label = "Load example datasets")
+             ))
+    }
+    },
+    box(width=12, uiOutput(ns("upload_info"))),
     br(),
 
-    box(width=12, collapsible = TRUE,
-        title = "Available sample sets",
-        shinyjs::hidden(div(id = ns("sample_set_box"),
-      radioButtons(ns("sample_set_select"), label = "", choices = list(PLACEHOLDER=1)),
-      shinyjs::hidden(textInput(ns("txt_rename_sample_set"), label = "New name")),
-      actionButton(ns("btn_rename_sample_set"),"Rename selected sample set"),
-      actionButton(ns("btn_remove_sample_set"),"Remove selected sample set")
-      ),
-    hr()),
     shinyjs::hidden(
-      div(id = ns("sample_set_table"),
-        htmlOutput(ns("info_samples")),
-        br(),
-        rhandsontable::rHandsontableOutput(ns("table")),
-        actionButton(ns("btn_save_table"),"Save table")
+      div(id=ns("sample_set_box"),
+          box(width=12, collapsible = TRUE,
+              title = "Uploaded sample sets",
+              status="primary",
+              column(6,radioButtons(ns("sample_set_select"), label = NULL, choices = list(PLACEHOLDER=1))),
+              column(6,
+                shinyjs::hidden(textInput(ns("txt_rename_sample_set"), label = "New name")),
+                actionButton(ns("btn_rename_sample_set"),"Rename selected sample set"),
+                actionButton(ns("btn_remove_sample_set"),"Remove selected sample set")
+              ),
+              br(),
+              rhandsontable::rHandsontableOutput(ns("table")),
+              actionButton(ns("btn_save_table"),"Save table (required to make changes persistent)")
+          )
       )
-    )
     )
   )
 }
@@ -101,25 +106,29 @@ dataInputModule <- function(input, output, session,
   ns <- session$ns
   #shinyFiles::shinyDirChoose(input, ns('txt_data_dir'), roots = server_dirs, filetypes = c(""))
 
-  read_error_msg <- reactiveValues(val=NULL)
+  read_error_msg <- reactiveValues(val_pos=NULL, val_neg=NULL)
 
-  output$upload_info <- renderText({
-    read_error_msg$val
+  output$upload_info <- renderUI({
+    shiny::tagList(
+      div(HTML(read_error_msg$val_pos), style="color:green"),
+      div(HTML(read_error_msg$val_neg), style="color:red")
+    )
   })
 
   read_server_directory <- function(data_dir, sample_set_name = NULL,
                                     include_base_dir = T) {
+    read_error_msg$val_neg <- NULL
+    read_error_msg$val_pos <- NULL
+
     message("reading files in ", data_dir)
     if (!dir.exists(data_dir)) {
-      read_error_msg$val <- paste("Directory ", data_dir, "does not exist.")
+      read_error_msg$val_neg <- paste("Directory ", data_dir, "does not exist.")
       return()
     }
     if (length(list.files(data_dir)) == 0) {
-      read_error_msg$val <- paste("No files in directory ", data_dir, ".")
+      read_error_msg$val_neg <- paste("No files in directory ", data_dir, ".")
       return()
     }
-    read_error_msg$val <- NULL
-
 
     if (!is.null(sample_set_name)) {
       old_names <- names(sample_sets$val)
@@ -132,8 +141,9 @@ dataInputModule <- function(input, output, session,
     }
 
     base_name <- ifelse(!is.null(sample_set_name),
-                                       sample_set_name,
-                                       basename(data_dir))
+                        sample_set_name,
+                        basename(data_dir))
+
     new_sample_sets <- list()
     if (include_base_dir) {
       new_sample_sets <- list(read_sample_data(data_dir, ext=NULL))
@@ -142,13 +152,25 @@ dataInputModule <- function(input, output, session,
 
     dirs <- list.dirs(data_dir, recursive = FALSE)
     if (length(dirs) > 0) {
-      sub_dir_sets <- lapply(list.dirs(data_dir, recursive = FALSE),
-                             read_sample_data,
-                             ext=NULL)
+      sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
       names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
       new_sample_sets <- c(new_sample_sets, sub_dir_sets)
     }
-    new_sample_sets <- new_sample_sets[! sapply(new_sample_sets, is.null) ]
+
+    bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
+    bad_sample_set_names <- names(new_sample_sets)[sapply(new_sample_sets, nrow) == 0]
+    new_sample_sets <- new_sample_sets[sapply(new_sample_sets, nrow) > 0]
+
+    if (length(new_sample_sets) > 0) {
+      read_error_msg$val_pos <- sprintf("Added sample set%s <b>%s</b> with <b>%s</b> valid reports in total.",
+                                        ifelse(length(new_sample_sets) == 1, "", "s"),
+                                        paste(names(new_sample_sets), collapse="</b>, <b>"),
+                                        sum(unlist(sapply(new_sample_sets, function(x) sum(x$FormatOK)))))
+    }
+    if (length(bad_files) > 0) {
+      read_error_msg$val_neg <- sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",
+                                        paste(bad_files, collapse="</b><br/> - <b>"))
+    }
 
     validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
     sample_sets$val <<- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
@@ -158,25 +180,11 @@ dataInputModule <- function(input, output, session,
     shinyjs::show("sample_set_table")
   }
 
-  observeEvent(input$upload_or_server, {
-    if (input$upload_or_server == "server") {
-      shinyjs::hide("file_upload")
-      shinyjs::show("txt_data_dir")
-      shinyjs::show("read_server_dir")
-    } else if (input$upload_or_server == "upload" ) {
-      shinyjs::show("file_upload")
-      shinyjs::hide("txt_data_dir")
-      shinyjs::hide("read_server_dir")
-    } else {
-      shinyjs::hide("file_upload")
-      shinyjs::hide("txt_data_dir")
-      shinyjs::hide("read_server_dir")
-
-      withProgress(message = "Reading example directory ...", {
-        read_server_directory(system.file("shinyapp", "example-data", package = "pavian"),
-                              include_base_dir = FALSE)
-      })
-    }
+  observeEvent(input$example_data, {
+    withProgress(message = "Reading example directory ...", {
+      read_server_directory(system.file("shinyapp", "example-data", package = "pavian"),
+                            include_base_dir = FALSE)
+    })
   })
 
   observeEvent(input$read_server_dir, {
@@ -196,7 +204,14 @@ dataInputModule <- function(input, output, session,
     req(input$table)
     req(input$sample_set_select)
     #str(rhandsontable::hot_to_r(input$table))
-    sample_sets$val[[input$sample_set_select]] <<- rhandsontable::hot_to_r(input$table)
+    tryCatch({
+    old_df <- sample_sets$val[[input$sample_set_select]]
+    new_df <- rhandsontable::hot_to_r(input$table)
+
+    if (!isTRUE(all.equal(old_df, new_df))) {
+        sample_sets$val[[input$sample_set_select]] <<- new_df
+      }
+    }, error = function(e) message("Error calling hot_to_r!"))
   })
 
 
@@ -227,10 +242,6 @@ dataInputModule <- function(input, output, session,
     sample_data <- get_sample_data()
     validate(need(sample_data, message = "Need def df."))
 
-    sample_data$FormatOK <- sapply(report_files(),
-                          function(x) length(read_report(x, check_file=T)) != 0)
-    sample_data$Include[!sample_data$FormatOK] <- FALSE
-
     #sample_data$FormatOK <- ifelse(sample_data$FormatOK,
     #                               "<font color='green'>&#x2713;</font>",
     #                               "<font color='red'>&#x2717;</font>")
@@ -244,7 +255,7 @@ dataInputModule <- function(input, output, session,
       Handsontable.renderers.CheckboxRenderer.apply(this, arguments);
       return td;
     }") %>%
-     hot_col("FormatOK", renderer = "
+      hot_col("FormatOK", renderer = "
     function(instance, td, row, col, prop, value, cellProperties) {
       Handsontable.renderers.TextRenderer.apply(this, arguments);
       if (value ) {
@@ -294,10 +305,10 @@ dataInputModule <- function(input, output, session,
     }
   })
 
-  output$info_samples <- renderText({
-    sprintf("<span class='background:#00ff00'>Got %s report files. </span>",
-            sum(file.exists(report_files())))
-  })
+  #output$info_samples <- renderText({
+  #  sprintf("<span class='background:#00ff00'>Got %s report files. </span>",
+  #          sum(file.exists(report_files())))
+  #})
 
   return(function() {
     attr(sample_sets$val, "selected") <<- input$sample_set_select

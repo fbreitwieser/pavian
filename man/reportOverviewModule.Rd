@@ -18,7 +18,7 @@ reportOverviewModule(input, output, session, sample_data, reports,
 
 \item{reports}{List of reports.}
 
-\item{datatable_opts}{Additional options for datatable.}
+\item{datatable_opts}{Additional datatable opts (mostly $class)}
 }
 \value{
 Report overview module server functionality.

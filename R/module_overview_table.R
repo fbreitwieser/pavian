@@ -10,8 +10,7 @@ reportOverviewModuleUI <- function(id) {
 
   shiny::tagList(
     checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = TRUE),
-    div(style = 'overflow-x: scroll',
-        DT::dataTableOutput(ns('dt_samples_overview')))
+    DT::dataTableOutput(ns('dt_samples_overview'))
   )
 
 }
@@ -23,7 +22,7 @@ reportOverviewModuleUI <- function(id) {
 #' @param session Shiny session object.
 #' @param sample_data Samples \code{data.frame}.
 #' @param reports List of reports.
-#' @param datatable_opts Additional options for datatable.
+#' @param datatable_opts Additional datatable opts (mostly $class)
 #'
 #' @return Report overview module server functionality.
 #' @export
@@ -88,17 +87,12 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
 
 
     dt <- DT::datatable(
-      samples_summary
-      , rownames = FALSE
-      , selection = 'single'
-      ,extensions = c('Buttons')
-      , options = list(
-        dom = 'Bfrtip'
-        , buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy', 'colvis')
-        , lengthMenu = list(c(10, 25, 100, -1), c('10', '25', '100', 'All'))
-        , pageLength = 25
-        , options = c(datatable_opts, list(stateSave = TRUE))
-      )
+      samples_summary,
+      rownames = FALSE,
+      selection = 'single',
+      extensions = datatable_opts$extensions,
+      escape = FALSE,
+      class = datatable_opts$class,
     ) %>%
       DT::formatStyle(
         colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],

@@ -10,11 +10,21 @@ library(shinyBS)
 options(shiny.maxRequestSize=50*1024^2)
 cache_dir <- tempdir()
 
-common_datatable_opts <- list(saveState = TRUE, searchHighlight = TRUE)
+options(DT.options = list(pageLength = 15,
+                          lengthMenu = c(15, 25, 50, 100),
+                          saveState = TRUE,
+                          searchHighlight = TRUE,
+                          scrollX = TRUE,
+                          dom = 'Bfrtip',
+                          buttons = c('pageLength','pdf', 'excel' , 'csv', 'copy', 'colvis'),
+                          lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
+                          search = list(regex = TRUE, caseInsensitive = TRUE)))
 
-intro <- fluidRow(
-  column(width = 11, includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
-  column(width = 1, includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
+intro <- box(width = 12,
+  fluidRow(
+  div(style="float: left;", includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
+  div(style="float: right;", includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
+)
 )
 
 ui <- dashboardPage(skin="blue", title = "Pavian",
@@ -61,6 +71,8 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
     ),
 
     br(),
+    checkboxInput("compact_format", "Compact format", value = T),
+    br(),
     tags$p(class="sidebartext", style="padding-left: 10px;","@fbreitw, 2016")
     ),
   dashboardBody(
@@ -92,7 +104,7 @@ setInterval(function(){
       tabItem("Comparison", comparisonModuleUI("comparison")),
       tabItem("Bacteria", comparisonModuleUI("bacteria")),
       tabItem("Viruses", comparisonModuleUI("viruses")),
-      tabItem("Fungi_and_Protists", comparisonModuleUI("fungi")),
+      tabItem("Eukaryotes", comparisonModuleUI("fungi")),
       tabItem("Sample", sampleModuleUI("sample")),
       tabItem("Alignment", alignmentModuleUI("alignment")),
       tabItem(
@@ -114,6 +126,21 @@ setInterval(function(){
 
 server <- function(input, output, session) {
 
+  datatable_opts <- reactiveValues(rownames = FALSE,
+                                   selection = 'single',
+                                   extensions = c('Buttons'),
+                                   class = "display")
+
+  observeEvent(input$compact_format, {
+    if (isTRUE(input$compact_format)) {
+      #shinyjs::addClass(class="lineheight1", selector = "body")
+      datatable_opts$class <- "display compact"
+    } else {
+      #shinyjs::removeClass(class="lineheight1", selector = "body")
+      datatable_opts$class <- "display"
+    }
+  })
+
   output$dy_menu_overview <- renderMenu({
     req(input$sample_set_names)
     menuItem("Results Overview", tabName="Overview", icon = icon("table"))
@@ -124,8 +151,8 @@ server <- function(input, output, session) {
     menuItem("Comparison", icon = icon("line-chart"),
              menuSubItem("All data", tabName="Comparison"),
              menuSubItem("Bacteria", tabName="Bacteria"),
-             menuSubItem("Viruses", tabName="Viruses"),
-             menuSubItem("Fungi and Protists", tabName="Fungi_and_Protists")
+             menuSubItem("Eukaryotes", tabName="Eukaryotes"),
+             menuSubItem("Viruses", tabName="Viruses")
     )
     )
   })
@@ -196,25 +223,25 @@ server <- function(input, output, session) {
     res
   })
 
-  sample_module_selected <- callModule(sampleModule, "sample", sample_data, reports, common_datatable_opts)
+  sample_module_selected <- callModule(sampleModule, "sample", sample_data, reports, datatable_opts)
 
   observeEvent(sample_module_selected(), {
     req(sample_module_selected())
     updateTabItems(session, "tabs", "Comparison")
   })
 
-  callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = common_datatable_opts)
-  callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = common_datatable_opts)#, search = sample_module_selected)
+  callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = datatable_opts)
+  callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
   callModule(comparisonModule, "bacteria", sample_data, reports,
-             filter_func = function(x) x[grep("[dk]_Bacteria", x[["taxonstring"]]), , drop=F],
-             datatable_opts = common_datatable_opts)
+             filter_func = function(x) x[grepl("[dk]_Bacteria", x[["taxonstring"]]) | grepl("[dk]_Archaea", x[["taxonstring"]]), , drop=F],
+             datatable_opts = datatable_opts)
   callModule(comparisonModule, "viruses", sample_data, reports,
              filter_func = function(x) x[grep("[dk]_Viruses", x[["taxonstring"]]), , drop=F],
-             datatable_opts = common_datatable_opts)
+             datatable_opts = datatable_opts)
   callModule(comparisonModule, "fungi", sample_data, reports,
              filter_func = function(x)
                x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("p_Chordata", x[["taxonstring"]]), , drop=F],
-             datatable_opts = common_datatable_opts)
+             datatable_opts = datatable_opts)
 
   callModule(alignmentModule, "alignment", sample_data)
 

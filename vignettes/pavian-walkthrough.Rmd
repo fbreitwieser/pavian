@@ -42,7 +42,7 @@ The samples of the brain biopsies dataset have between 8.3 and 29 million reads,
 
 ## 3) Comparision - Compare the classification across samples
 
-Click 'Comparison' and 'All data' to delve into the data (see Figure 3). The sample comparison view juxtaposes the identification results from the samples in a query-able table with taxa as rows and samples as columns. The table provides a visual guide to the values with inline bars, and the column taxid links to NCBI. You can decide to show percentages or z-scores, only show results at a certain taxon level, and filter uninteresting taxa. By default, the taxa 'Homo sapiens', 'synthetic construct' and 'unclassified' are filtered.
+Click 'Comparison' and 'All data' to delve into the data (see Figure 3). The sample comparison view juxtaposes the identification results from the samples in a query-able table with taxa as rows and samples as columns. The table provides a visual guide to the values with inline bars, and the column taxid links to NCBI. You can decide to show percentages or z-scores, only show results at a certain taxonomic rank, and filter uninteresting taxa. By default, the taxa 'Homo sapiens', 'synthetic construct' and 'unclassified' are filtered.
 
 In the brain biopsies dataset, we immediately see an outlier in sample PT5, which is the only one with a substantial number of JC polyomavirus reads. Note the table is rather wide with ten samples, and the fourth column provides an overview of the values in all columns. You can restrict the view to bacteria, viruses, or eukaryotic microbes by selecting the appropriate link in the sidebar.
 

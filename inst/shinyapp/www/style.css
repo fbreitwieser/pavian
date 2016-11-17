@@ -1,317 +1,66 @@
+/* Pavian style sheet */
 
-.selectize-control {
-  margin-bottom: 0px;
-  margin-top: 0px;
+
+/* no top border for boxes without status */
+.box {
+    border-top: none;
 }
 
-.form-group {
-        margin-bottom: 2px;
+.box.box-primary {
+    border-top: 3px solid #3c8dbc;
 }
 
-.box-header {
-  padding: 10px 0px 0px 10px;
-  margin-bottom: 10px;
-}
-
-.main-header .logo {
-  font-family: "Georgia", serif;
-  font-weight: bold;
-  font-size: 24px;
-}
-
-.has-feedback .form-control {
-  padding-right: 2px;
-}
-.form-control {
-  padding: 2px;
-  padding-left: 4px;
-  height: 25px;
-  line-height: 25px;
-}
-.form-control-feedback {
-  line-height: 25px;
-  width: inherit !important;
-}
-table.dataTable tbody th, table.dataTable thead th {
-  padding: 2px 18px 2px 10px !important;
-}
-
-table.dataTable tbody td,table.dataTable thead td {
-  padding: 2px 6px !important;
-}
-
-.nowrap {
-  white-space: nowrap;
-}
-
-/*table.dataTable th.dt-right, table.dataTable td.dt-right {
-    word-break: break-all;
-}*/
-
-/* tooltip for sparkline rendered with bootstrap
-   see https://github.com/htmlwidgets/sparkline/issues/4 */
-.jqstooltip {
-  -webkit-box-sizing: content-box;
-  -moz-box-sizing: content-box;
-  box-sizing: content-box;
-}
-div[id=samples_overview]>div>table>thead>tr> th:first-child,
-div[id=samples_overview]>div>table>tbody>tr> td:first-child {
-  min-width: 125px;
-}
-div[id=samples_comparison]>div>table>thead>tr> th:first-child,
-div[id=samples_comparison]>div>table>tbody>tr> td:first-child {
-  min-width: 125px;
-}
-.glyphicon glyphicon-remove-circle form-control-feedback {
-  position: relative !important;
-  width: unset !important;
-  height: unset !important;
-}
-
-.sunburst-sidebar {
-  position: absolute;
-  width: 20%;
-  left: 80%;
-  top: 40px;
-}
-
-.sunburst-legend {
-  padding: 2px 0 0 3px;
-}
-
-.sunburst-sequence text, .sunburst-legend text {
-  font-weight: normal;
-  fill: #fff;
-  font-size: small;
-}
-
-
-
-#data-title {
-    text-align:center;
-}
-
-#drop-area {
-    background-color:#BCED91;
-    border:2px solid #46523C;
-    border-radius:25px;
-    height:90px;
-    overflow:auto;
-    padding:12px;
-}
-
-#drop-area #datasets {
-    display:inline-block;
-    font-size:small;
-    margin-right:8px;
-    text-align:center;
-    vertical-align:top;
-}
-
-.thumb {
-    height:45px;
-}
-
-
-/* SIDEBAR */
-
-/*
-
-.sidebar {
-  color: black !important;
-}
-
-.sidebar a {
-  color: black !important;
-}
-
-.sidebar a:active, .sidebar a:focus, .sidebar a:hover {
-  color: #fff !important;
-}
-
-.main-sidebar {
-  background-color: #ccc !important;
-}
-
-.sidebar-menu>li.active>a, .sidebar-menu>li:hover>a {
-  color: #fff !important;
-}
-*/
-
-.main-header .logo , .main-header .navbar {
-    background: #164f9a; /* For browsers that do not support gradients */
-    background: -webkit-linear-gradient(#164f9a, #477cb2); /* For Safari 5.1 to 6.0 */
-    background: -o-linear-gradient(#164f9a, #477cb2); /* For Opera 11.1 to 12.0 */
-    background: -moz-linear-gradient(#164f9a, #477cb2); /* For Firefox 3.6 to 15 */
-    background: linear-gradient(#164f9a, #477cb2); /* Standard syntax */
-
-}
-
-.sidebartext {
-    padding: 10px !important;
-    color: #ccc;
-}
-
-table.dataTable tr.selected td, table.dataTable td.selected {
-    background-color: white-space !important;
+/* Make the header of tab-boxes bold */
+.nav-tabs-custom>.nav-tabs>li>a, .nav-tabs-custom>.nav-tabs>li>a:hover {
     font-weight: bold;
 }
 
-table.dataTable thead .sorting {
-  background-image: none;
-  padding: 2px 8px !important;
+/* Make the DT buttons look better (smaller) */
+button.dt-button, div.dt-button, a.dt-button {
+    padding: 2px 4px !important;
+    border: 1px solid #ccc !important;
 }
 
-.treeview-menu {
-  display: block !important;
-}
-
-
-/* from https://github.com/daattali/advanced-shiny/tree/master/plot-spinner */
-#plot-container {
-  position: relative;
-}
-#loading-spinner {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: -1;
-  margin-top: -33px;  /* half of the spinner's height */
-  margin-left: -33px; /* half of the spinner's width */
-}
-.recalculating {
-  z-index: -2;
-}
-
-/* from https://github.com/daattali/advanced-shiny/tree/master/busy-indicator */
-.btn-loading-container {
-  margin-left: 10px;
-  font-size: 1.2em;
-}
-.btn-done-indicator {
-  color: green;
-}
-.btn-err {
-  margin-top: 10px;
-  color: red;
-}
-
-.box {
-  border-top: none;
-  box-shadow: none;
-}
-
-.box.box-solid>.box-header {
-  display: none;
-}
-
-.box.box-solid>.box-header>h3 {
-  display: none;
-}
-
-.box.box-solid.collapsed-box>.box-header>h3 {
-  display: block;
-}
-
-p.sidebartext {
-    padding-left: 10px;
-}
-.row {
-    margin-left: -5px;
-}
-
-      .shiny-input-container:not(.shiny-input-container-inline) {
-        width: initial;
-      }
-      .irs {
-        width: 200px;
-      }
-
-/*
-th {
-  word-break: break-all;
-  line-height: 1;
-}
-*/
-/*
-label.control-label, .selectize-control.single{ display: table-cell; text-align: center; vertical-align: middle; }
-.form-group { display: table-row;}
-
-
-.form-group.shiny-input-container {
-    display: inline-block!important;
-}
-*/
-
-.dataTables_length {
-  padding-top: 0.25em;
+button.dt-button:hover, div.dt-button:hover, a.dt-button:hover {
+  border: 1px solid #666 !important;
 }
 
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-  padding: 1px !important
+  padding: 2px 4px !important;
 }
 
-.checkbox input[type=checkbox], .checkbox-inline input[type=checkbox], .radio input[type=radio], .radio-inline input[type=radio] {
-    margin-left: -14px;
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  border: 1px solid #ccc !important;
 }
 
-.checkbox-inline, .radio-inline {
-  display:inline-flex;
-    padding-left: 10px;
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  border: 1px solid #666 !important;
 }
 
-.irs {
-    width: inherit;
-    margin-right: 5px;
+/* custom styles */
+
+.underlineOnHover:hover {
+  text-decoration: underline !important;
 }
 
-
-
-.col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {
-    padding-left: 5px;
-    padding-right: 5px;
+.lessPadding {
+  padding-right: 5px;
+  padding-left: 5px;
 }
 
-.checkbox, .radio {
-    margin-top: 1px;
-    margin-bottom: 1px;
+.lessMargin > .form-group {
+  margin-bottom: 0px;
 }
 
-label {
-  display: inherit;
+.lessMargin > div > div > .checkbox, .lessMargin > div > div > .radio {
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
-#datafile-upload_or_server > div > label:hover {
-  text-decoration: underline;
+.lessMargin > div > div > .selectize-control {
+  margin-bottom: 0px;
 }
 
-
-button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled), button.dt-button, div.dt-button, a.dt-button  {
-  padding: 0.25em .5em !important;
+.lineheight1 {
+  line-height: 1;
 }
-
-th {
-  text-align: center;
-}
-
-table.dataTable th.dt-right, table.dataTable td.dt-right {
-    text-align: center !important;
-}
-
-table.dataTable tfoot th, table.dataTable tfoot td {
-    padding: 4px 5px;
-    border-top: 1px solid #111;
-}
-
-.form-control[disabled], fieldset[disabled] .form-control {
-    cursor: not-allowed;
-    display: none;
-}
-
-table.dataTable thead .sorting {
-    background-image: none !important;
-}
-
-/*#datafile-upload_or_server > div > label
-*/

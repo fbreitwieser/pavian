@@ -4,7 +4,7 @@
 \alias{dataInputModuleUI}
 \title{UI part of pavian data input module}
 \usage{
-dataInputModuleUI(id, server_access = TRUE, start_with = "example_data")
+dataInputModuleUI(id, server_access = FALSE, start_with = "example_data")
 }
 \arguments{
 \item{id}{Namespace ID.}

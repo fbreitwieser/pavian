@@ -1,6 +1,9 @@
+library(shiny)
+library(shinydashboard)
+library(shinyjs)
 
-## TODOL Make Sankey work for '-' levels
-tax_levels <- c("D","K","P","C","O","F","G","S")
+## TODOL Make Sankey work for '-' ranks
+tax_ranks <- c("D","K","P","C","O","F","G","S")
 
 #' UI part for sample module
 #'
@@ -13,39 +16,48 @@ sampleModuleUI <- function(id) {
   ns <- NS(id)
   shiny::tagList(
     fluidRow(
-      box(width = 6, title = "Select sample", background = "green",
-        selectInput(
-          ns('sample_selector'), label = "",
-          choices = NULL, multiple = FALSE,
-          width = '100%'
-        )),
-      column(width=6,
-          selectizeInput(
-            ns('contaminant_selector'), label = "Filter taxons",
-            allcontaminants, selected = c("artificial sequences", "Homo sapiens"),
-            multiple = TRUE, options = list(maxItems = 25, create = TRUE, placeholder = 'Filter clade'),
-            width = "100%"
-          ),
-          shinyjs::hidden(checkboxInput(ns("opt_remove_root_hits"),
-                        label = "Do not show reads that stay at the root", value = FALSE)),
-          column(4,checkboxInput(ns("side_by_side"),"Taxon hover", value = TRUE)),
-          column(4,checkboxInput(ns("show_numbers"),"Show numbers", value = TRUE)),
-          column(4,actionLink(ns("sankey_opts"), "Hide options"))
-      )
-    ),
-    fluidRow(
-      column(3,checkboxGroupInput(ns("levels"),"Taxonomical levels",tax_levels,setdiff(tax_levels,c("O","-")), inline = TRUE)),
-      column(3,(sliderInput(ns("sankey_maxn"), "No taxons", 1, 25, value = 10, step = 1))),
-      column(3,(sliderInput(ns("scalingFactor"),"Scaling", value = 1, min = .5, max = 1.5, step=.1))),
-      column(3,(sliderInput(ns("height"),"Height", value = 600, min = 300, max = 1200, step=50))),
-      #column(2,(checkboxInput(ns("sync_table"),"Synchronize table", value = TRUE))),
-      shinyjs::hidden(column(2,sliderInput(ns("curvature"),"Curvature", value = .5, min = 0, max = 1, step=.01))),
-      shinyjs::hidden(column(2,radioButtons(ns("linkType"), "linkType", selected = "path2", choices = c("bezier", "l-bezier", "trapez", "path1","path2"), inline = TRUE)))
+      div(class="col-lg-5 col-md-6 col-sm-6 col-xs-12",
+          div(class="col-lg-4 col-md-5 col-sm-12 lessPadding", style="font-size: 18px;", HTML("<label>Select sample<label>")),
+          div(class="col-lg-8 col-md-7 col-sm-12 lessPadding", style="font-size: 18px;",
+              selectInput(
+                ns('sample_selector'), label = NULL,
+                choices = NULL, multiple = FALSE,
+                width = '100%'
+              ))),
+      div(class="col-lg-7 col-md-6 col-sm-6 col-xs-12",
+          div(class="col-lg-2 col-md-4 col-sm-12 lessPadding", HTML("<label>Filter taxa</label>")),
+          div(class="col-lg-10 col-md-8 col-sm-12 lessPadding",
+              selectizeInput(
+                ns('contaminant_selector'), label = NULL,
+                allcontaminants, selected = c("artificial sequences", "Homo sapiens"),
+                multiple = TRUE, options = list(maxItems = 25, create = TRUE, placeholder = 'Filter clade'),
+                width = "100%"
+              )
+          ))
     ),
     fluidRow(
       uiOutput(ns("dynamic_sankey")),
+      div(id="sidebar", class = "col-lg-4 col-md-12",
+          tabBox(width=12,
+                 tabPanel("Across samples",
+                          "Hover over a node, or click a row in the table, to see the abundance of the taxon in other samples.",
+                          uiOutput(ns("sankey_hover_plots"))),
+                 tabPanel("Figure options",
+
+                          checkboxGroupInput(ns("ranks"),"Taxonomical ranks to display",tax_ranks,setdiff(tax_ranks,c("O","-")), inline = TRUE),
+                          sliderInput(ns("sankey_maxn"), "Number of taxa at each level", 1, 25, value = 10, step = 1),
+                          sliderInput(ns("scalingFactor"),"Scale distance between nodes", value = .9, min = .5, max = 1.5, step=.05),
+                          sliderInput(ns("height"),"Figure height", value = 600, min = 300, max = 1200, step=50),
+                          sliderInput(ns("nodeStrokeWidth"),"Node border width", value = 0, min = 0, max = 5, step=1),
+                          sliderInput(ns("linkOpacity"),"linkOpacity", value = .6, min = .1, max = 1, step=.1),
+                          sliderInput(ns("textXPos"),"textXPos", value = 1, min = 0, max = 5, step=.5),
+                          checkboxInput(ns("show_numbers"),"Show numbers above nodes", value = TRUE),
+                          checkboxInput(ns("color_links"),"Color the flow", value = TRUE),
+                          shinyjs::hidden(sliderInput(ns("curvature"),"Curvature", value = .5, min = 0, max = 1, step=.01)),
+                          shinyjs::hidden(radioButtons(ns("linkType"), "linkType", selected = "path2", choices = c("bezier", "l-bezier", "trapez", "path1","path2"), inline = TRUE)))
+          ))#,
       #uiOutput(ns("view_in_samples_comparison")),
-      uiOutput(ns("blastn"))
+      #uiOutput(ns("blastn"))
     )
   )
 }
@@ -57,7 +69,7 @@ sampleModuleUI <- function(id) {
 #' @param session Shiny session object
 #' @param sample_data Samples \code{data.frame}
 #' @param reports List of reports
-#' @param datatable_opts Additional options for datatable
+#' @param datatable_opts Additional datatable opts (mostly $class)
 #'
 #' @return Sample module server functionality
 #' @export
@@ -66,9 +78,11 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   sankey_opts_state <- reactiveValues(visible = TRUE)
 
+  hover_plots <- reactiveValues(taxon = NULL)
+
   observeEvent(input$sankey_opts, {
     sankey_opts_state$visible <- !sankey_opts_state$visible
-    toggle_elems <- c("scalingFactor","curvature","sankey_maxn","height","levels","sync_table")
+    toggle_elems <- c("ext_sankey_opts")
 
     if (sankey_opts_state$visible) {
       lapply(toggle_elems, shinyjs::show)
@@ -100,8 +114,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     for (c in input$contaminant_selector)
       my_report <- filter_taxon(my_report, c)
 
-    if (input$opt_remove_root_hits)
-      my_report <- my_report[my_report$name != "-_root", ]
+    my_report <- my_report[my_report$name != "-_root", ]
 
     my_report
   })
@@ -110,8 +123,9 @@ sampleModule <- function(input, output, session, sample_data, reports,
   ##  Sample viewer outputs
 
   output$sankey_hover_plots <- renderUI({
+    req(hover_plots$taxon)
     ns <- session$ns
-    shiny::tagList(h3(input$sankey_hover),
+    shiny::tagList(h3(hover_plots$taxon),
                    strong(textOutput(ns("header1"))),
                    plotOutput(ns("plot1"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
                    strong(textOutput(ns("header2"))),
@@ -121,34 +135,15 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
 
   output$dynamic_sankey <- renderUI({
-    ns <- session$ns
-    if (input$side_by_side) {
-      tagList(
-        fluidRow(
-          column(8,
-                 sankeyD3::sankeyNetworkOutput(session$ns("sankey"),
-                                               width = "100%",
-                                               height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
-                 downloadLink(ns("save_sankey"),"Save Network")
-          ),
-          column(4,
-                 br(),
-                 uiOutput(ns("sankey_hover_plots"))
-          )
-        ),
-        fluidRow(
-          div(style = 'overflow-x: scroll',DT::dataTableOutput(session$ns('dt_sample_view')))
-        )
-      )
-    } else {
-      tagList(
-        sankeyD3::sankeyNetworkOutput(session$ns("sankey"), width = "100%", height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
-        downloadLink(ns("save_sankey"),"Save Network"),
-        div(style = 'overflow-x: scroll', DT::dataTableOutput(session$ns('dt_sample_view')))
-      )
-    }
-
-
+    div(class="col-lg-8 col-md-12",
+        tabBox(width=12,
+               tabPanel("Figure",
+                        sankeyD3::sankeyNetworkOutput(session$ns("sankey"), width = "100%",
+                                                      height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
+                        br(),
+                        downloadLink(session$ns("save_sankey"),"Save Network")),
+               tabPanel("Table", div(style = 'overflow-x: scroll', DT::dataTableOutput(session$ns('dt_sample_view'))))
+        ))
   })
 
   sum_reads <- reactive({
@@ -165,17 +160,17 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
 
   hover_reads <- reactive({
-    res <- lapply(reports(), function(x) x$reads[sub("^._", "", x$name) == input$sankey_hover])
+    res <- lapply(reports(), function(x) x$reads[sub("^._", "", x$name) == hover_plots$taxon])
     sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
   })
 
   hover_reads_stay <- reactive({
-    res <- lapply(reports(), function(x) x$reads_stay[sub("^._", "", x$name) == input$sankey_hover])
+    res <- lapply(reports(), function(x) x$reads_stay[sub("^._", "", x$name) == hover_plots$taxon])
     sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
   })
 
-  plot_it <- function(normalize) {
-    req(input$sankey_hover)
+  plot_it <- function(normalize = FALSE) {
+    req(hover_plots$taxon)
     req(sum_reads())
     len <- length(sum_reads())
     stopifnot(length(hover_reads()) == len)
@@ -190,8 +185,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
     colvec <- ifelse(my_names == input$sample_selector, "red","black")
 
     type1 <- factor(mydf$type,
-                        levels = c("reads_stay","reads"),
-                        labels = c("at taxon","in total"), ordered=T)
+                    levels = c("reads_stay","reads"),
+                    labels = c("at taxon","in total"), ordered=T)
 
     mydf$sample <- factor(mydf$sample, names(sum_reads()) ,my_names)
 
@@ -202,8 +197,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
     mydf$pos <- unlist(tapply(mydf$reads, mydf$sample, function(reads) cumsum(reads)))
 
     mydf$type <- factor(mydf$type,
-           levels = c("reads","reads_stay"),
-           labels = c("in total","at taxon"), ordered=T)
+                        levels = c("reads","reads_stay"),
+                        labels = c("in total","at taxon"), ordered=T)
 
     ## TODO: Replace by D3 graph?
     ##   See e.g. http://eyeseast.github.io/visible-data/2013/08/28/responsive-charts-with-d3/
@@ -222,8 +217,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
 
   output$header1 <- renderText({
-    req(input$sankey_hover)
-    #paste("Number of reads for ", input$sankey_hover, "across all samples")
+    req(hover_plots$taxon)
+    #paste("Number of reads for ", hover_plots$taxon, "across all samples")
     paste("Number of reads across all samples")
   })
   output$plot1 <- renderPlot({
@@ -232,8 +227,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
   },  bg="transparent")
 
   output$header2 <- renderText({
-    req(input$sankey_hover)
-    #paste0("Percent of reads for ", input$sankey_hover, " (excluding filtered clades)")
+    req(hover_plots$taxon)
+    #paste0("Percent of reads for ", hover_plots$taxon, " (excluding filtered clades)")
     paste0("Percent of reads (excluding filtered clades)")
   })
   output$plot2 <- renderPlot({
@@ -251,12 +246,17 @@ sampleModule <- function(input, output, session, sample_data, reports,
     sankey_network()
   })
 
+  observeEvent(input$sankey_hover, {
+    hover_plots$taxon <- input$sankey_hover
+  })
 
-  observeEvent(input$sankey_clicked, {
-    #update(session, "txt_selected_name", input$sankey_clicked)
-    req(input$sync_table)
+  observeEvent(input$dt_sample_view_rows_selected, {
+    hover_plots$taxon <- sub("^._", "", sample_view_report()[input$dt_sample_view_rows_selected,"name"])
+  })
+
+  observeEvent(input$sankey_hover, {
     req(dt_sample_view_proxy)
-    DT::updateSearch(dt_sample_view_proxy, list(global=input$sankey_clicked))
+    DT::updateSearch(dt_sample_view_proxy, list(global=input$sankey_hover))
   })
 
   tbx <- reactive({
@@ -277,14 +277,14 @@ sampleModule <- function(input, output, session, sample_data, reports,
     req(sample_view_report())
     req(input$dt_sample_view_rows_selected)
 
-    scanTabix(tbx(),
-              GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxonid"], IRanges(c(50), width=100000)))[[1]]
+    #scanTabix(tbx(),
+    #          GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxonid"], IRanges(c(50), width=100000)))[[1]]
   })
 
   tbx_results_df <- reactive({
     req(tbx_results())
-    read.delim(tbx_results(), header=F,
-               col.names = c("readID","seqID","taxID","score","2ndBestScore","hitLength","queryLength","numMatches","readSeq"))
+    #read.delim(tbx_results(), header=F,
+    #           col.names = c("readID","seqID","taxID","score","2ndBestScore","hitLength","queryLength","numMatches","readSeq"))
   })
 
   output$txt_selected_name <- renderText({
@@ -297,7 +297,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   colourScale <- reactive({
     colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20b).domain([%s])",
-                              paste0('"',c(all_names(),"other"),'"',collapse=",")))
+                                        paste0('"',c(all_names(),"other"),'"',collapse=",")))
   })
 
   output$save_sankey <- downloadHandler(filename = function() { paste0("sankey-",input$sample_selector,".html") },
@@ -320,12 +320,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
     #my_report$name <- sub("^._","",my_report$name)
     #eng <- get_nodes_and_links(my_report, 10)
 
-    my_report <- subset(my_report, level %in% input$levels)
+    my_report <- subset(my_report, rank %in% input$ranks)
     #my_report <- my_report[utils::tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), , drop = FALSE]
-    my_report <- plyr::ddply(my_report, "level", function(x) x[utils::tail(order(x$reads,-x$depth), n=input$sankey_maxn), , drop = FALSE])
+    my_report <- plyr::ddply(my_report, "rank", function(x) x[utils::tail(order(x$reads,-x$depth), n=input$sankey_maxn), , drop = FALSE])
 
-    #my_report <- subset(my_report, level %in% input$levels)
-    my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth", "level")]
+    #my_report <- subset(my_report, rank %in% input$ranks)
+    my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth", "rank")]
 
     my_report <- my_report[!my_report$name %in% c('-_root'), ]
     #my_report$name <- sub("^-_root.", "", my_report$name)
@@ -343,12 +343,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
     colnames(links) <- c("source","target")
     links$value <- my_report[sel,"reads"]
 
-    my_levels <- input$levels[input$levels %in% my_report$level]
-    level_to_depth <- stats::setNames(seq_along(my_levels)-1, my_levels)
+    my_ranks <- input$ranks[input$ranks %in% my_report$rank]
+    rank_to_depth <- stats::setNames(seq_along(my_ranks)-1, my_ranks)
 
 
     nodes <- data.frame(name=my_report$name,
-                        depth=level_to_depth[my_report$level],
+                        depth=rank_to_depth[my_report$rank],
                         value=my_report$reads,
                         stringsAsFactors=FALSE)
 
@@ -374,6 +374,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
       sankeyD3::sankeyNetwork(
         Links = links,
         Nodes = nodes,
+        doubleclickTogglesChildren = TRUE,
         Source = "source",
         Target = "target",
         Value = "value",
@@ -382,23 +383,25 @@ sampleModule <- function(input, output, session, sample_data, reports,
         NodePosX = "depth",
         NodeValue = "value",
         colourScale = colourScale(),
-        xAxisDomain = my_levels,
+        xAxisDomain = my_ranks,
         xScalingFactor = input$scalingFactor,
         numberFormat = "pavian",
         title = NULL, #input$sample_selector,
         nodeWidth = 15,
         nodePadding = ifelse(input$show_numbers, 13, 8),
+        linkOpacity = input$linkOpacity,
+        textXPos = input$textXPos,
         height = input$height,
         nodeCornerRadius = 5,
         showNodeValues = input$show_numbers,
         units = "reads",
         linkType = input$linkType,
         curvature = input$curvature,
-        LinkGroup = "source_name",
+        LinkGroup = ifelse(input$color_links, "source_name", NA),
         fontSize = 12,
         iterations = input$sankey_maxn * 100,
         align = "none",
-        nodeStrokeWidth = 1,
+        nodeStrokeWidth = input$nodeStrokeWidth,
         highlightChildLinks = TRUE,
         orderByPath = TRUE,
         scaleNodeBreadthsByString = TRUE,
@@ -412,29 +415,29 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
     my_report$taxonstring <- beautify_taxonstring(my_report$taxonstring)
 
-    my_report$level <- as.factor(my_report$level)
+
+    my_report$rank <- as.factor(my_report$rank)
     #my_report$Percent <-
     #  100 * signif(my_report$reads / sum(my_report$reads_stay, na.rm = TRUE), 3)
     my_report$coverage <- NULL
     my_report$rankperc <- NULL
     my_report$percentage <- NULL
-    my_report$name <- sub("^._", "", my_report$name)
+    my_report$name <- my_report$name %>% sub("^._", "", .) %>% gsub(" ", "&nbsp;", .)
 
     colnames(my_report) <- beautify_string(colnames(my_report))
     DT::datatable(
       my_report,
       filter = 'none',
       selection = 'single',
-      options = c(datatable_opts,
-                  pagelength = 25,
-                  lengthMenu = c(10, 25, 50, 100),
-                  scrollX = TRUE
-                  ),
-      rownames = FALSE
+      class = datatable_opts$class,
+      extensions = datatable_opts$extensions,
+      escape = FALSE,
+      rownames = FALSE,
+      options = c(search = list(search = input$sankey_hover))
     ) %>%
       #DT::formatString("Percent", suffix = "%") %>%
       DT::formatCurrency(c("Reads", "Reads stay"),
-                     digits = 0, currency = "")
+                         digits = 0, currency = "")
 
   }, server = TRUE)
 
@@ -481,7 +484,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   reactive({
     req(input$show_in_comparison)
-    return(isolate(input$sankey_hover));
+    return(isolate(hover_plots$taxon));
   })
 
 }

@@ -1,4 +1,4 @@
-perc	n-clade	n-stay	level	taxonid	depth	name
+perc	n-clade	n-stay	rank	taxonid	depth	name
   0.37	101821	101821	U	0	0	unclassified
  99.63	27159918	181	-	1	0	root
  97.78	26657059	0	-	131567	1	  cellular organisms
