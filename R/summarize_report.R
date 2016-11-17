@@ -49,7 +49,11 @@ filter_reports_to_rank <- function(my_reports, classification_rank) {
 # numeric_col <- c("reads", "reads_stay")
 get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
   ## generate data.frame which has a name column (species name) and a further reads column for each sample
-  id_cols_before <- c("name", "rank", "taxonid")
+  id_cols_before <- c("name", "rank")
+
+  if (all(sapply(my_reports, function(x) "taxonid" %in% colnames(x) ))) {
+    id_cols_before <- c(id_cols_before, "taxonid")
+  }
 
   id_cols_after <- c("taxonstring")
   id_cols <- c(id_cols_before, id_cols_after)
@@ -96,9 +100,13 @@ get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
 
 
   ## make a link to NCBI genome browser in the taxonID column
-  taxonid_column <- which(colnames(summarized_report) == "Taxonid")
-  stopifnot(length(taxonid_column) == 1)
-  summarized_report[, taxonid_column] <- sub("^  *", "", summarized_report[, taxonid_column])
+  if (!"Taxonid" %in% colnames(summarized_report)) {
+    taxonid_column <- NA
+  } else {
+    taxonid_column <- which(colnames(summarized_report) == "Taxonid")
+    stopifnot(length(taxonid_column) == 1)
+    summarized_report[, taxonid_column] <- sub("^  *", "", summarized_report[, taxonid_column])
+  }
   ## remove s_, g_, etc
   summarized_report[, 1] <- sub("^[a-z-]_", "", summarized_report[, 1])
 

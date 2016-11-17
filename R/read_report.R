@@ -466,9 +466,6 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   }
 
 
-  if (!"taxonid" %in% colnames(report))
-    report$taxonid <- 0
-
   if (!"reads_stay" %in% colnames(report)) {
     taxonstrings <- strsplit(report$taxonstring, "|", fixed=TRUE)
     ## fix reads_stay
@@ -484,7 +481,11 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   #report$rankperc <- 100/rank(report$reads)
 
 
-  std_colnames = c("percentage","reads","reads_stay","rank","taxonid","name")
+  if ("taxonid" %in% colnames(report)) {
+    std_colnames <- c("percentage","reads","reads_stay","rank", "taxonid","name")
+  } else {
+    std_colnames <- c("percentage","reads","reads_stay","rank","name")
+  }
   stopifnot(all(std_colnames %in% colnames(report)))
   report[, c(std_colnames, setdiff(colnames(report), std_colnames))]
 }
