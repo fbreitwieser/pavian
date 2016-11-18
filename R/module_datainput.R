@@ -18,7 +18,7 @@ dataInputModuleUI <- function(id, server_access = FALSE, start_with=getOption("p
         #collapsible = TRUE,
         #collapse = TRUE,
         HTML(
-"
+          "
 <h2>Pavian metagenomics data explorer</h2>
 
 <p>
@@ -64,26 +64,9 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
              ))
     }
     },
-    box(width=12, uiOutput(ns("upload_info"))),
+    uiOutput(ns("upload_info")),
     br(),
-
-    shinyjs::hidden(
-      div(id=ns("sample_set_box"),
-          box(width=12, collapsible = TRUE,
-              title = "Uploaded sample sets",
-              status="primary",
-              column(6,radioButtons(ns("sample_set_select"), label = NULL, choices = list(PLACEHOLDER=1))),
-              column(6,
-                shinyjs::hidden(textInput(ns("txt_rename_sample_set"), label = "New name")),
-                actionButton(ns("btn_rename_sample_set"),"Rename selected sample set"),
-                actionButton(ns("btn_remove_sample_set"),"Remove selected sample set")
-              ),
-              br(),
-              rhandsontable::rHandsontableOutput(ns("table")),
-              actionButton(ns("btn_save_table"),"Save table (required to make changes persistent)")
-          )
-      )
-    )
+    uiOutput(ns("uploaded_sample_sets"))
   )
 }
 
@@ -104,7 +87,9 @@ dataInputModule <- function(input, output, session,
                             pattern = "sample_data.csv$",
                             cache_tree = TRUE) {
 
-  sample_sets <- reactiveValues(val = data.frame())
+  sample_sets <- reactiveValues(val = list(),         # val is the list of all sample sets
+                                selected = NULL,      # selected is just used to initialize the radioButtons in the module
+                                selected_set = NULL)  # selected_set is the name of the currently selected set, and is given outwards
 
 
   ns <- session$ns
@@ -113,7 +98,8 @@ dataInputModule <- function(input, output, session,
   read_error_msg <- reactiveValues(val_pos=NULL, val_neg=NULL)
 
   output$upload_info <- renderUI({
-    shiny::tagList(
+    req(!is.null(read_error_msg$val_pos) || !is.null(read_error_msg$val_neg))
+    box(width=12,
       div(HTML(read_error_msg$val_pos), style="color:green"),
       div(HTML(paste(read_error_msg$val_neg, collapse=" ")), style="color:red")
     )
@@ -181,20 +167,37 @@ dataInputModule <- function(input, output, session,
     }
     if (length(bad_files) > 0) {
       read_error_msg$val_neg <- c(read_error_msg$val_neg,
-        sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",
-                                        paste(bad_files, collapse="</b><br/> - <b>")))
+                                  sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",
+                                          paste(bad_files, collapse="</b><br/> - <b>")))
     }
 
     if (is.null(read_error_msg$val_pos))
       return()
 
     validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
-    sample_sets$val <<- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
-    updateRadioButtons(session, "sample_set_select", choices = names(sample_sets$val), selected = names(new_sample_sets)[1])
-
-    shinyjs::show("sample_set_box")
-    shinyjs::show("sample_set_table")
+    sample_sets$val <- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
+    sample_sets$selected <- names(new_sample_sets)[1]
   }
+
+  output$uploaded_sample_sets <- renderUI({
+    req(sample_sets$val)
+    req(sample_sets$selected)
+    box(width=12, collapsible = TRUE,
+        title = "Uploaded sample sets",
+        status="primary",
+
+        column(6,radioButtons(ns("sample_set_select"), label = NULL,
+                              choices = names(sample_sets$val), selected = sample_sets$selected)),
+        column(6,
+               shinyjs::hidden(textInput(ns("txt_rename_sample_set"), label = "New name")),
+               actionButton(ns("btn_rename_sample_set"),"Rename selected sample set"),
+               actionButton(ns("btn_remove_sample_set"),"Remove selected sample set")
+        ),
+        br(),
+        rhandsontable::rHandsontableOutput(ns("table")),
+        actionButton(ns("btn_save_table"),"Save table (required to make changes persistent)")
+    )
+  })
 
   observeEvent(input$example_data, {
     withProgress(message = "Reading example directory ...", {
@@ -221,10 +224,10 @@ dataInputModule <- function(input, output, session,
     req(input$sample_set_select)
     #str(rhandsontable::hot_to_r(input$table))
     tryCatch({
-    old_df <- sample_sets$val[[input$sample_set_select]]
-    new_df <- rhandsontable::hot_to_r(input$table)
+      old_df <- sample_sets$val[[input$sample_set_select]]
+      new_df <- rhandsontable::hot_to_r(input$table)
 
-    if (!isTRUE(all.equal(old_df, new_df))) {
+      if (!isTRUE(all.equal(old_df, new_df))) {
         sample_sets$val[[input$sample_set_select]] <<- new_df
       }
     }, error = function(e) message("Error calling hot_to_r!"))
@@ -256,7 +259,7 @@ dataInputModule <- function(input, output, session,
 
   output$table <- renderRHandsontable({
     sample_data <- get_sample_data()
-    validate(need(sample_data, message = "Need def df."))
+    validate(need(sample_data, message = "Need sample data for table."))
 
     #sample_data$FormatOK <- ifelse(sample_data$FormatOK,
     #                               "<font color='green'>&#x2713;</font>",
@@ -313,11 +316,14 @@ dataInputModule <- function(input, output, session,
 
   observeEvent(input$btn_remove_sample_set, {
     selected_item <- names(sample_sets$val) == input$sample_set_select
-    sample_sets$val <<- sample_sets$val[!selected_item]
-    updateRadioButtons(session, "sample_set_select", choices = names(sample_sets$val), selected = names(sample_sets$val)[1])
-    if (length(sample_sets$val) == 0) {
-      shinyjs::hide("sample_set_box")
-      shinyjs::hide("sample_set_table")
+    read_error_msg$val_pos <- NULL
+    read_error_msg$val_neg <- NULL
+    if (length(sample_sets$val) == 1) {
+      sample_sets$val <- list()
+      sample_sets$selected <- NULL
+    } else {
+      sample_sets$val <- sample_sets$val[!selected_item]
+      sample_sets$selected <- names(sample_sets$val)[1]
     }
   })
 
@@ -327,7 +333,8 @@ dataInputModule <- function(input, output, session,
   #})
 
   return(function() {
-    attr(sample_sets$val, "selected") <<- input$sample_set_select
+    attr(sample_sets$val, "selected") <- input$sample_set_select
+    sample_sets$selected_set <- input$sample_set_select
     sample_sets
   })
 }
