@@ -9,7 +9,9 @@ reportOverviewModuleUI <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::tagList(
-    HTML("Note: The bar in the columns for bacterial, viral and fungal reads is relative to the microbial content in that sample."),
+    HTML("This page shows the summary of the classifications in the selected sample set.
+         The table cells have a barchart that shows the relation of the cell value to other cell values in the same category.
+         The size of bar in the columns for bacterial, viral and fungal reads is relative to the microbial content in that sample."),
     checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = TRUE),
     DT::dataTableOutput(ns('dt_samples_overview'))
   )
@@ -60,7 +62,9 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
   ## Samples overview output
   output$dt_samples_overview <- DT::renderDataTable({
 
+
     samples_summary <- get_samples_summary()
+    validate(need(samples_summary, message = "Error in getting samples summary - please re-select the sample set."))
 
     start_color_bar_at <- 2  ## length of extra_cols + 1
     number_range <-  c(0, max(samples_summary[, 2], na.rm = TRUE))
