@@ -20,8 +20,6 @@ taxon_ranks <- c(
   "------- Species" = "S"
 )
 
-include_overview <- FALSE
-
 #taxon_ranks <- list(
 #  "At taxon" = taxon_ranks,
 #  "At taxon and children" = setNames(paste("C",taxon_ranks),paste(names(taxon_ranks),"clade"))
@@ -48,12 +46,13 @@ comparisonModuleUI <- function(id) {
                                                           options=list(create = TRUE)))),
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector2"),label="Sample 2", multiple=FALSE, choices=NULL,selected=NULL,
                                                           options=list(create = TRUE)))),
-                 checkboxInput(ns("dont_wrap_name"), label = "Don't wrap name in table", value = TRUE)
+                 checkboxInput(ns("dont_wrap_name"), label = "Don't wrap name in table", value = FALSE),
+                 checkboxInput(ns("show_overview"), label = "Show overview column", value = FALSE)
     )),
     fluidRow(
       box(width=7, background = "green",
           column(5,
-                 div(class="col-lg-5 col-md-12 lessPadding lessMargin",
+                 div(class="col-lg-5 col-md-5 lessPadding lessMargin",
                      selectizeInput(ns("opt_statistic"), label = " Statistic",
                                     choices = c("Mean", "Median", "Max", "Sd",
                                                 "Maximum absolute deviation", "Max Z-score"),
@@ -62,7 +61,7 @@ comparisonModuleUI <- function(id) {
                                         title = "Select summarization statistic used in fifth column of data table.",
                                         placement = "left", trigger = "hover")
                  ),
-                 div(class="col-lg-7 col-md-12 lessPadding lessMargin",
+                 div(class="col-lg-7 col-md-7 lessPadding lessMargin",
                      checkboxGroupInput(ns("opts_normalization"), label = NULL,
                                         choices = c("Normalize by total # of reads"="opt_display_percentage",
                                                     "Log data"="opt_vst_data", ## TODO: Change to VST
@@ -386,7 +385,11 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
     colnames(summarized_report)[colnames(summarized_report) == "STAT"] <- input$opt_statistic
 
-    if (include_overview) {
+    if (any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
+      summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
+    }
+
+    if (input$show_overview) {
       summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols, drop=F]), round_digits), 1, paste0, collapse = ",")
       colnames(summarized_report)[colnames(summarized_report) == "OVERVIEW"] <- "Overview"
     } else {
@@ -396,10 +399,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       attr(summarized_report, 'data_column_start') <- attr(summarized_report, 'data_column_start') - 1
       attr(summarized_report, 'reads_stay_columns') <- attr(summarized_report, 'reads_stay_columns') - 1
       attr(summarized_report, 'reads_columns') <- attr(summarized_report, 'reads_columns') - 1
-    }
-
-    if (any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
-      summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
     }
 
     summarized_report
@@ -493,7 +492,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                           columnDefs = columnDefs,
                           #autoWidth = TRUE,
                           buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
-                          drawCallback = ifelse(include_overview, sparklineDrawCallback, ""),
+                          drawCallback = ifelse(input$show_overview, sparklineDrawCallback, ""),
                           order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
                           search = list(
                             search = isolate(dt_options$search)
