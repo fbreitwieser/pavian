@@ -8,9 +8,12 @@ if (!require(Rsamtools)) {
   biocLite("Rsamtools")
 }
 
+# devtools currently fails to correctly install dependencies
+#  - install all required packages beforehand
+#  see https://github.com/hadley/devtools/issues/1298
 all_packages <- c("devtools", "htmlwidgets", "magrittr", "Rcpp","shiny",
                   "shinydashboard","shinyjs","shinyBS","sparkline","DT",
-                  "rhandsontable","sankeyD3","scatterD3","ggplot2", "scales",
+                  "rhandsontable","scatterD3","ggplot2", "scales",
                   "htmltools","plyr","dplyr","yaml")
 
 packages_to_install <- all_packages[!all_packages %in% rownames(installed.packages())]
