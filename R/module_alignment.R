@@ -223,7 +223,6 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
 
   output$table <- DT::renderDataTable({
     req(my_bam_file$val)
-    my_title = sprintf("%s-alignment-summary_%s", basename(my_bam_file$val), format(Sys.time(), "%y%m%d"))
     datatable(seqinfo_df(), selection = 'single',
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
@@ -233,7 +232,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
               extensions = datatable_opts$extensions,
               class=datatable_opts$class,
               options=list(
-                buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
+                buttons = common_buttons(sub(".bam$","",basename(my_bam_file$val), ignore.case = T),"alignment-summary"),
                 columnDefs=list(
                   list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
                   )))) %>%
@@ -393,9 +392,10 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
     DT::datatable(
       ai,
       filter = 'bottom',
+      selection = 'single',
       extensions = datatable_opts$extensions,
       class = paste(datatable_opts$class, "nowrap"),
-      options(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'))
+      options(buttons = common_buttons(names(refseq_assemblies)[refseq_assemblies==input$cbo_assemblies], "assembly-info"))
     )
   })
 

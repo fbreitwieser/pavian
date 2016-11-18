@@ -90,14 +90,16 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
 
     microbial_col <- start_color_bar_at + 5
 
-    my_title <- sprintf("%s-summary-%s", basename(attr(sample_data(), "set_name")), format(Sys.time(), "%y%m%d"))
+    if (!max(samples_summary[,2]) > 1000) {
+      samples_summary[,seq(from=start_color_bar_at, to=ncol(samples_summary))] <- signif(samples_summary[,seq(from=start_color_bar_at, to=ncol(samples_summary))], 4)
+    }
 
     dt <- DT::datatable(
       samples_summary,
       rownames = FALSE,
       selection = 'single',
       extensions = datatable_opts$extensions,
-      options(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis')),
+      options(buttons = common_buttons(basename(attr(sample_data(), "set_name")), "summary")),
       escape = FALSE,
       class = datatable_opts$class,
     )
@@ -139,10 +141,10 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
                            samples_summary[, microbial_col], na.rm = TRUE
                          )), 'lightgreen'))
 
-       if (max(samples_summary[,2]) > 1000)
+       if (max(samples_summary[,2]) > 1000) {
         dt <- dt %>% DT::formatCurrency(seq(from=start_color_bar_at, to=ncol(samples_summary)),
-                               currency = '',
-                               digits = 0)
+                               currency = '', digits = 0)
+       }
      }
 
     dt

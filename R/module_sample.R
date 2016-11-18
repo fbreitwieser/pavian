@@ -426,8 +426,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
     my_report$percentage <- NULL
     my_report$name <- my_report$name %>% sub("^._", "", .) %>% gsub(" ", "&nbsp;", .)
 
-    my_title <- sprintf("%s-results_%s", input$sample_selector, format(Sys.time(), "%y%m%d"))
     colnames(my_report) <- beautify_string(colnames(my_report))
+
+    if (!max(my_report$Reads) > 1000) {
+      my_report[,c("Reads", "Reads stay")] <- signif(my_report[,c("Reads", "Reads stay")], digits = 4)
+    }
+
     dt <- DT::datatable(
       my_report,
       filter = 'none',
@@ -436,13 +440,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
       extensions = datatable_opts$extensions,
       escape = FALSE,
       rownames = FALSE,
-      options = list(buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'))
+      options = list(buttons = common_buttons(input$sample_selector, "results"))
     )
     if (max(my_report$Reads) > 1000) {
-      dt <- dt %>%
-        DT::formatCurrency(c("Reads", "Reads stay"),
-                         digits = 0, currency = "")
+      dt <- dt %>% DT::formatCurrency(c("Reads", "Reads stay"), digits = 0, currency = "")
     }
+
     dt
 
   }, server = TRUE)

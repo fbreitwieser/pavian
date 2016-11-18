@@ -10,6 +10,12 @@ startsWith <- function(x, prefix) {
   }
 }
 
+common_buttons <- function(...) {
+  opts <- list(...)
+  dl_fname <- paste(unlist(c(opts, format(Sys.time(), "%y%m%d"))), collapse="-")
+  list('pageLength', list(extend='excel',title=dl_fname), list(extend='csv',title=dl_fname),'print','copy', 'colvis')
+}
+
 ## helper functions for loading the files reactively
 ##   file_glob_pattern contains %s, which is to be replaced by the sample names
 list_kraken_files <- function(data_dir, file_names,file_extension,sample_name=NULL) {

@@ -15,8 +15,11 @@ options(DT.options = list(pageLength = 15,
                           saveState = TRUE,
                           searchHighlight = TRUE,
                           scrollX = TRUE,
+                          #colReorder = TRUE,
+                          #deferRender = FALSE,
+                          #scrollY = 400,
+                          #scroller = TRUE,
                           dom = 'Bfrtip',
-                          #buttons = list('pageLength', 'excel' , 'csv', 'copy', 'colvis'),
                           lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
                           search = list(regex = TRUE, caseInsensitive = TRUE)))
 
@@ -127,15 +130,19 @@ server <- function(input, output, session) {
   datatable_opts <- reactiveValues(rownames = FALSE,
                                    selection = 'single',
                                    extensions = c('Buttons'),
-                                   class = "display")
+                                   # Maybe use 'Scroller' for some tables
+                                   # 'ColReorder' isn't really useful
+                                   # 'FixedColumns' is too buggy
+                                   # Consider adding 'Responsive' / see https://datatables.net/extensions/responsive/priority
+                                   class = "stripe hover row-border")
 
   observeEvent(input$compact_format, {
     if (isTRUE(input$compact_format)) {
       #shinyjs::addClass(class="lineheight1", selector = "body")
-      datatable_opts$class <- "display compact"
+      datatable_opts$class <- "stripe hover row-border compact"
     } else {
       #shinyjs::removeClass(class="lineheight1", selector = "body")
-      datatable_opts$class <- "display"
+      datatable_opts$class <- "stripe hover row-border"
     }
   })
 
