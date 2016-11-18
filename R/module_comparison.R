@@ -51,7 +51,7 @@ comparisonModuleUI <- function(id) {
     )),
     fluidRow(
       box(width=7, background = "green",
-          column(5,
+          column(6,
                  div(class="col-lg-5 col-md-5 lessPadding lessMargin",
                      selectizeInput(ns("opt_statistic"), label = " Statistic",
                                     choices = c("Mean", "Median", "Max", "Sd",
@@ -69,7 +69,7 @@ comparisonModuleUI <- function(id) {
                                         inline = FALSE)
                  )
           ),
-          column(7,
+          column(6,
                  div(class="col-lg-7 col-md-12 lessPadding lessMargin",
                      selectizeInput(
                        ns("opt_classification_rank"), label = "Select reads to display",
@@ -121,9 +121,7 @@ comparisonModuleUI <- function(id) {
     ),
     div(id=ns("table_div"),
         DT::dataTableOutput(ns('dt_samples_comparison')),
-        actionButton(ns("btn_sc_filter"), "Filter taxon"),
-        actionButton(ns("btn_sc_filter_clade"), "Filter taxon and children"),
-        actionButton(ns("btn_sc_gointo"), "Go Into")
+        uiOutput(ns("filter_buttons"))
     ),
     shinyjs::hidden(
       div(id=ns("scatter_div"),
@@ -276,6 +274,8 @@ comparisonModule <- function(input, output, session, sample_data, reports,
   get_summarized_reportc <- reactive({
     #requireNamespace("dplyr")
     summarized_report <-  get_summarized_report1()
+    validate(need(summarized_report, message = "No data available for current selection."),
+      need(nrow(summarized_report) > 0, message = "No data available for current selection."))
 
     ## Remove taxons or clades
     sel_rm_clades <- summarized_report$Name %in% input$contaminant_selector_clade
@@ -417,6 +417,14 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     updateSelectizeInput(session, "sample_selector",
                          choices=sample_data()[,"Name"], selected=sample_data()[,"Name"]
     )
+  })
+
+  output$filter_buttons <- renderUI({
+    req(input$dt_samples_comparison_rows_selected)
+    ns <- session$ns
+    shiny::tagList(actionButton(ns("btn_sc_filter"), "Filter taxon"),
+                   actionButton(ns("btn_sc_filter_clade"), "Filter taxon and children"),
+                   actionButton(ns("btn_sc_gointo"), "Go Into"))
   })
 
   dt_proxy <- DT::dataTableProxy('dt_samples_comparison', session = session)
