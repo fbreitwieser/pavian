@@ -20,6 +20,29 @@ taxon_ranks <- c(
   "------- Species" = "S"
 )
 
+show_rownames <- FALSE
+
+## define a callback that
+##  (a) makes the background colors of number cells '!important'
+##       otherwise the row-selection overwrites those values
+##       see https://github.com/rstudio/DT/issues/364
+##  (b) center the numeric cells
+##  (c) initializes a sparkline on elements which have not been initialized before
+##       this is essential for pagination
+drawCallback = htmlwidgets::JS(
+  "function (oSettings, json) {
+        $('td.dt-right').each(function(i) {
+          var color = $(this).css('background-color');
+          $(this).attr('style', 'text-align: center; background-color: '+color+'!important;' );  })
+
+        $('.spark:not(:has(canvas))').sparkline('html', {
+          type: 'bar',
+          highlightColor: 'orange',
+          chartRangeMin: 0
+        });
+      }"
+)
+
 #taxon_ranks <- list(
 #  "At taxon" = taxon_ranks,
 #  "At taxon and children" = setNames(paste("C",taxon_ranks),paste(names(taxon_ranks),"clade"))
@@ -47,7 +70,7 @@ comparisonModuleUI <- function(id) {
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector2"),label="Sample 2", multiple=FALSE, choices=NULL,selected=NULL,
                                                           options=list(create = TRUE)))),
                  checkboxInput(ns("dont_wrap_name"), label = "Don't wrap name in table", value = FALSE),
-                 checkboxInput(ns("show_overview"), label = "Show overview column", value = FALSE)
+                 checkboxGroupInput(ns("table_columns"), label = "Table columns", choices = c("Taxonid","Overview","Taxonstring"), selected = c("Taxonstring"), inline = TRUE)
     )),
     fluidRow(
       box(width=7, background = "green",
@@ -119,8 +142,10 @@ comparisonModuleUI <- function(id) {
         )
       )
     ),
+    box(width=12,
     div(id=ns("table_div"),
         DT::dataTableOutput(ns('dt_samples_comparison')),
+        downloadButton(ns('downloadData'), 'Download full table as tsv'),
         uiOutput(ns("filter_buttons"))
     ),
     shinyjs::hidden(
@@ -129,7 +154,7 @@ comparisonModuleUI <- function(id) {
           column(6, scatterD3::scatterD3Output(ns("ma_plot")))
       )
     )
-  )
+  ))
 }
 
 
@@ -220,16 +245,26 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       xlab = "log10 mean", ylab = "log2 ratio")
   })
 
+  output$downloadData <- downloadHandler(
+    filename = function() { sprintf("%s-matrix-all-%s.tsv", basename(attr(sample_data(), "set_name")), format(Sys.time(), "%y%m%d")) },
+    content = function(file) {
+      write.table(r_summarized_report(), file, row.names = FALSE, sep = "\t")
+    }
+  )
 
 
 
   ## parse search term from query
   #query <- parseQueryString(session$clientData$url_search)
   #ifelse("search" %in% names(query), query['search'], ""))
-  dt_options <- reactiveValues(search = "")
+  dt_options <- reactiveValues(search = "", order = NULL)
   #observeEvent(search(), {
   #  dt_options$search <-search()
   #})
+
+  observeEvent(input$dt_samples_comparison_state, {
+    dt_options$order <- input$dt_samples_comparison_state$order
+  })
 
   observeEvent(input$dt_samples_comparison_search, {
     dt_options$search <- input$dt_samples_comparison_search
@@ -389,16 +424,24 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
     }
 
-    if (input$show_overview) {
+    table_attr <- c("data_columns", "stat_column", "data_column_start", "reads_stay_columns", "reads_columns")
+
+    if ("Overview" %in% input$table_columns) {
       summarized_report$OVERVIEW = apply(round(zero_if_na(summarized_report[,data_cols, drop=F]), round_digits), 1, paste0, collapse = ",")
       colnames(summarized_report)[colnames(summarized_report) == "OVERVIEW"] <- "Overview"
     } else {
       summarized_report$OVERVIEW <- NULL
-      attr(summarized_report, 'data_columns') <- attr(summarized_report, 'data_columns') - 1
-      attr(summarized_report, 'stat_column') <- attr(summarized_report, 'stat_column') - 1
-      attr(summarized_report, 'data_column_start') <- attr(summarized_report, 'data_column_start') - 1
-      attr(summarized_report, 'reads_stay_columns') <- attr(summarized_report, 'reads_stay_columns') - 1
-      attr(summarized_report, 'reads_columns') <- attr(summarized_report, 'reads_columns') - 1
+      for (i in table_attr) { attr(summarized_report, i) <- attr(summarized_report, i) - 1; }
+    }
+
+    if (!"Taxonid" %in% input$table_columns) {
+      summarized_report$Taxonid <- NULL
+      attr(summarized_report, 'taxonid_column') <- NA
+      for (i in table_attr) { attr(summarized_report, i) <- attr(summarized_report, i) - 1; }
+    }
+
+    if (!"Taxonstring" %in% input$table_columns) {
+      summarized_report$Taxonstring <- NULL
     }
 
     summarized_report
@@ -427,97 +470,61 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                    actionButton(ns("btn_sc_gointo"), "Go Into"))
   })
 
-  dt_proxy <- DT::dataTableProxy('dt_samples_comparison', session = session)
-  output$dt_samples_comparison <- DT::renderDataTable({
+  get_columnDefs <- function(summarized_report) {
+    zero_col <- ifelse(show_rownames, 0, 1)
 
+    columnDefs <- list(
+      list(targets = attr(summarized_report, 'stat_column') - zero_col, orderSequence = c('desc', 'asc'), width = "80px" ),       ## Stat column
+      list(targets = attr(summarized_report, 'data_columns') - zero_col, orderSequence = c('desc', 'asc'), searchable = FALSE ))  ## Data columns shouldn't be searchable
+
+    if (!is.na(attr(summarized_report, 'taxonid_column'))) {
+      columnDefs[length(columnDefs) + 1] <-
+        list(list(targets = which(colnames(summarized_report) == "Taxonid") - zero_col,
+                  render = htmlwidgets::JS("function(data, type, full) {
+                return '<a href=\"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id='+data+'\" target=\"_blank\">' + data + '</a>'; }")
+        ))
+    }
+
+    if ("Overview" %in% colnames(summarized_report)) {
+      columnDefs[length(columnDefs) + 1] <-
+        list(list(targets = which(colnames(summarized_report) == "Overview") - zero_col, searchable = FALSE,
+                  render = htmlwidgets::JS("function(data, type, full) { return '<span class=spark>' + data + '</span>' }")))
+    }
+    columnDefs
+  }
+
+  summarized_report_df <- reactive({
     summarized_report <- r_summarized_report()
     validate(need(summarized_report, message = "No data"),
              need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"),
-             #need(attr(summarized_report, 'taxonid_column'), message = "taxonid_columns NULL"),
              need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
 
-    summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
+    if ("Taxonstring" %in% colnames(summarized_report))
+      summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
 
     if (input$dont_wrap_name)
       summarized_report$Name <- summarized_report$Name %>% gsub(" ", "&nbsp;", .)
 
-    show_rownames <- FALSE
-    zero_col <- ifelse(show_rownames, 0, 1)
-
-    if (!is.na(attr(summarized_report, 'taxonid_column'))) {
-      columnDefs <- list(
-        ## Make taxonid column link-able
-        list(
-          targets = attr(summarized_report, 'taxonid_column') - zero_col,
-          render = htmlwidgets::JS(
-            "function(data, type, full){
-          return '<a href=\"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id='+data+'\" target=\"_blank\">' + data + '</a>'
-  }"
-          )
-        ))
-    } else {
-      columnDefs <- list()
+    if (!max(summarized_report[,attr(summarized_report, 'data_columns')], na.rm = TRUE) > 1000) {
+      summarized_report[,attr(summarized_report, 'data_columns')] <- signif(summarized_report[,attr(summarized_report, 'data_columns')], digits = 4 )
     }
 
-    columnDefs <- c(columnDefs,
-                    list(
-                      list(targets = attr(summarized_report, 'stat_column') - zero_col, orderSequence = c('desc', 'asc'), width = "80px" ),       ## Stat column
-                      list(targets = attr(summarized_report, 'data_columns') - zero_col, orderSequence = c('desc', 'asc'), searchable = FALSE ),  ## Data columns shouldn't be searchable
-                      list(
-                        targets = which(colnames(summarized_report) == "Overview") - zero_col,
-                        searchable = FALSE,
-                        render = htmlwidgets::JS(
-                          "function(data, type, full){
-    return '<span class=spark>' + data + '</span>'
-  }"
-                        )
-                      )
-                    ))
+    if (is.null(dt_colnames$val) || !all(dt_colnames$val == colnames(summarized_report))) {
+      dt_colnames$val <- colnames(summarized_report)
+      dt_options$order <- NULL
+    }
 
+    summarized_report
+  })
 
-    ## define a callback that initializes a sparkline on elements which have not been initialized before
-    ##   this is essential for pagination
-    sparklineDrawCallback = htmlwidgets::JS(
-      "function (oSettings, json) {
-        $('.spark:not(:has(canvas))').sparkline('html', {
-          type: 'bar',
-          highlightColor: 'orange',
-          chartRangeMin: 0
-        });
-      }"
-    )
-
-    my_title = sprintf("%s-matrix-%s", basename(attr(sample_data(), "set_name")), format(Sys.time(), "%y%m%d"))
-
-    dt <- DT::datatable(summarized_report,
-                        #filter = "bottom",
-                        escape = FALSE,
-                        rownames = show_rownames,
-                        selection = "single",
-                        extensions = datatable_opts$extensions,
-                        class=datatable_opts$class,
-                        options = list(
-                          columnDefs = columnDefs,
-                          #autoWidth = TRUE,
-                          buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
-                          drawCallback = ifelse(input$show_overview, sparklineDrawCallback, ""),
-                          order = list(attr(summarized_report, 'stat_column') - zero_col, "desc"),
-                          search = list(
-                            search = isolate(dt_options$search)
-                          ))
-    )
-
-
-    ## TODO: Consider adding more information in child rows: https://rstudio.github.io/DT/002-rowdetails.html
-    ##  For example: taxonomy ID, links to assemblies (e.g. www.ncbi.nlm.nih.gov/assembly/organism/821)
-    ##   and organism overview http://www.ncbi.nlm.nih.gov/genome/?term=txid821[Organism:noexp]
-
+  formatDT <- function(dt, summarized_report) {
     ## Give the correct format to the columns: thousands separators for numbers, and percent sign for percents
     if (!any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
       dt <- dt %>%
         DT::formatCurrency(attr(summarized_report, 'stat_column'), currency = '', digits = 1 )
-      if (max(summarized_report[,attr(summarized_report, 'data_columns')], na.rm = TRUE) > 1000)
+      if (max(summarized_report[,attr(summarized_report, 'data_columns')], na.rm = TRUE) > 1000) {
         dt <- dt %>% DT::formatCurrency(attr(summarized_report, 'data_columns'), currency = '', digits = 0 )
+      }
     } else {
       suffix <- ifelse(any(c("opt_zscore", "opt_vst_data") %in% input$opts_normalization),"","%")
       dt <- dt %>%
@@ -525,9 +532,9 @@ comparisonModule <- function(input, output, session, sample_data, reports,
         DT::formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
     }
 
-    ## Add color bar
-    #str(summarized_report[,attr(summarized_report, 'data_columns')])
+
     if (0) {
+      ## Add color bar (heatmap colors instead)
       dt <- dt %>% DT::formatStyle(
         attr(summarized_report, 'data_columns'),
         background = DT::styleColorBar(range(summarized_report[,attr(summarized_report, 'stat_column')],na.rm=TRUE), 'lightblue'),
@@ -537,27 +544,66 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       )
     }
 
-    if (nrow(summarized_report) > 0) {
-      #brks <- quantile(summarized_report[,attr(summarized_report, 'data_columns')], probs = seq(.5, .95, .05), na.rm = TRUE)
-      #brks <- quantile(summarized_report[,attr(summarized_report, 'stat_column')], probs = seq(.05, .95, .05), na.rm = TRUE)
-      #brks <- seq(from=0, to=max(summarized_report[,attr(summarized_report, 'stat_column')], na.rm=T), length.out = 20)
-      brks <- quantile(summarized_report[,attr(summarized_report, 'data_columns')], probs = cumsum(1/2^(1:20)), na.rm =TRUE)
-      clrs <- round(seq(255, 40, length.out = length(brks) + 1), 0) %>% {paste0("rgb(255,", ., ",", ., ")")}
-      dt <- dt %>% DT::formatStyle(attr(summarized_report, 'data_columns'), backgroundColor = DT::styleInterval(brks, clrs))
-    }
+    #brks <- quantile(summarized_report[,attr(summarized_report, 'data_columns')], probs = seq(.5, .95, .05), na.rm = TRUE)
+    #brks <- quantile(summarized_report[,attr(summarized_report, 'stat_column')], probs = seq(.05, .95, .05), na.rm = TRUE)
+    #brks <- seq(from=0, to=max(summarized_report[,attr(summarized_report, 'stat_column')], na.rm=T), length.out = 20)
+    brks <- quantile(summarized_report[,attr(summarized_report, 'data_columns')], probs = cumsum(1/2^(1:20)), na.rm =TRUE)
+    clrs <- round(seq(255, 40, length.out = length(brks) + 1), 0) %>% {paste0("rgb(255,", ., ",", ., ")")}
+    dt <- dt %>% DT::formatStyle(attr(summarized_report, 'data_columns'), backgroundColor = DT::styleInterval(brks, clrs))
+
+    dt
+  }
+
+  #datatable_colnames <-
+
+  dt_colnames <- reactiveValues(val = NULL)
+
+  output$dt_samples_comparison <- DT::renderDataTable({
+    dt_colnames$val
+    summarized_report <- isolate(summarized_report_df())
+
+    zero_col <- ifelse(show_rownames, 0, 1)
+    my_order <- isolate(dt_options$order)
+    if (is.null(my_order))
+      my_order <- list(attr(summarized_report, 'stat_column') - zero_col, "desc")
+
+    dt <- DT::datatable(summarized_report,
+                        #filter = "bottom",
+                        escape = FALSE,
+                        rownames = show_rownames,
+                        selection = "single",
+                        extensions = datatable_opts$extensions,
+                        class=datatable_opts$class,
+                        options = list(
+                          stateSave = TRUE,
+                          columnDefs = get_columnDefs(summarized_report),
+                          #autoWidth = TRUE,
+                          buttons = common_buttons(basename(attr(sample_data(), "set_name")), "matrix-view"),
+                          drawCallback = drawCallback,
+                          order = my_order,
+                          search = list(
+                            search = isolate(dt_options$search)
+                          ))
+    )
 
 
-    if (requireNamespace("sparkline")) {
-      req(requireNamespace("htmltools"))
+    dt <- formatDT(dt, summarized_report)
+
+    if ("Overview" %in% colnames(summarized_report)) {
       ## use the sparkline package and the getDependencies function in htmlwidgets to get the
       ## dependencies required for constructing sparklines and then inject it into the dependencies
-      ## needed by datatable
-      dt$dependencies <-
-        append(dt$dependencies,
-               getDependency('sparkline'))
+      dt$dependencies <- append(dt$dependencies, htmlwidgets::getDependency('sparkline'))
     }
 
     dt
+  })
+
+  dt_proxy <- DT::dataTableProxy(session$ns('dt_samples_comparison'))
+  observe({
+    ## replaceData does not work with modules, currently
+    ##  see https://github.com/rstudio/DT/issues/359
+    dataTableAjax(session, summarized_report_df(), rownames = FALSE, outputId = 'dt_samples_comparison')
+    reloadData(dt_proxy, resetPaging=TRUE, TRUE)
   })
 
   output$row_details_table <- DT::renderDataTable({
@@ -596,7 +642,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
   })
 
   selected_row <- reactive({
-    r_summarized_report()[input$dt_samples_comparison_rows_selected,]
+    r_summarized_report()[input$dt_samples_comparison_rows_selected, , drop=FALSE]
   })
 
   observeEvent(input$btn_sc_filter, {
@@ -628,10 +674,7 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     req(dt_proxy)
     req(selected_row())
 
-    DT::updateSearch(dt_proxy, list(global=selected_row()[["Name"]]
-    ))
-
-    #input$dt_samples_comparison_search <- selected_name
+    DT::updateSearch(dt_proxy, list(global=selected_row()[["Name"]]))
   })
 
 
