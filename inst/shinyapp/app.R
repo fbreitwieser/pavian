@@ -192,8 +192,7 @@ server <- function(input, output, session) {
       shinyjs::enable("sample_set_names")
       shinyjs::enable("btn_remove_cache_files")
 
-      #updateSelectizeInput(session, "sample_set_names", choices = sample_set_names, selected = attr(sample_sets()$val, "selected"))
-      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = attr(sample_sets()$val, "selected"))
+      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_sets()$selected_set)
     } else {
       #updateSelectizeInput(session, "sample_set_names", choices = c("Not available"=""))
       updateSelectInput(session, "sample_set_names", choices = c("Not available"=""))
