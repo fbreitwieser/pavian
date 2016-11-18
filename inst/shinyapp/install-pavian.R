@@ -10,7 +10,7 @@ if (!require(Rsamtools)) {
 
 all_packages <- c("devtools", "htmlwidgets", "magrittr", "Rcpp","shiny",
                   "shinydashboard","shinyjs","shinyBS","sparkline","DT",
-                  "rhandsontable","sankeyD3","scatterD3","ggplot2",
+                  "rhandsontable","sankeyD3","scatterD3","ggplot2", "scales",
                   "htmltools","plyr","dplyr","yaml")
 
 packages_to_install <- all_packages[!all_packages %in% rownames(installed.packages())]
