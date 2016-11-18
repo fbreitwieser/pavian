@@ -21,7 +21,7 @@ if (length(packages_to_install) > 0) {
 }
 
 message("Installing sankeyD3 from https://github.com/fbreitwieser/sankeyD3")
-devtools::install_github("sankeyD3")
+devtools::install_github("fbreitwieser/sankeyD3")
 
 message("Installing pavian from https://github.com/fbreitwieser/pavian")
 devtools::install_github("fbreitwieser/pavian")
