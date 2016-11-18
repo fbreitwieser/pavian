@@ -1,7 +1,7 @@
 Package: pavian
 Type: Package
 Title: Analyze and dispaly metagenomics data in R
-Version: 0.3.2
+Version: 0.3.3
 URL: https://github.com/fbreitwieser/pavian
 BugReports: https://github.com/fbreitwieser/pavian/issues
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))

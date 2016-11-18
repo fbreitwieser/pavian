@@ -20,13 +20,6 @@ options(DT.options = list(pageLength = 15,
                           lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
                           search = list(regex = TRUE, caseInsensitive = TRUE)))
 
-intro <- box(width = 12,
-  fluidRow(
-  div(style="float: left;", includeMarkdown(system.file("shinyapp", "intro_data.md", package="pavian"))),
-  div(style="float: right;", includeMarkdown(system.file("shinyapp", "intro_logo.html", package="pavian")))
-)
-)
-
 ui <- dashboardPage(skin="blue", title = "Pavian",
   dashboardHeader(title = "",
                   tags$li(class = "dropdown",
@@ -94,7 +87,6 @@ setInterval(function(){
     ),
     tabItems(
       tabItem("Home",
-              intro,
               dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", FALSE))
       ),
       tabItem("Overview",
@@ -109,8 +101,14 @@ setInterval(function(){
       tabItem("Alignment", alignmentModuleUI("alignment")),
       tabItem(
         "About",
-        intro,
-        "This tool was developed by Florian Breitwieser in Steven Salzberg's lab at the Center for Computational Biology at Johns Hopkins Medical Institution. This work was supported by the U.S. National Institutes of Health [R01-HG006677,R01-GM083873]; and by the U.S. Army Research Office [W911NF-1410490].",
+        box(width=12,
+            HTML(
+        "<h2>Pavian metagenomics data explorer</h2>
+
+        <p>This tool was developed by Florian Breitwieser in Steven Salzberg's lab at the Center for
+        Computational Biology at Johns Hopkins Medical Institution. This work was supported by
+        the U.S. National Institutes of Health [R01-HG006677,R01-GM083873]; and by the U.S. Army Research
+        Office [W911NF-1410490]. </p>")),
         br(),
         br(),
         box(width=12,

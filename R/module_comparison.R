@@ -48,7 +48,7 @@ comparisonModuleUI <- function(id) {
                                                           options=list(create = TRUE)))),
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector2"),label="Sample 2", multiple=FALSE, choices=NULL,selected=NULL,
                                                           options=list(create = TRUE)))),
-                 checkboxGroupInput(ns("dt_class"),label="", choices=c("Don't wrap text in table"="nowrap","Compact layout"="compact"))
+                 checkboxInput(ns("dont_wrap_name"), label = "Don't wrap name in table", value = TRUE)
     )),
     fluidRow(
       box(width=7, background = "green",
@@ -430,7 +430,9 @@ comparisonModule <- function(input, output, session, sample_data, reports,
              need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
 
     summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
-    summarized_report$Name <- summarized_report$Name %>% gsub(" ", "&nbsp;", .)
+
+    if (input$dont_wrap_name)
+      summarized_report$Name <- summarized_report$Name %>% gsub(" ", "&nbsp;", .)
 
     show_rownames <- FALSE
     zero_col <- ifelse(show_rownames, 0, 1)

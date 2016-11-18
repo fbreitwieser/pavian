@@ -43,46 +43,42 @@ alignmentModuleUI <- function(id) {
 To generate a BAM file, download a genome of interest, and align to it with an aligner like <a target='blank' href='http://bowtie-bio.sourceforge.net/bowtie2/index.shtml'>Bowtie2</a> or <a target='blank' href='https://github.com/lh3/bwa'>bwa mem</a>. The resulting SAM file can be compressed into a binary BAM file and indexed with <a target='blank' href='http://www.htslib.org'>samtools</a>.
 ")
     ),
-    tabsetPanel(
+    tabBox(width = 12,
       tabPanel(
         title = "View alignment",
         uiOutput(ns("warn_Rsamtools"), width = 12),
-        box(width = 12,
-            fluidRow(
-              column(5,shiny::fileInput(ns("bam_file"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE)),
-              column(3,shiny::actionButton(ns("btn_get_alignment"), "Load example data")),
-              column(4,shiny::sliderInput(ns("mapq"),"Minimum MAPQ",0,50,0,step=1))),
-            shinyjs::hidden(shiny::checkboxInput(ns("align_loess"), "Show smoothed LOESS curve")),
-            shinyjs::hidden(shiny::checkboxInput(ns("align_moving_avg"), "Show moving average", value = TRUE)),
-            shiny::uiOutput(ns("bam_name")),
-            br(),
-            DT::dataTableOutput(ns("table")),
-            br(),
-            shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
-            shiny::plotOutput(ns("plot_brush"), height = "200px")
-        )
+        fluidRow(
+          column(5,shiny::fileInput(ns("bam_file"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE)),
+          column(3,shiny::actionButton(ns("btn_get_alignment"), "Load example data")),
+          column(4,shiny::sliderInput(ns("mapq"),"Minimum MAPQ",0,50,0,step=1))),
+        shinyjs::hidden(shiny::checkboxInput(ns("align_loess"), "Show smoothed LOESS curve")),
+        shinyjs::hidden(shiny::checkboxInput(ns("align_moving_avg"), "Show moving average", value = TRUE)),
+        shiny::uiOutput(ns("bam_name")),
+        br(),
+        DT::dataTableOutput(ns("table")),
+        br(),
+        shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
+        shiny::plotOutput(ns("plot_brush"), height = "200px")
       ),
       tabPanel(
         title = "Download genomes for alignment",
-        box(width = 12,
-            HTML(
-            "Gather and display the content of the assembly_summary.txt from the selected domain from <a target='blank' href='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq'>ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq</a>. An active internet connection is required, and currently no files are cached."),
-            br(),
-            br(),
-            div(class="row-fluid",
-                div(class="col-sm-6 col-xs-12",
-                    shiny::selectizeInput(ns("cbo_assemblies"), choices = assembly_resources, selected = "RefSeq bacteria", label = NULL, width="100%")),
-                div(class="col-sm-6 col-xs-12",
-                    shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="100%"))),
-            br(),
-            br(),
-            DT::dataTableOutput(ns("dt_assembly_info")),
-            htmlOutput(ns("dl_genome"))
-        )
+
+        HTML(
+          "Gather and display the content of the assembly_summary.txt from the selected domain from <a target='blank' href='ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq'>ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq</a>. An active internet connection is required, and currently no files are cached."),
+        br(),
+        br(),
+        div(class="row-fluid",
+            div(class="col-sm-6 col-xs-12",
+                shiny::selectizeInput(ns("cbo_assemblies"), choices = assembly_resources, selected = "RefSeq bacteria", label = NULL, width="100%")),
+            div(class="col-sm-6 col-xs-12",
+                shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="100%"))),
+        br(),
+        br(),
+        DT::dataTableOutput(ns("dt_assembly_info")),
+        htmlOutput(ns("dl_genome"))
       )
     )
   )
-
 }
 
 #' Server part of alignment module
@@ -231,16 +227,16 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
     datatable(seqinfo_df(), selection = 'single',
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
-                "Covered bp"="covered_bp","Average\ncoverage"="avg_coverage",
-                "Average\nMAPQ"="avg_mapq",
-                "Percent\ncovered"="perc_covered"),
+                           "Covered bp"="covered_bp","Average\ncoverage"="avg_coverage",
+                           "Average\nMAPQ"="avg_mapq",
+                           "Percent\ncovered"="perc_covered"),
               extensions = datatable_opts$extensions,
               class=datatable_opts$class,
               options=list(
                 buttons = list('pageLength', list(extend='excel',title=my_title) , list(extend='csv', title= my_title), 'copy', 'colvis'),
                 columnDefs=list(
-      list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
-                              )))) %>%
+                  list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
+                  )))) %>%
       DT::formatCurrency(2, currency = '', digits = 0 ) %>%
       DT::formatString(3, suffix = "x") %>%
       DT::formatString(7, suffix = "%")
@@ -368,10 +364,10 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
       # taxid   species_taxid   organism_name   infraspecific_name  isolate
       # version_status  assembly_rank  release_type    genome_rep  seq_rel_date    asm_name    submitter   gbrs_paired_asm paired_asm_comp ftp_path    excluded_from_refseq
       utils::read.delim(url, comment.char = "#",
-                 colClasses = as.character(colClasses),
-                 col.names = names(colClasses),
-                 fill = TRUE,
-                 header = FALSE
+                        colClasses = as.character(colClasses),
+                        col.names = names(colClasses),
+                        fill = TRUE,
+                        header = FALSE
       )
     }, message = "Downloading and parsing assembly info ... ")
 

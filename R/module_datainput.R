@@ -18,7 +18,11 @@ dataInputModuleUI <- function(id, server_access = FALSE, start_with=getOption("p
         #collapsible = TRUE,
         #collapse = TRUE,
         HTML(
-          "<p>Pavian is a tool for interactive analysis of metagenomics data. You can read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script <tt>centrifuge-kreport</tt> that is distributed with Centrifuge. Further note that you can compare Kraken and Centrifuge results, but not Kraken or Centrifuge with MetaPhlAn results, as the naming and taxonomy is different.
+"
+<h2>Pavian metagenomics data explorer</h2>
+
+<p>
+Pavian is a tool for interactive analysis of metagenomics data. You can read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script <tt>centrifuge-kreport</tt> that is distributed with Centrifuge. Further note that you can compare Kraken and Centrifuge results, but not Kraken or Centrifuge with MetaPhlAn results, as the naming and taxonomy is different.
 </p>
 
 <p>
