@@ -1,5 +1,6 @@
 
 options(warn=2)
+options(repos = c(CRAN = "http://cran.rstudio.com"))
 
 if (!require(Rsamtools)) {
   message("Installing Rsamtools from Bioconductor")
