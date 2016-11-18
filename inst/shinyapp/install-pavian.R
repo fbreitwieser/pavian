@@ -15,8 +15,10 @@ all_packages <- c("devtools", "htmlwidgets", "magrittr", "Rcpp","shiny",
 
 packages_to_install <- all_packages[!all_packages %in% rownames(installed.packages())]
 
-message("Installing ",length(all_packages), " required packages")
-install.packages(packages_to_install)
+if (length(packages_to_install) > 0) {
+  message("Installing ",length(packages_to_install), " required packages")
+  install.packages(packages_to_install)
+}
 
 message("Installing sankeyD3 from https://github.com/fbreitwieser/sankeyD3")
 devtools::install_github("sankeyD3")
