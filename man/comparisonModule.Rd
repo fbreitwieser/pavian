@@ -4,8 +4,8 @@
 \alias{comparisonModule}
 \title{Server part of comparison module}
 \usage{
-comparisonModule(input, output, session, sample_data, reports,
-  datatable_opts = NULL, filter_func = NULL, search = NULL)
+comparisonModule(input, output, session, sample_data, summarized_report,
+  reports, datatable_opts = NULL, filter_func = NULL, search = NULL)
 }
 \arguments{
 \item{input}{Shiny input object.}
@@ -15,6 +15,8 @@ comparisonModule(input, output, session, sample_data, reports,
 \item{session}{Shiny session.}
 
 \item{sample_data}{A \code{data.frame} specifying sample names and file paths (read from a defs.csv file).}
+
+\item{summarized_report}{Summerized report.}
 
 \item{reports}{A list with report \code{data.frame}s.}
 

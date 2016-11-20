@@ -210,7 +210,7 @@ server <- function(input, output, session) {
 
   sample_data <- reactive({
     req(input$sample_set_names)
-    res <- sample_sets()$val[[input$sample_set_names]]
+    res <- isolate(sample_sets()$val)[[input$sample_set_names]]
     req(res)
     res <- res[res$Include, ]
     attr(res, "set_name") <- input$sample_set_names
@@ -238,17 +238,24 @@ server <- function(input, output, session) {
   #  updateTabItems(session, "tabs", "Comparison")
   #})
 
+  summarized_report <- reactive({
+    rep <- reports()
+    req(rep)
+    withProgress(message="Merging samples ...", { merge_reports(rep, c("reads", "reads_stay")) })
+  })
+
   callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = datatable_opts)
-  callModule(comparisonModule, "comparison", sample_data, reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
-  callModule(comparisonModule, "bacteria", sample_data, reports,
-             filter_func = function(x) x[grepl("[dk]_Bacteria", x[["taxonstring"]]) | grepl("[dk]_Archaea", x[["taxonstring"]]), , drop=F],
+  callModule(comparisonModule, "comparison", sample_data, summarized_report,
+             reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
+  callModule(comparisonModule, "bacteria", sample_data, summarized_report, reports,
+             filter_func = function(x) x[grepl("[dk]_Bacteria", x[["Taxonstring"]]) | grepl("[dk]_Archaea", x[["Taxonstring"]]), , drop=F],
              datatable_opts = datatable_opts)
-  callModule(comparisonModule, "viruses", sample_data, reports,
-             filter_func = function(x) x[grep("[dk]_Viruses", x[["taxonstring"]]), , drop=F],
+  callModule(comparisonModule, "viruses", sample_data, summarized_report, reports,
+             filter_func = function(x) x[grep("[dk]_Viruses", x[["Taxonstring"]]), , drop=F],
              datatable_opts = datatable_opts)
-  callModule(comparisonModule, "fungi", sample_data, reports,
+  callModule(comparisonModule, "fungi", sample_data, summarized_report, reports,
              filter_func = function(x)
-               x[grepl("d_Eukaryota", x[["taxonstring"]]) & !grepl("p_Chordata", x[["taxonstring"]]), , drop=F],
+               x[grepl("d_Eukaryota", x[["Taxonstring"]]) & !grepl("p_Chordata", x[["Taxonstring"]]), , drop=F],
              datatable_opts = datatable_opts)
 
   callModule(alignmentModule, "alignment", sample_data, datatable_opts = datatable_opts)

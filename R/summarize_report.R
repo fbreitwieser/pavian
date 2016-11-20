@@ -47,7 +47,15 @@ filter_reports_to_rank <- function(my_reports, classification_rank) {
 }
 
 # numeric_col <- c("reads", "reads_stay")
-get_summarized_report2 <- function(my_reports, numeric_col = "reads_stay") {
+
+#' Merge several
+#'
+#' @param my_reports Report data.frames
+#' @param numeric_col Numeric columns to keep
+#'
+#' @return Combined data.frame
+#' @export
+merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
   ## generate data.frame which has a name column (species name) and a further reads column for each sample
   id_cols_before <- c("name", "rank")
 

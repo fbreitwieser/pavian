@@ -64,8 +64,8 @@ comparisonModuleUI <- function(id) {
                  radioButtons(ns("comparison_type"), label = NULL,
                               choices = c("Comparison table"="table", "Pairwise comparison scatterplot"="scatter"),
                               selected = "table"),
-                 selectizeInput(ns("sample_selector"),label="Samples to show in table", multiple=TRUE, choices=NULL,selected=NULL,
-                                options=list(create = TRUE)),
+                 #selectizeInput(ns("sample_selector"),label="Samples to show in table", multiple=TRUE, choices=NULL,selected=NULL,
+                 #              options=list(create = TRUE)),
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector1"),label="Sample 1", multiple=FALSE, choices=NULL,selected=NULL,
                                                           options=list(create = TRUE)))),
                  column(6, shinyjs::hidden(selectizeInput(ns("sample_selector2"),label="Sample 2", multiple=FALSE, choices=NULL,selected=NULL,
@@ -146,7 +146,7 @@ comparisonModuleUI <- function(id) {
     box(width=12,
     div(id=ns("table_div"),
         DT::dataTableOutput(ns('dt_samples_comparison')),
-        downloadButton(ns('downloadData'), 'Download full table as tsv'),
+        downloadButton(ns('downloadData'), 'Download full table in tab-separated value format'),
         uiOutput(ns("filter_buttons"))
     ),
     shinyjs::hidden(
@@ -175,6 +175,7 @@ stat_name_to_f <- list(
 #' @param output Shiny output object.
 #' @param session Shiny session.
 #' @param sample_data A \code{data.frame} specifying sample names and file paths (read from a defs.csv file).
+#' @param summarized_report Summerized report.
 #' @param reports A list with report \code{data.frame}s.
 #' @param datatable_opts Additional options for creating the datatable.
 #' @param filter_func If not NULL, \code{filter_func} is applied to every data.frame in \code{reports}.
@@ -182,26 +183,23 @@ stat_name_to_f <- list(
 #'
 #' @return Comparison module server functionality
 #' @export
-comparisonModule <- function(input, output, session, sample_data, reports,
+comparisonModule <- function(input, output, session, sample_data, summarized_report, reports,
                              datatable_opts = NULL, filter_func = NULL, search = NULL) {
 
-  #observe({
-  #  updateSelectizeInput(session, "sample_selector",
-  #                       choices=sample_data()[,"Name"], selected=sample_data()[,"Name"])
-  #  })
+  dt_options <- reactiveValues(search = "", order = NULL, colnames = NULL)
 
   observeEvent(input$comparison_type, {
     if (input$comparison_type == "table") {
       shinyjs::hide("sample_selector1")
       shinyjs::hide("sample_selector2")
       shinyjs::hide("scatter_div")
-      shinyjs::show("sample_selector")
+      #shinyjs::show("sample_selector")
       shinyjs::show("table_div")
     } else {
       shinyjs::show("sample_selector1")
       shinyjs::show("sample_selector2")
       shinyjs::show("scatter_div")
-      shinyjs::hide("sample_selector")
+      #shinyjs::hide("sample_selector")
       shinyjs::hide("table_div")
     }
   })
@@ -253,16 +251,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     }
   )
 
-
-
-  ## parse search term from query
-  #query <- parseQueryString(session$clientData$url_search)
-  #ifelse("search" %in% names(query), query['search'], ""))
-  dt_options <- reactiveValues(search = "", order = NULL)
-  #observeEvent(search(), {
-  #  dt_options$search <-search()
-  #})
-
   observeEvent(input$dt_samples_comparison_state, {
     dt_options$order <- input$dt_samples_comparison_state$order
   })
@@ -271,30 +259,18 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     dt_options$search <- input$dt_samples_comparison_search
   })
 
-  selected_reports <- reactive({
-    selected <- unlist(lapply(input$sample_selector,function(s) grep(paste0("^",s,"$"),sample_data()[,"Name"])))
-    #updateSelectizeInput(session, "sample_selector",
-    #                     selected=sample_data()[selected,"Name"])
-    reports()[unique(sort(selected))]
-  })
-
-  get_summarized_report_reads_both <- reactive({
-    req(reports_filtered())
-    get_summarized_report2(reports_filtered(), c("reads", "reads_stay"))
-  })
-
-  reports_filtered <- reactive({
-    req(selected_reports())
-    ## filter reports, if a filter function is given to the module
-    if (!is.null(filter_func)) {
-      lapply(selected_reports(), filter_func)
-    } else {
-      selected_reports()
-    }
-  })
+  #selected_reports <- reactive({
+  #  selected <- unlist(lapply(input$sample_selector,function(s) grep(paste0("^",s,"$"),sample_data()[,"Name"])))
+  #  #updateSelectizeInput(session, "sample_selector",
+  #  #                     selected=sample_data()[selected,"Name"])
+  #  reports()[unique(sort(selected))]
+  #})
 
   get_summarized_report1 <- reactive({
-    withProgress(message="Combining sample reports ...", { get_summarized_report_reads_both() })
+    if (!is.null(filter_func))
+      filter_func(summarized_report())
+    else
+      summarized_report()
   })
 
   and <- function(x) {
@@ -397,8 +373,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
 
       sav_colnames <- attr(summarized_report,sav_col)
-      #summarized_report[!is.na(summarized_report[,sav_colnames]) & summarized_report[,sav_colnames] == 0,sav_colnames] <- NA
-      #sel_rows <- apply(!is.na(summarized_report[,sav_colnames]) & summarized_report[,sav_colnames] > input$minimum_value, 1, any)
       sel_rows <- apply(!is.na(summarized_report[,sav_colnames]), 1, any)
 
       summarized_report <- summarized_report[sel_rows, -attr(summarized_report,rm_col), drop = FALSE]
@@ -458,9 +432,9 @@ comparisonModule <- function(input, output, session, sample_data, reports,
                          choices=sample_data()[,"Name"],
                          selected=sample_data()[ifelse(nrow(sample_data()) > 1, 2,1),"Name"])
 
-    updateSelectizeInput(session, "sample_selector",
-                         choices=sample_data()[,"Name"], selected=sample_data()[,"Name"]
-    )
+    #updateSelectizeInput(session, "sample_selector",
+    #                     choices=sample_data()[,"Name"], selected=sample_data()[,"Name"]
+    #)
   })
 
   output$filter_buttons <- renderUI({
@@ -478,7 +452,8 @@ comparisonModule <- function(input, output, session, sample_data, reports,
       list(targets = attr(summarized_report, 'stat_column') - zero_col, orderSequence = c('desc', 'asc'), width = "80px" ),       ## Stat column
       list(targets = attr(summarized_report, 'data_columns') - zero_col, orderSequence = c('desc', 'asc'), searchable = FALSE ))  ## Data columns shouldn't be searchable
 
-    if (!is.na(attr(summarized_report, 'taxonid_column'))) {
+    if (!is.null(attr(summarized_report, 'taxonid_column')) &&
+        !is.na(attr(summarized_report, 'taxonid_column'))) {
       columnDefs[length(columnDefs) + 1] <-
         list(list(targets = which(colnames(summarized_report) == "Taxonid") - zero_col,
                   render = htmlwidgets::JS("function(data, type, full) {
@@ -500,6 +475,14 @@ comparisonModule <- function(input, output, session, sample_data, reports,
              need(attr(summarized_report, 'data_columns'), message = "data_columns NULL"),
              need(attr(summarized_report, 'stat_column'), message = "stat_columns NULL"))
 
+    if (is.null(isolate(dt_options$colnames)) || !isTRUE(all.equal(isolate(dt_options$colnames),colnames(summarized_report)))) {
+      dt_options$colnames <- colnames(summarized_report)
+      dt_options$order <- NULL
+    }
+
+    if (nrow(summarized_report) == 0)
+      return(summarized_report)
+
     if ("Taxonstring" %in% colnames(summarized_report))
       summarized_report$Taxonstring <- beautify_taxonstring(summarized_report$Taxonstring)
 
@@ -508,11 +491,6 @@ comparisonModule <- function(input, output, session, sample_data, reports,
 
     if (!max(summarized_report[,attr(summarized_report, 'data_columns')], na.rm = TRUE) > 1000) {
       summarized_report[,attr(summarized_report, 'data_columns')] <- signif(summarized_report[,attr(summarized_report, 'data_columns')], digits = 4 )
-    }
-
-    if (is.null(dt_colnames$val) || !all(dt_colnames$val == colnames(summarized_report))) {
-      dt_colnames$val <- colnames(summarized_report)
-      dt_options$order <- NULL
     }
 
     summarized_report
@@ -555,12 +533,8 @@ comparisonModule <- function(input, output, session, sample_data, reports,
     dt
   }
 
-  #datatable_colnames <-
-
-  dt_colnames <- reactiveValues(val = NULL)
-
   output$dt_samples_comparison <- DT::renderDataTable({
-    dt_colnames$val
+    dt_options$colnames
     summarized_report <- isolate(summarized_report_df())
 
     zero_col <- ifelse(show_rownames, 0, 1)
