@@ -573,12 +573,18 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
     dt
   })
 
+  ## Different DT version handle namespaces differently. Make sure it works in all of them.
   dt_proxy <- DT::dataTableProxy(session$ns('dt_samples_comparison'))
+  dt_proxy1 <- DT::dataTableProxy('dt_samples_comparison')
   observe({
     ## replaceData does not work with modules, currently
     ##  see https://github.com/rstudio/DT/issues/359
+    req(summarized_report_df())
     dataTableAjax(session, summarized_report_df(), rownames = FALSE, outputId = 'dt_samples_comparison')
+    dataTableAjax(session, summarized_report_df(), rownames = FALSE,
+                  outputId = session$ns('dt_samples_comparison'))
     reloadData(dt_proxy, resetPaging=TRUE, TRUE)
+    reloadData(dt_proxy1, resetPaging=TRUE, TRUE)
   })
 
   output$row_details_table <- DT::renderDataTable({
@@ -647,9 +653,11 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
 
   observeEvent(input$btn_sc_gointo, {
     req(dt_proxy)
+    req(dt_proxy1)
     req(selected_row())
 
     DT::updateSearch(dt_proxy, list(global=selected_row()[["Name"]]))
+    DT::updateSearch(dt_proxy1, list(global=selected_row()[["Name"]]))
   })
 
 

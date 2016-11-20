@@ -48,10 +48,11 @@ filter_reports_to_rank <- function(my_reports, classification_rank) {
 
 # numeric_col <- c("reads", "reads_stay")
 
-#' Merge several
+#' Merge report files into a wide format, with column(s) for each
+#' report.
 #'
-#' @param my_reports Report data.frames
-#' @param numeric_col Numeric columns to keep
+#' @param my_reports Report data.frames.
+#' @param numeric_col Numeric columns to keep.
 #'
 #' @return Combined data.frame
 #' @export

@@ -281,6 +281,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   observeEvent(input$sankey_hover, {
     req(dt_sample_view_proxy)
     DT::updateSearch(dt_sample_view_proxy, list(global=input$sankey_hover))
+    DT::updateSearch(dt_sample_view_proxy1, list(global=input$sankey_hover))
   })
 
   tbx <- reactive({
@@ -471,7 +472,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
     HTML(paste0(sprintf("%s %s <span style='background-color:%s;'>%s</span>", path, res_name, white_to_red[int], res_reads), collapse = "<br/>\n"))
   })
 
-  dt_sample_view_proxy <- DT::dataTableProxy('dt_sample_view', session = session)
+  dt_sample_view_proxy <- DT::dataTableProxy('dt_sample_view')
+  dt_sample_view_proxy1 <- DT::dataTableProxy(session$ns('dt_sample_view'))
   output$dt_sample_view <- DT::renderDataTable({
     my_report <- sample_view_report()
 
