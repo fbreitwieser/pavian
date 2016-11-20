@@ -47,7 +47,7 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
         from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
         analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
                       br(),br(),
-                      actionButton(ns("example_data"), label = "Load example datasets")
+                      actionButton(ns("btn_load_example_data"), label = "Load example datasets")
              ))
     } else {
       tabBox(width=12,
@@ -60,7 +60,7 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
         from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
         analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
                       br(),br(),
-                      actionButton(ns("example_data"), label = "Load example datasets")
+                      actionButton(ns("btn_load_example_data"), label = "Load example datasets")
              ))
     }
     },
@@ -119,14 +119,17 @@ dataInputModule <- function(input, output, session,
       read_error_msg$val_neg <- paste("No files in directory ", data_dir, ".")
       return()
     }
-    if (length(list.files(data_dir)) > 50) {
-      read_error_msg$val_neg <- paste("There are more than 50 files ", data_dir, " - please subdivide the data into smaller directories.")
+    n_files <- length(list.files(data_dir))
+    max_files <- getOption("pavian.maxFiles", 50)
+    if (n_files > max_files) {
+      read_error_msg$val_neg <- paste("There are ",n_files," in the directory, but the highest allowed number is ",max_files," files ", data_dir, " - please subdivide the data into smaller directories, or set the option 'pavian.maxFiles' to a higher number (e.g. 'options(pavian.maxFiles=250)').")
       return()
     }
 
+    my_sample_sets <- isolate(sample_sets$val)
 
     if (!is.null(sample_set_name)) {
-      old_names <- names(sample_sets$val)
+      old_names <- names(my_sample_sets)
       counter <- 1
 
       while (paste(sample_set_name,counter) %in% old_names) {
@@ -146,8 +149,11 @@ dataInputModule <- function(input, output, session,
     }
 
     dirs <- grep("^\\.", list.dirs(data_dir, recursive = FALSE), invert = TRUE, value = TRUE)
-    if (length(dirs) > 25) {
-      read_error_msg$val_neg <- c(read_error_msg$val_neg, paste("There are more than 25 sub-directories in ", data_dir, " - specify individual directories with reports one at a time to load data."))
+    n_dirs <- length(dirs)
+    max_dirs <- getOption("pavian.maxSubDirs", 25)
+    if (n_dirs > max_dirs) {
+      read_error_msg$val_neg <- c(read_error_msg$val_neg, paste("There are ",n_dirs," sub-directories in ", data_dir,
+                                                                " but the highest allowed number is ",max_dirs,"  - specify individual directories with reports one at a time to load data or set the option 'pavian.maxSubDirs' to a higher number (e.g. 'options(pavian.maxSubDirs=50)')."))
     } else if (length(dirs) > 0) {
       sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
       names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
@@ -175,19 +181,20 @@ dataInputModule <- function(input, output, session,
       return()
 
     validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
-    sample_sets$val <- c(sample_sets$val[!names(sample_sets$val) %in% names(new_sample_sets)], new_sample_sets)
+    sample_sets$val <- c(my_sample_sets[!names(my_sample_sets) %in% names(new_sample_sets)], new_sample_sets)
     sample_sets$selected <- names(new_sample_sets)[1]
   }
 
   output$uploaded_sample_sets <- renderUI({
     req(sample_sets$val)
-    req(sample_sets$selected)
+    req(isolate(sample_sets$selected))
+    message("UI")
     box(width=12, collapsible = TRUE,
         title = "Uploaded sample sets",
         status="primary",
 
         column(6,radioButtons(ns("sample_set_select"), label = NULL,
-                              choices = names(sample_sets$val), selected = sample_sets$selected)),
+                              choices = names(sample_sets$val), selected = isolate(sample_sets$selected))),
         column(6,
                shinyjs::hidden(textInput(ns("txt_rename_sample_set"), label = "New name")),
                actionButton(ns("btn_rename_sample_set"),"Rename selected sample set"),
@@ -199,7 +206,7 @@ dataInputModule <- function(input, output, session,
     )
   })
 
-  observeEvent(input$example_data, {
+  observeEvent(input$btn_load_example_data, {
     withProgress(message = "Reading example directory ...", {
       read_server_directory(system.file("shinyapp", "example-data", package = "pavian"),
                             include_base_dir = FALSE)
@@ -213,11 +220,6 @@ dataInputModule <- function(input, output, session,
     })
   })
 
-  observeEvent(input$btn_load_example_dir, {
-    withProgress(message = "Reading example directory ...", {
-      read_server_directory(system.file("shinyapp", "example-data", package = "pavian"))
-    })
-  })
 
   update_sample_set_hot <- reactive({
     req(input$table)
@@ -332,10 +334,9 @@ dataInputModule <- function(input, output, session,
   #          sum(file.exists(report_files())))
   #})
 
-  return(function() {
-    attr(sample_sets$val, "selected") <- input$sample_set_select
+  return(reactive( {
     sample_sets$selected_set <- input$sample_set_select
     sample_sets
-  })
+  }))
 }
 
