@@ -12,11 +12,8 @@ interactive tables, heatmaps and flow diagrams. Pavian also provides an alignmen
 
 In R / RStudio:
 
-    # source("https://bioconductor.org/biocLite.R")
-    # biocLite("Rsamtools")
-    # install.packages("devtools")
-    
-    devtools::install_github("fbreitwieser/pavian")
+    ## Installs required packages from CRAN and Bioconductor
+    source("https://raw.githubusercontent.com/fbreitwieser/pavian/master/inst/shinyapp/install-pavian.R")
     pavian::runApp(port=5000)
 
 With Docker:
