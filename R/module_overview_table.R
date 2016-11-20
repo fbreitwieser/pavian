@@ -10,10 +10,12 @@ reportOverviewModuleUI <- function(id) {
 
   shiny::tagList(
     HTML("This page shows the summary of the classifications in the selected sample set.
-         The table cells have a barchart that shows the relation of the cell value to other cell values in the same category.
-         The size of bar in the columns for bacterial, viral and fungal reads is relative to the microbial content in that sample."),
+         The table cells have a barchart that shows the relation of the cell value to other cell values in the same category, with the microbiota columns being a separate category from the rest."),
     checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = TRUE),
-    DT::dataTableOutput(ns('dt_samples_overview'))
+    DT::dataTableOutput(ns('dt_samples_overview')),
+    br(),
+    HTML("If the table does not display at first, double-click the checkbox to reload it.")
+
   )
 
 }
@@ -79,16 +81,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
       ## TODO: Define columnDefs and give read counts on mouse-over
     }
 
-    styleColorBar2 = function(data, color, angle=90) {
-      rg = range(data, na.rm = TRUE, finite = TRUE)
-      r1 = rg[1]; r2 = rg[2]; r = r2 - r1
-      htmlwidgets::JS(sprintf(
-        "isNaN(parseFloat(value)) || value <= %s ? '' : 'linear-gradient(%sdeg, transparent ' + (%s - value)/%s * 100 + '%%, %s ' + (%s - value)/%s * 100 + '%%)'",
-        r1, angle, r2, r, color, r2, r
-      ))
-    }
-
-    microbial_col <- start_color_bar_at + 5
+    microbial_col <- 7
 
     if (!max(samples_summary[,2]) > 1000) {
       samples_summary[,seq(from=start_color_bar_at, to=ncol(samples_summary))] <- signif(samples_summary[,seq(from=start_color_bar_at, to=ncol(samples_summary))], 4)
