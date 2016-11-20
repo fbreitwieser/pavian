@@ -76,6 +76,14 @@ zero_if_na <- function(df) {
   return(df)
 }
 
+styleColorBar2 = function(data, color, angle=90) {
+  rg = range(data, na.rm = TRUE, finite = TRUE)
+  r1 = rg[1]; r2 = rg[2]; r = r2 - r1
+  htmlwidgets::JS(sprintf(
+    "isNaN(parseFloat(value)) || value <= %s ? '' : 'linear-gradient(%sdeg, transparent ' + (%s - value)/%s * 100 + '%%, %s ' + (%s - value)/%s * 100 + '%%)'",
+    r1, angle, r2, r, color, r2, r
+  ))
+}
 
 # get directory listing for shinyTree
 get_directory_listing <- function(my_dir) {

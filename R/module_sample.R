@@ -2,8 +2,11 @@ library(shiny)
 library(shinydashboard)
 library(shinyjs)
 
+
+
 ## TODOL Make Sankey work for '-' ranks
 tax_ranks <- c("D","K","P","C","O","F","G","S")
+tax_rank_names <- c("D"="Domain","K"="Kingdom","P"="Phylum","C"="Clade","O"="Order","F"="Family","G"="Genus","S"="Species", "-"="-", "T"="Strain")
 
 #' UI part for sample module
 #'
@@ -29,7 +32,7 @@ sampleModuleUI <- function(id) {
           div(class="col-lg-10 col-md-8 col-sm-12 lessPadding",
               selectizeInput(
                 ns('contaminant_selector'), label = NULL,
-                allcontaminants, selected = c("artificial sequences", "Homo sapiens"),
+                allcontaminants, selected = c("artificial sequences", "Homo sapiens", "unclassified"),
                 multiple = TRUE, options = list(maxItems = 25, create = TRUE, placeholder = 'Filter clade'),
                 width = "100%"
               )
@@ -114,8 +117,6 @@ sampleModule <- function(input, output, session, sample_data, reports,
     for (c in input$contaminant_selector)
       my_report <- filter_taxon(my_report, c)
 
-    my_report <- my_report[my_report$name != "-_root", ]
-
     my_report
   })
 
@@ -125,7 +126,23 @@ sampleModule <- function(input, output, session, sample_data, reports,
   output$sankey_hover_plots <- renderUI({
     req(hover_plots$taxon)
     ns <- session$ns
+    ## Todo: Add rank (species, genus, etc)
+    ## Add link to NCBI and other sides
+    my_report <- sample_view_report()
+    my_report$name <- sub("^._","",my_report$name)
+    sel_row <- my_report[which(my_report$name == hover_plots$taxon)[1], , drop=FALSE]
+    req(sel_row)
+
     shiny::tagList(h3(hover_plots$taxon),
+                   p(HTML(paste0("Taxonomy rank ", strong(tax_rank_names[sel_row$rank]),
+                                 {if ("taxonid" %in% colnames(sel_row)) {
+                                   HTML(paste0(", ID ", sel_row$taxonid, ". Links: ",
+                     a(href=sprintf("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=%s", sel_row$taxonid), "NCBI Taxonomy"), ", ",
+                     a(href=sprintf("https://www.ncbi.nlm.nih.gov/assembly/?term=txid%s[Organism:exp]", sel_row$taxonid), "Assemblies")))
+                                   }},". ",
+                     "Search ",a(href=sprintf("https://www.ncbi.nlm.nih.gov/pubmed/?term=%s", sel_row$name), "PubMed"),", ",
+                     a(href=sprintf("https://www.google.com/#q=%s", sel_row$name), "Google")," or ",
+                     a(href=sprintf("https://scholar.google.at/scholar?q=%s", sel_row$name), " Google Scholar"),"."))),
                    strong(textOutput(ns("header1"))),
                    plotOutput(ns("plot1"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
                    strong(textOutput(ns("header2"))),
@@ -135,14 +152,21 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
 
   output$dynamic_sankey <- renderUI({
+    ns <- session$ns
     div(class="col-lg-8 col-md-12",
         tabBox(width=12,
                tabPanel("Figure",
-                        sankeyD3::sankeyNetworkOutput(session$ns("sankey"), width = "100%",
+                        sankeyD3::sankeyNetworkOutput(ns("sankey"), width = "100%",
                                                       height = paste0(ifelse(is.null(input$height), 500, input$height),"px")),
                         br(),
-                        downloadLink(session$ns("save_sankey"),"Save Network")),
-               tabPanel("Table", div(style = 'overflow-x: scroll', DT::dataTableOutput(session$ns('dt_sample_view'))))
+                        downloadLink(ns("save_sankey"),"Save Network")),
+               tabPanel("Table",
+                        DT::dataTableOutput(ns('dt_sample_view')),
+                        br(),
+                        downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')),
+               tabPanel("Text",
+                        sliderInput(ns("min_reads"),"Minimum number of reads", value = 0, min = 0, max = 100, step = 1),
+                        htmlOutput(ns('text')))
         ))
   })
 
@@ -382,6 +406,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
         NodeGroup = "name",
         NodePosX = "depth",
         NodeValue = "value",
+        dragY = TRUE,
         colourScale = colourScale(),
         xAxisDomain = my_ranks,
         xScalingFactor = input$scalingFactor,
@@ -409,6 +434,41 @@ sampleModule <- function(input, output, session, sample_data, reports,
         scaleNodeBreadthsByString = TRUE,
         zoom = T
       )
+  })
+
+  output$text <- renderUI({
+    my_report <- sample_view_report()
+
+    my_name <- sub("^._","",my_report$name)
+
+    n <- nrow(my_report)
+    res_depth <- c()
+    res_name <- c()
+    res_reads <- c()
+
+    curr_name <- c()
+    for (i in seq(from=n-1, to=1)) {
+      curr_name <- c(my_name[i], curr_name)
+      if (i == 1 ||
+          my_report[i-1, "reads"] != my_report[i, "reads"] ||
+          my_report[i-1, "depth"] != my_report[i, "depth"] - 1) {
+        if (my_report[i, "reads"] >= input$min_reads) {
+        res_name <- c(paste(sprintf("<a href='#' onclick=\"Shiny.onInputChange('%s','%s');\" class='name-link'><nobr>%s</nobr></a>", session$ns("sankey_hover"),curr_name, curr_name), collapse = "<wbr>>"),res_name)
+        res_reads <- c(my_report[i, "reads"], res_reads)
+        res_depth <- c(my_report[i, "depth"], res_depth)
+        }
+        curr_name <- c()
+      }
+    }
+
+    path <- sapply(res_depth, function(x) paste(rep("-",x), collapse = ""))
+    white_to_red <- colorRampPalette(c("white", "red"))( 20 )
+    #brks <- quantile(my_report$reads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
+    brks <- quantile(res_reads, probs = c(0,cumsum(1/2^(1:19))), na.rm =TRUE)
+    int <- findInterval(res_reads, brks)
+
+
+    HTML(paste0(sprintf("%s %s <span style='background-color:%s;'>%s</span>", path, res_name, white_to_red[int], res_reads), collapse = "<br/>\n"))
   })
 
   dt_sample_view_proxy <- DT::dataTableProxy('dt_sample_view', session = session)
@@ -446,9 +506,18 @@ sampleModule <- function(input, output, session, sample_data, reports,
       dt <- dt %>% DT::formatCurrency(c("Reads", "Reads stay"), digits = 0, currency = "")
     }
 
-    dt
+    dt %>% DT::formatStyle(c("Reads","Reads stay"),
+      background = styleColorBar2(c(0,my_report$Reads,na.rm=T), 'lightblue'))
 
   }, server = TRUE)
+
+  output$downloadData <- downloadHandler(
+    filename = function() { sprintf("%s-report-%s.tsv", input$sample_selector, format(Sys.time(), "%y%m%d")) },
+    content = function(file) {
+      write.table(beautify_colnames(sample_view_report()), file, row.names = FALSE, sep = "\t")
+    }
+  )
+
 
   ## When a row (i.e. a taxonomical entry) gets selected in the sample view table, an action button appears to view the species in the overview
   output$view_in_samples_comparison <- renderUI({
