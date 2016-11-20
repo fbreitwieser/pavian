@@ -33,8 +33,9 @@ drawCallback = htmlwidgets::JS(
   "function (oSettings, json) {
         $('td.dt-right').each(function(i) {
           var color = $(this).css('background-color');
-          $(this).attr('style', 'text-align: center; background-color: '+color+'!important;' );  })
-
+          if (color != 'rgba(0, 0, 0, 0)') {
+            $(this).attr('style', 'text-align: center; background-color: '+color+'!important;' );
+          }})
         $('.spark:not(:has(canvas))').sparkline('html', {
           type: 'bar',
           highlightColor: 'orange',
