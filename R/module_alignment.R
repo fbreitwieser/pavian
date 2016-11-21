@@ -239,7 +239,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
       DT::formatCurrency(2, currency = '', digits = 0 ) %>%
       DT::formatString(3, suffix = "x") %>%
       DT::formatString(7, suffix = "%")
-  })
+  }, server = FALSE)
 
   #plot_pileup_act <- eventReactive(input$btn_get_alignment, {
   plot_pileup_act <- reactive ({
