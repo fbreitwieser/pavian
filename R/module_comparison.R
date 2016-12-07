@@ -371,9 +371,8 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
       sav_attr[[rm_col]] <- NULL
       sav_attr[["names"]] <- sav_attr[["names"]][-attr(summarized_report,rm_col)]
 
-
       sav_colnames <- attr(summarized_report,sav_col)
-      sel_rows <- apply(!is.na(summarized_report[,sav_colnames]), 1, any)
+      sel_rows <- apply(!is.na(summarized_report[,sav_colnames, drop = FALSE]), 1, any)
 
       summarized_report <- summarized_report[sel_rows, -attr(summarized_report,rm_col), drop = FALSE]
 
