@@ -3,13 +3,22 @@
 #' @param report_files character vector with files
 #' @param report_names character vector with names
 #' @param cache_dir cache directory path
+#' @param with_progress Show Shiny progress bar - if FALSE the function can also be used outside of a Shiny session
 #'
 #' @return List of reports
 #' @export
-read_reports <- function(report_files, report_names, cache_dir = NULL) {
+read_reports <- function(report_files, report_names = basename(report_files), cache_dir = NULL,
+                         with_progress = TRUE) {
   if (length(report_files) == 0) {
     return()
   }
+
+  if (!with_progress) {
+    withProgress <- function(expr, ...) { eval(substitute(expr)); }
+    setProgress <- function(...) {}
+  }
+
+  message("Reading reports ...")
   n_reports <- length(report_files)
   my_reports <-
     withProgress(

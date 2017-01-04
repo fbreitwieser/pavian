@@ -4,7 +4,8 @@
 \alias{read_reports}
 \title{Read report files, with Shiny progress bar}
 \usage{
-read_reports(report_files, report_names, cache_dir = NULL)
+read_reports(report_files, report_names = basename(report_files),
+  cache_dir = NULL, with_progress = TRUE)
 }
 \arguments{
 \item{report_files}{character vector with files}
@@ -12,6 +13,8 @@ read_reports(report_files, report_names, cache_dir = NULL)
 \item{report_names}{character vector with names}
 
 \item{cache_dir}{cache directory path}
+
+\item{with_progress}{Show Shiny progress bar - if FALSE the function can also be used outside of a Shiny session}
 }
 \value{
 List of reports

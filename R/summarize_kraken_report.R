@@ -15,6 +15,11 @@ zero_if_na1 <- function(x) {
   x
 }
 
+protist_taxids <- c("-_Diplomonadida"=5738,
+                    "-_Amoebozoa"=554915,
+                    "-_Alveolata"=33630)
+
+
 
 #' Summarize the result of a metagenomics report
 #'
@@ -49,7 +54,8 @@ summarize_report <- function(my_report) {
     microbial_reads=identified_reads-mammal_reads-artificial_reads,
     bacterial_reads=zero_if_na1(my_report["d_Bacteria","reads"]) + zero_if_na1(my_report["k_Bacteria","reads"]), ## MetaPhLan reports bacteria as kingdom; Kraken as domain. Sum them
     viral_reads=zero_if_na1(my_report["d_Viruses","reads"]) + zero_if_na1(my_report["k_Viruses","reads"]), ## same as for Bacteria
-    fungal_reads=zero_if_na1(my_report["k_Fungi","reads"])
+    fungal_reads=zero_if_na1(my_report["k_Fungi","reads"]),
+    protozoan_reads=sum(zero_if_na1(my_report[names(protist_taxids),"reads"]))
     #s_cerevisia_reads=s_cerevisiae_reads,
     #eupath_reads=eupath_reads,
     #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],

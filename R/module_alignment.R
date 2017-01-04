@@ -58,7 +58,9 @@ To generate a BAM file, download a genome of interest, and align to it with an a
         DT::dataTableOutput(ns("table")),
         br(),
         shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
-        shiny::plotOutput(ns("plot_brush"), height = "200px")
+        shiny::plotOutput(ns("plot_brush"), height = "200px"),
+        downloadLink(ns("pdf"), "PDF"),
+        downloadLink(ns("pdf_brush"), "PDF")
       ),
       tabPanel(
         title = "Download genomes for alignment",
@@ -180,6 +182,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
 
   seqinfo_df <- reactive({
     req(my_bam_file$val)
+
     covered_bp <- attr(pileup(),"covered_bp")
     covered_bp[setdiff(names(seq_lengths()),names(covered_bp))] <- 0
     sum_count <- attr(pileup(),"sum_count")
@@ -193,6 +196,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
                  n_reads=nreads(),
                  avg_mapq=signif(avg_mapq(),3))
 
+    print(head(seq_info_df))
 
     seq_info_df$perc_covered = 100*signif(seq_info_df$covered_bp / seq_info_df$genome_size,3)
     seq_info_df[order(-seq_info_df$n_reads,-seq_info_df$perc_covered), , drop=F]
@@ -222,7 +226,8 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
 
 
   output$table <- DT::renderDataTable({
-    req(my_bam_file$val)
+    req(seqinfo_df())
+
     datatable(seqinfo_df(), selection = 'single',
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
@@ -232,7 +237,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
               extensions = datatable_opts$extensions,
               class=datatable_opts$class,
               options=list(
-                buttons = common_buttons(sub(".bam$","",basename(my_bam_file$val), ignore.case = T),"alignment-summary"),
+                buttons = common_buttons(sub(".bam$","",basename(isolate(my_bam_file$val)), ignore.case = T),"alignment-summary"),
                 columnDefs=list(
                   list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
                   )))) %>%
@@ -245,6 +250,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
   plot_pileup_act <- reactive ({
     req_bioc("Rsamtools")
     req(input$table_rows_selected)
+    req(pileup())
     selected_row <- seqinfo_df()[input$table_rows_selected, , drop=FALSE]
     pileup_res <- pileup() %>% dplyr::filter(seqnames %in% selected_row$seqnames)
     plot_pileup(pileup_res,
@@ -308,6 +314,10 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
     plot_pileup_act()
   }, res = 72)
 
+  output$pdf <- downloadHandler(filename=function() { "bla.pdf" },
+                                content=function(file) { ggsave(file, plot_pileup_act(), "pdf",
+                                                                height = 2.5, units = "in") } )
+
   ranges <- reactiveValues(x = NULL)
 
   observe({
@@ -320,15 +330,21 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
   })
 
   output$plot_brush <- shiny::renderPlot({
+    req(input$table_rows_selected)
+    req(ranges$x)
     #xlim <- ranges$x
-    #xlim[1] <- max(0,xlim[1])
-    #xlim[2] <- min(seqinfo_df_brush()$genome_size,xlim[2])
+    #xlim[1] <- max(0,ceiling(xlim[1]))
+    #xlim[2] <- min(seqinfo_df_brush()$genome_size,floor(xlim[2]))
     selected_row <- seqinfo_df_brush()[input$table_rows_selected, , drop=FALSE]
 
-    plot_pileup(pileup_brush(), selected_row,
-                text_size = 4
-    ) #+ coord_cartesian(xlim = xlim)
+    plot_pileup(pileup_brush(), selected_row, text_size = 4)
   }, res=72)
+
+  output$pdf_brush <- downloadHandler(filename=function() { "bla.pdf" },
+                                content=function(file) { ggsave(file,
+                                                                plot_pileup(pileup_brush(), seqinfo_df_brush()[input$table_rows_selected, , drop=FALSE],
+                                                                            text_size = 4), "pdf",
+                                                                height = 2.5, units = "in") } )
 
   assembly_info <- eventReactive(input$btn_load_assembly_info, {
     url <- input$cbo_assemblies

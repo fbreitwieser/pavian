@@ -7,6 +7,10 @@ library(shinyjs)
 library(DT)
 library(shinyBS)
 
+protist_taxids <- c("-_Diplomonadida"=5738,
+                    "-_Amoebozoa"=554915,
+                    "-_Alveolata"=33630)
+
 options(shiny.maxRequestSize=50*1024^2)
 cache_dir <- tempdir()
 
@@ -90,16 +94,19 @@ setInterval(function(){
     ),
     tabItems(
       tabItem("Home",
-              dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", FALSE))
+              dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", TRUE))
       ),
       tabItem("Overview",
               reportOverviewModuleUI("overview"),
               uiOutput("view_in_sample_viewer") ### <<<<<< TODO
       ),
+      tabItem("Alldata", comparisonModuleUI("alldata")),
       tabItem("Comparison", comparisonModuleUI("comparison")),
       tabItem("Bacteria", comparisonModuleUI("bacteria")),
       tabItem("Viruses", comparisonModuleUI("viruses")),
-      tabItem("Eukaryotes", comparisonModuleUI("fungi")),
+      tabItem("Eukaryotes", comparisonModuleUI("eukaryotes")),
+      tabItem("Fungi", comparisonModuleUI("fungi")),
+      tabItem("Protists", comparisonModuleUI("protists")),
       tabItem("Sample", sampleModuleUI("sample")),
       tabItem("Alignment", alignmentModuleUI("alignment")),
       tabItem(
@@ -126,6 +133,7 @@ setInterval(function(){
 )
 
 server <- function(input, output, session) {
+  #query <- parseQueryString(session$clientData$url_search)
 
   datatable_opts <- reactiveValues(rownames = FALSE,
                                    selection = 'single',
@@ -154,10 +162,13 @@ server <- function(input, output, session) {
     req(input$sample_set_names)
     shiny::tagList(
     menuItem("Comparison", icon = icon("line-chart"),
+             tabName = "Alldata",
              menuSubItem("All data", tabName="Comparison"),
-             menuSubItem("Bacteria", tabName="Bacteria"),
+             menuSubItem("Bacteria and Archaea", tabName="Bacteria"),
+             menuSubItem("Viruses", tabName="Viruses"),
              menuSubItem("Eukaryotes", tabName="Eukaryotes"),
-             menuSubItem("Viruses", tabName="Viruses")
+             menuSubItem("Eukaryotes/Fungi", tabName="Fungi"),
+             menuSubItem("Eukaryotes/Protists", tabName="Protists")
     )
     )
   })
@@ -245,6 +256,8 @@ server <- function(input, output, session) {
   })
 
   callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = datatable_opts)
+  callModule(comparisonModule, "Alldata", sample_data, summarized_report,
+             reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
   callModule(comparisonModule, "comparison", sample_data, summarized_report,
              reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
   callModule(comparisonModule, "bacteria", sample_data, summarized_report, reports,
@@ -253,9 +266,21 @@ server <- function(input, output, session) {
   callModule(comparisonModule, "viruses", sample_data, summarized_report, reports,
              filter_func = function(x) x[grep("[dk]_Viruses", x[["Taxonstring"]]), , drop=F],
              datatable_opts = datatable_opts)
+  callModule(comparisonModule, "eukaryotes", sample_data, summarized_report, reports,
+             filter_func = function(x) x[grepl("d_Eukaryota", x[["Taxonstring"]]), , drop=F],
+             datatable_opts = datatable_opts)
   callModule(comparisonModule, "fungi", sample_data, summarized_report, reports,
-             filter_func = function(x)
-               x[grepl("d_Eukaryota", x[["Taxonstring"]]) & !grepl("p_Chordata", x[["Taxonstring"]]), , drop=F],
+             filter_func = function(x) x[grepl("k_Fungi", x[["Taxonstring"]]), , drop=F],
+             datatable_opts = datatable_opts)
+
+  protist_taxids <- c("-_Diplomonadida"=5738,
+                      "-_Amoebozoa"=554915,
+                      "-_Alveolata"=33630)
+
+  callModule(comparisonModule, "protists", sample_data, summarized_report, reports,
+             filter_func = function(x) x[grepl("-_Diplomonadida", x[["Taxonstring"]]) |
+                                           grepl("-_Amoebozoa", x[["Taxonstring"]]) |
+                                           grepl("-_Alveolata", x[["Taxonstring"]]) , , drop=F],
              datatable_opts = datatable_opts)
 
   callModule(alignmentModule, "alignment", sample_data, datatable_opts = datatable_opts)

@@ -1,39 +1,39 @@
 
-normalize_data_cols <- function(summarized_report, normalize_col = "reads_stay_columns") {
-  data_columns <- attr(summarized_report, "data_columns")
-  normalize_columns <- attr(summarized_report, normalize_col)
+normalize_data_cols <- function(merged_reports, normalize_col = "reads_stay_columns") {
+  data_columns <- attr(merged_reports, "data_columns")
+  normalize_columns <- attr(merged_reports, normalize_col)
 
   validate(need(data_columns, message="data_columns is NULL"),
            need(normalize_columns, message=paste(normalize_col,"is NULL")))
 
-  sum_reads <- colSums(summarized_report[, normalize_columns, drop=F], na.rm = T)
+  sum_reads <- colSums(merged_reports[, normalize_columns, drop=F], na.rm = T)
   sum_reads <- rep(sum_reads, each = length(data_columns) / length(normalize_columns))
 
-  summarized_report[, data_columns] <- 100*scale(summarized_report[, data_columns],
+  merged_reports[, data_columns] <- 100*scale(merged_reports[, data_columns],
                                                  center = rep(0, length(sum_reads)),
                                                  scale = sum_reads)
 
-  summarized_report
+  merged_reports
 }
 
-log_data_cols <- function(summarized_report) {
-  data_columns <- attr(summarized_report, "data_columns")
-  summarized_report[, data_columns] <- log10(summarized_report[, data_columns, drop=F] + 1)
+log_data_cols <- function(merged_reports) {
+  data_columns <- attr(merged_reports, "data_columns")
+  merged_reports[, data_columns] <- log10(merged_reports[, data_columns, drop=F] + 1)
 
-  summarized_report
+  merged_reports
 }
 
-calc_robust_zscore <- function(summarized_report, min_scale = 1) {
-  data_columns <- attr(summarized_report, "data_columns")
+calc_robust_zscore <- function(merged_reports, min_scale = 1) {
+  data_columns <- attr(merged_reports, "data_columns")
   stopifnot(!is.null(data_columns))
 
-  dp2 <- summarized_report[, data_columns, drop=F]
+  dp2 <- merged_reports[, data_columns, drop=F]
   dp2[is.na(dp2)] <- 0
-  summarized_report[, data_columns] <- t(scale(t(summarized_report[, data_columns, drop=F]),
+  merged_reports[, data_columns] <- t(scale(t(merged_reports[, data_columns, drop=F]),
                                            center = apply(dp2,1,median),
                                            scale  = pmax(apply(dp2,1,stats::mad), min_scale)))
 
-  summarized_report
+  merged_reports
 }
 
 filter_reports_to_rank <- function(my_reports, classification_rank) {
@@ -46,7 +46,9 @@ filter_reports_to_rank <- function(my_reports, classification_rank) {
   })
 }
 
-# numeric_col <- c("reads", "reads_stay")
+
+
+
 
 #' Merge report files into a wide format, with column(s) for each
 #' report.
@@ -94,43 +96,50 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
   idx_of_numeric_col_merged <- seq(from = length(id_cols) + 1, length.out = length(my_reports)*length(numeric_col))
 
   ## merge all the data.frames in the my_reports list, and add additional info (sparkline and mean)
-  summarized_report <-
+  merged_reports <-
     Reduce(function(x, y)
       merge(x, y, all = TRUE, by = id_cols), my_reports)
 
-  summarized_report <- cbind(
-        beautify_colnames(summarized_report[, id_cols_before, drop = FALSE]),
-        OVERVIEW = rep(NA, nrow(summarized_report)),
-        STAT = rep(NA, nrow(summarized_report)),  ## Placeholder
-        summarized_report[, idx_of_numeric_col_merged, drop = FALSE],
-        beautify_colnames(summarized_report[, id_cols_after, drop = FALSE])
+  merged_reports <- cbind(
+        beautify_colnames(merged_reports[, id_cols_before, drop = FALSE]),
+        OVERVIEW = rep(NA, nrow(merged_reports)),
+        STAT = rep(NA, nrow(merged_reports)),  ## Placeholder
+        merged_reports[, idx_of_numeric_col_merged, drop = FALSE],
+        beautify_colnames(merged_reports[, id_cols_after, drop = FALSE])
       )
 
 
 
   ## make a link to NCBI genome browser in the taxonID column
-  if (!"Taxonid" %in% colnames(summarized_report)) {
+  if (!"Taxonid" %in% colnames(merged_reports)) {
     taxonid_column <- NA
   } else {
-    taxonid_column <- which(colnames(summarized_report) == "Taxonid")
+    taxonid_column <- which(colnames(merged_reports) == "Taxonid")
     stopifnot(length(taxonid_column) == 1)
-    summarized_report[, taxonid_column] <- sub("^  *", "", summarized_report[, taxonid_column])
+    merged_reports[, taxonid_column] <- sub("^  *", "", merged_reports[, taxonid_column])
   }
   ## remove s_, g_, etc
-  summarized_report[, 1] <- sub("^[a-z-]_", "", summarized_report[, 1])
+  merged_reports[, 1] <- sub("^[a-z-]_", "", merged_reports[, 1])
 
   for (col in numeric_col) {
-    attr(summarized_report, paste0(col,"_columns")) <-
+    attr(merged_reports, paste0(col,"_columns")) <-
       seq(from = length(id_cols) + which(numeric_col == col),
           length.out = length(my_reports), by = length(numeric_col)) + 1
   }
 
 
-  attr(summarized_report, "data_column_start") <- length(id_cols) + 2
-  attr(summarized_report, "data_columns") <- idx_of_numeric_col_merged + 1
-  attr(summarized_report, "stat_column") <- which(colnames(summarized_report) == "STAT")
-  attr(summarized_report, "taxonid_column") <- taxonid_column
+  attr(merged_reports, "data_column_start") <- length(id_cols) + 2
+  attr(merged_reports, "data_columns") <- idx_of_numeric_col_merged + 1
+  attr(merged_reports, "stat_column") <- which(colnames(merged_reports) == "STAT")
+  attr(merged_reports, "taxonid_column") <- taxonid_column
 
-  summarized_report
+  class(merged_reports) <- append(class(merged_reports),"merged_reports")
+
+  merged_reports
 }
+
+assayData <- function(x, ...) UseMethod("assayData", x)
+assayData.merged_reports <- function(x)
+  list("reads"=x[, attr(x, "reads_columns")],
+       "reads_stay"=x[, attr(x, "reads_stay_columns")])
 

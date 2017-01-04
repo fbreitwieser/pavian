@@ -133,7 +133,9 @@ sampleModule <- function(input, output, session, sample_data, reports,
     sel_row <- my_report[which(my_report$name == hover_plots$taxon)[1], , drop=FALSE]
     req(sel_row)
 
-    shiny::tagList(h3(hover_plots$taxon),
+    shiny::tagList(br(),
+                   HTML(sub("\\(.*\\)>.*","\\1", beautify_taxonstring(sel_row$taxonstring))),
+                   h3(hover_plots$taxon, style='margin-top: 0;'),
                    p(HTML(paste0("Taxonomy rank ", strong(tax_rank_names[sel_row$rank]),
                                  {if ("taxonid" %in% colnames(sel_row)) {
                                    HTML(paste0(", ID ", sel_row$taxonid, ". Links: ",
@@ -143,9 +145,9 @@ sampleModule <- function(input, output, session, sample_data, reports,
                      "Search ",a(href=sprintf("https://www.ncbi.nlm.nih.gov/pubmed/?term=%s", sel_row$name), "PubMed"),", ",
                      a(href=sprintf("https://www.google.com/#q=%s", sel_row$name), "Google")," or ",
                      a(href=sprintf("https://scholar.google.at/scholar?q=%s", sel_row$name), " Google Scholar"),"."))),
-                   strong(textOutput(ns("header1"))),
+                   strong(textOutput(ns("header1"))),downloadLink(ns("save_plot1"),"PDF"),
                    plotOutput(ns("plot1"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
-                   strong(textOutput(ns("header2"))),
+                   strong(textOutput(ns("header2"))),downloadLink(ns("save_plot2"),"PDF"),
                    plotOutput(ns("plot2"), height=paste0(input$height/2-75,"px"), click = ns("plot_click")),
                    conditionalPanel("typeof input.sankey_hover != 'undefined'", actionLink(ns("show_in_comparison"),"Show in comparison table"))
     )
@@ -165,7 +167,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
                         br(),
                         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')),
                tabPanel("Text",
-                        sliderInput(ns("min_reads"),"Minimum number of reads", value = 0, min = 0, max = 100, step = 1),
+                        sliderInput(ns("quantile"),"Amount of data to show", value = 100, min = 1, max = 100, step = 1),
                         htmlOutput(ns('text')))
         ))
   })
@@ -245,6 +247,17 @@ sampleModule <- function(input, output, session, sample_data, reports,
     #paste("Number of reads for ", hover_plots$taxon, "across all samples")
     paste("Number of reads across all samples")
   })
+
+  output$save_plot1 <- downloadHandler(
+    filename = function() {
+      paste("plot1-", Sys.Date(), ".pdf", sep="")
+    },
+    content = function(file) {
+      ggsave(file, plot_it(FALSE) +
+               geom_text(aes(label = f2si2(pos), y=pos), hjust = 0.5, vjust = -.1))
+    }
+  )
+
   output$plot1 <- renderPlot({
     plot_it(FALSE) +
       geom_text(aes(label = f2si2(pos), y=pos), hjust = 0.5, vjust = -.1)
@@ -255,10 +268,22 @@ sampleModule <- function(input, output, session, sample_data, reports,
     #paste0("Percent of reads for ", hover_plots$taxon, " (excluding filtered clades)")
     paste0("Percent of reads (excluding filtered clades)")
   })
+
+  output$save_plot2 <- downloadHandler(
+    filename = function() {
+      paste("plot2-", Sys.Date(), ".pdf", sep="")
+    },
+    content = function(file) {
+      ggsave(file, plot_it(TRUE) +
+               geom_text(aes(label = f2si2(pos), y=pos),  hjust = 0.5, vjust = -.1))
+    }
+  )
+
   output$plot2 <- renderPlot({
     plot_it(TRUE) +
       geom_text(aes(label = f2si2(pos), y=pos),  hjust = 0.5, vjust = -.1)
   },  bg="transparent")
+
 
 
   observeEvent(input$plot_click, {
@@ -326,8 +351,13 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
 
   output$save_sankey <- downloadHandler(filename = function() { paste0("sankey-",input$sample_selector,".html") },
-                                        content = function(con) { sankey_network() %>%
-                                            htmlwidgets::saveWidget(file=con) })
+                                        content = function(con) {
+                                          a <- sankey_network()
+                                          a$sizingPolicy$defaultHeight <- 1080
+                                          a$sizingPolicy$defaultWidth <- 1920
+                                          #print(a$sizingPolizy)
+                                          htmlwidgets::saveWidget(a, file=con)
+                                          })
 
 
   sankey_network <- reactive({
@@ -439,37 +469,21 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   output$text <- renderUI({
     my_report <- sample_view_report()
-
-    my_name <- sub("^._","",my_report$name)
-
-    n <- nrow(my_report)
-    res_depth <- c()
-    res_name <- c()
-    res_reads <- c()
-
-    curr_name <- c()
-    for (i in seq(from=n-1, to=1)) {
-      curr_name <- c(my_name[i], curr_name)
-      if (i == 1 ||
-          my_report[i-1, "reads"] != my_report[i, "reads"] ||
-          my_report[i-1, "depth"] != my_report[i, "depth"] - 1) {
-        if (my_report[i, "reads"] >= input$min_reads) {
-        res_name <- c(paste(sprintf("<a href='#' onclick=\"Shiny.onInputChange('%s','%s');\" class='name-link'><nobr>%s</nobr></a>", session$ns("sankey_hover"),curr_name, curr_name), collapse = "<wbr>>"),res_name)
-        res_reads <- c(my_report[i, "reads"], res_reads)
-        res_depth <- c(my_report[i, "depth"], res_depth)
-        }
-        curr_name <- c()
-      }
+    name_format <- function(node_name) {
+      paste(sprintf("<a href='#' onclick=\"Shiny.onInputChange('%s','%s');\" class='name-link'><nobr>%s</nobr></a>",
+                    session$ns("sankey_hover"),node_name, node_name), collapse = "<wbr>>")
     }
 
-    path <- sapply(res_depth, function(x) paste(rep("-",x), collapse = ""))
-    white_to_red <- colorRampPalette(c("white", "red"))( 20 )
-    #brks <- quantile(my_report$reads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
-    brks <- quantile(res_reads, probs = c(0,cumsum(1/2^(1:19))), na.rm =TRUE)
-    int <- findInterval(res_reads, brks)
+#    HTML(
+    div(style="line-height: 1;",
+    text_representation(my_report,
+                        name_format = name_format,
+                        reads_format = function(x, color) sprintf("<span style='background-color:%s;'>%s</span>", color, x),
+                        min_reads = quantile(my_report$reads[my_report$reads_stay > 0], probs=1-input$quantile/100), collapse = "<br/>\n")
+    )
+#    )
 
 
-    HTML(paste0(sprintf("%s %s <span style='background-color:%s;'>%s</span>", path, res_name, white_to_red[int], res_reads), collapse = "<br/>\n"))
   })
 
   dt_sample_view_proxy <- DT::dataTableProxy('dt_sample_view')

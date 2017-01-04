@@ -39,6 +39,10 @@ button.dt-button:hover, div.dt-button:hover, a.dt-button:hover {
 
 /* custom styles */
 
+.name-link {
+  white-space: nowrap;
+}
+
 .underlineOnHover:hover {
   text-decoration: underline !important;
 }

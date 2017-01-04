@@ -50,6 +50,76 @@ beautify_taxonstring <- function(x) {
     gsub("-","&#x2011;", .)
 }
 
+text_representation <- function(my_report,
+                                name_format=function(x) paste(x, collapse=">"),
+                                reads_format=function(x, y) x,
+                                min_reads = 0,
+                                collapse="\n") {
+
+  my_name <- sub("^._","",my_report$name)
+  n <- nrow(my_report)
+  res_depth <- c(); res_name <- c(); res_reads <- c(); res_plus <- c();
+
+  has_plus = FALSE
+
+  curr_name <- c()
+  for (i in seq(from=n-1, to=1)) {
+    curr_name <- c(my_name[i], curr_name)
+    if (i == 1 ||
+        my_report[i-1, "reads"] != my_report[i, "reads"] ||
+        my_report[i-1, "depth"] != my_report[i, "depth"] - 1) {
+      if (my_report[i, "reads"] >= min_reads) {
+        res_name <- c(name_format(curr_name),res_name)
+        res_reads <- c(my_report[i, "reads"], res_reads)
+        res_depth <- c(my_report[i, "depth"], res_depth)
+        res_plus <- c(ifelse(has_plus, "+", ""), res_plus)
+        has_plus <- FALSE
+      } else {
+        has_plus <- TRUE
+      }
+      curr_name <- c()
+    }
+  }
+
+  nn <- length(res_depth)
+  if (nn < 1) {
+      return();
+  }
+
+  space   <- "&nbsp;&nbsp;"
+  vline   <- "│&nbsp;"
+  cornerc <- "├&nbsp;"
+  corner  <- "╰&nbsp;"
+
+  space   <- "&nbsp;"
+  vline   <- "│"
+  cornerc <- "├"
+  corner  <- "╰"
+
+
+  res_path <- as.list(rep(NA, nn))
+  res_path[[nn]] <- c(rep(space, res_depth[nn]), corner)
+  for (i in seq(from=nn-1, to=1)) {
+    my_path <- rep(space, res_depth[i])
+    old_path <- res_path[[i+1]]
+    old_path[length(old_path)] <- vline
+    sel <- seq(from=1, to=min(length(old_path), length(my_path)))
+    my_path[sel] <- old_path[sel]
+    res_path[[i]] <- c(my_path,
+                       ifelse(length(old_path) >= (length(my_path) + 1) && 
+                              old_path[length(my_path) + 1] == vline, cornerc, corner))
+  }
+  #path <- sapply(res_depth, function(x) paste(rep(" ",x-1), collapse = ""))
+  path <- sapply(res_path, function(x) { paste(x,collapse = ""); } )
+  white_to_red <- colorRampPalette(c("white", "red"))( 20 )
+  #brks <- quantile(my_report$reads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
+  brks <- quantile(res_reads, probs = c(0,cumsum(1/2^(1:19))), na.rm =TRUE)
+  int <- findInterval(res_reads, brks)
+
+
+  HTML(paste0(sprintf("<span style='font-family: monospace;'>%s</span>%s%s %s", path, res_name, res_plus, reads_format(res_reads, white_to_red[int])), collapse = collapse))
+}
+
 
 #' Beautify colnames
 #'

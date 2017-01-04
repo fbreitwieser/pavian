@@ -9,7 +9,9 @@
 #' @import shiny
 #' @import shinydashboard
 #' @import rhandsontable
-dataInputModuleUI <- function(id, server_access = FALSE, start_with=getOption("pavian.start_data_input_with","Example data")) {
+dataInputModuleUI <- function(id,
+                              server_access = TRUE,
+                              start_with=getOption("pavian.start_data_input_with","Example data")) {
 
   ns <- NS(id)
 

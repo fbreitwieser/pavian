@@ -349,6 +349,11 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
 #'
 read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
+  #myfile <- file(myfile)
+  #file_class <- summary(myfile)$class
+  #if (file_class == "gzfile")
+  #  myfile <- gzcon(myfile)
+
   first.line <- tryCatch( readLines(myfile,n=1, warn=FALSE),
                           error = function(e) { warning("Error reading ",myfile); return() })
   isASCII <-  function(txt) {
@@ -480,6 +485,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report$kmerpercentage <- round(report$n_unique_kmers/sum(report$n_unique_kmers,na.rm=T),6) * 100
   #report$rankperc <- 100/rank(report$reads)
 
+  #report$depth <- NULL
 
   if ("taxonid" %in% colnames(report)) {
     std_colnames <- c("percentage","reads","reads_stay","rank", "taxonid","name")

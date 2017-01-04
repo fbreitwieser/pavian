@@ -4,7 +4,7 @@
 \alias{dataInputModuleUI}
 \title{UI part of pavian data input module}
 \usage{
-dataInputModuleUI(id, server_access = FALSE,
+dataInputModuleUI(id, server_access = TRUE,
   start_with = getOption("pavian.start_data_input_with", "Example data"))
 }
 \arguments{
