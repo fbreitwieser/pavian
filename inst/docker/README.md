@@ -1,38 +1,26 @@
-Pavian Docker image
-=======================
+# Pavian - Interactive analysis of metagenomics data
 
-This is the [Pavian](https://github.com/fbreitwieser/pavian)
+Pavian is a web application for exploring metagenomics classification results, with a special focus on infectious disease diagnosis. Pinpointing pathogens in metagenomics classification results is often complicated by host and laboratory contaminants as well as many non-pathogenic microbiota. With Pavian, researchers can analyze, display and transform results from the Kraken and Centrifuge classifiers using interactive tables, heatmaps and flow diagrams. Pavian also provides an alignment viewer for validation of matches to a particular genome.
 
-This Dockerfile is based on Debian "testing" and r-base image.
+Source code and up-to-date documentation are available at https://github.com/fbreitwieser/pavian.
 
-The image is available from [Docker Hub](https://registry.hub.docker.com/u/fbreitwieser/pavian/).
+**Preprint now available at http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html**.
 
-## Usage:
+![image](https://cloud.githubusercontent.com/assets/516060/20188595/5c8b9808-a747-11e6-9235-296a2314659a.png)
 
-To run this Shiny App on your computer:
 
-```sh
-docker run --rm -p 80:80 fbreitwieser/pavian
-```
+## Installing and running Pavian
 
-and it will avaliable at http://127.0.0.1/ ou http://localhost
+In R / RStudio:
 
-You can run the container at other ports. Sometimes there is already some services running at PORT 80, as Apache ou Nginx.
-To run the app at PORT 3838 for example, you can use:
+    source("https://raw.githubusercontent.com/fbreitwieser/pavian/master/inst/shinyapp/install-pavian.R")
+    pavian::runApp(port=5000)
 
-```sh
-docker run --rm -p 3838:80 fbreitwieser/pavian
-```
+With Docker:
 
-## Intented usage:
+    docker run --rm -p 5000:80 florianbw/pavian
 
-This project can be used as a start point to build any dockerized shiny app that could be distributed at any server running docker.
-Possible use cases are:
+In both cases Pavian will be available at http://127.0.0.1:5000 .
 
-* Deploy a single Shiny App at AWS, Google Compute Engine, Azure or a private server with docker.
-* Deploy Shiny Apps at a docker based PaaS as [dokku](https://github.com/progrium/dokku). 
-
-## Deploy with a docker based PaaS
-
-If you have a PaaS with Dockerfiles support, like [Deis](http://deis.io/) or [Dokku](https://github.com/progrium/dokku), you can git push this image. I just wrote a post with further instructions: [Git pushing Shiny Apps with docker and dokku](http://www.fbreitwieser.net/2015/05/11/git-pushing-shiny-apps-with-docker-dokku/)
+You can deploy this Docker image on your private server or on any <a href="https://docs.docker.com/machine/drivers/">cloud service</a>.
 
