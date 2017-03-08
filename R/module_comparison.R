@@ -87,7 +87,8 @@ comparisonModuleUI <- function(id) {
                  ),
                  div(class="col-lg-7 col-md-7 lessPadding lessMargin",
                      checkboxGroupInput(ns("opts_normalization"), label = NULL,
-                                        choices = c("Normalize by total # of reads"="opt_display_percentage",
+                                        choices = c("Normalize reads"="opt_display_percentage",
+                                                    "Use library size for normalization (instead of filtered taxa)"="opt_display_percentage_lib",
                                                     "Log data"="opt_vst_data", ## TODO: Change to VST
                                                     "Robust z-score"="opt_zscore"),
                                         inline = FALSE)
@@ -329,13 +330,29 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
   })
 
   get_summarized_reportp <- reactive({
-    req(get_summarized_reportc())
-    if (nrow(get_summarized_reportc()) == 0) {
-      return(get_summarized_reportc());
+    merged_reports <- get_summarized_reportc()
+    req(merged_reports)
+    if (nrow(merged_reports) == 0)
+      return(merged_reports)
+
+    if ("opt_display_percentage_lib" %in% input$opts_normalization) {
+      validate(need_attr(reports(), "LibrarySize"))
+      sum_reads <- attr(reports(), "LibrarySize")
+    } else {
+      normalize_col_attr <- ifelse(input$opt_classification_rank == "-", "reads_stay_columns", "reads_columns")
+      validate(need_attr(merged_reports, normalize_col_attr))
+      normalize_columns <- attr(merged_reports, normalize_col_attr)
+      sum_reads <- colSums(merged_reports[, normalize_columns, drop=F], na.rm = T)
     }
-    withProgress(message="Normalizing samples ...", { get_summarized_reportc() %>%
-        normalize_data_cols(normalize_col=ifelse(input$opt_classification_rank == "-", "reads_stay_columns", "reads_columns")) })
+    str(sum_reads)
+
+    withProgress(message="Normalizing samples ...", { merged_reports  %>%
+        normalize_data_cols(sum_reads = sum_reads) })
   })
+
+  need_attr <- function(mydf, attri) {
+    need(all(attri %in% names(attributes(mydf))), message=sprintf("Need attribute %s! Set attributes: %s", attri, paste(names(attributes(mydf)), collapse=", ")))
+  }
 
 
   r_summarized_report <- reactive({
@@ -345,6 +362,9 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
     } else {
       summarized_report <- get_summarized_reportc()
     }
+
+    validate(need(summarized_report, message = "summarized_report??"))
+
     sav_attr <- attributes(summarized_report)
 
     if ("opt_vst_data" %in% input$opts_normalization) {

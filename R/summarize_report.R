@@ -1,12 +1,18 @@
 
-normalize_data_cols <- function(merged_reports, normalize_col = "reads_stay_columns") {
+normalize_data_cols <- function(merged_reports, normalize_col = "reads_stay_columns", sum_reads = NULL) {
   data_columns <- attr(merged_reports, "data_columns")
   normalize_columns <- attr(merged_reports, normalize_col)
 
   validate(need(data_columns, message="data_columns is NULL"),
            need(normalize_columns, message=paste(normalize_col,"is NULL")))
 
-  sum_reads <- colSums(merged_reports[, normalize_columns, drop=F], na.rm = T)
+  if (is.null(sum_reads)) {
+    sum_reads <- colSums(merged_reports[, normalize_columns, drop=F], na.rm = T)
+  }
+
+  if(length(sum_reads) != length(normalize_columns))
+    stop("length(sum_reads) != length(normalize_columns)")
+
   sum_reads <- rep(sum_reads, each = length(data_columns) / length(normalize_columns))
 
   merged_reports[, data_columns] <- 100*scale(merged_reports[, data_columns],
