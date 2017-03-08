@@ -25,10 +25,11 @@ Imports:
     plyr,
     dplyr,
     yaml,
-    Rsamtools
+    rappdirs
 Suggests:
     phyloseq,
-    rmarkdown
+    rmarkdown,
+    Rsamtools
 Remotes:
     github::fbreitwieser/sankeyD3
 License: GPL-3

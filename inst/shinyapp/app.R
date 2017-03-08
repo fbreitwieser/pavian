@@ -6,6 +6,11 @@ library(shinydashboard)
 library(shinyjs)
 library(DT)
 library(shinyBS)
+library(rappdirs)
+
+if (!dir.exists(user_config_dir("pavian", expand = FALSE))) {
+  dir.create(user_config_dir("pavian", expand = FALSE))
+}
 
 protist_taxids <- c("-_Diplomonadida"=5738,
                     "-_Amoebozoa"=554915,
@@ -238,6 +243,12 @@ server <- function(input, output, session) {
       need("Name" %in% colnames(sample_data()), "Name not available!")
     )
     res <- read_reports(sample_data()$ReportFilePath, sample_data()$Name, cache_dir = cache_dir)
+    if ("LibrarySize" %in% colnames(sample_data())) {
+      message("Getting lib size from sample data")
+      attr(res,"LibrarySize") <- sample_data()$LibrarySize
+    } else {
+      attr(res,"LibrarySize") <- sapply(res, function(x) sum(x$reads_stay))
+    }
     validate(need(length(res) > 0, message = "There are no valid reports in this sample set!"))
     res
   })

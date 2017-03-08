@@ -1,3 +1,34 @@
+library(shiny)
+library(rappdirs)
+
+serverDataPanel <- function (ns) {
+  tabPanel("Use data on server", id="server_dir",
+           "Be careful which directory you select - if there are too many files, the process might hang.",
+           " Pavian will check the specified directory and its direct children for report files.",br(),
+           textInput(ns("txt_data_dir"),  width= "100%",
+                     label = "Specify directory on machine running Pavian",
+                     value = getOption("pavian.server_dir","")),
+           actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px"),
+           uiOutput(ns('rud'))
+  )
+}
+
+exampleDataPanel <- function(ns) {
+  tabPanel("Example data",
+           HTML("Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
+        from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
+        patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
+        from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
+        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
+           br(),br(),
+           actionButton(ns("btn_load_example_data"), label = "Load example datasets")
+  )
+}
+
+uploadFilePanel <- function(ns) {
+  tabPanel("Upload files",fileInput(ns("file_upload"), width = "600px", "", multiple = TRUE))
+}
+
 #' UI part of pavian data input module
 #'
 #' @param id Namespace ID.
@@ -34,36 +65,16 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
     {if (server_access) {
       tabBox(width=12,
              title = "Data Source", selected=start_with,
-             tabPanel("Upload files",fileInput(ns("file_upload"), width = "600px", "", multiple = TRUE)),
-             tabPanel("Use data on server", id="server_dir", style=ifelse(server_access, "","display: none"),
-                      "Be careful which directory you select - if there are too many files, the process might hang. Pavian will check the specified directory and its direct children for report files.",br(),
-                      textInput(ns("txt_data_dir"),  width= "100%",
-                                label = "Specify directory on machine running Pavian",
-                                value = getOption("pavian.server_dir","")),
-                      actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px")
-             ),
-             tabPanel("Example data",
-                      HTML("Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
-        from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
-        patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
-        from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
-        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
-                      br(),br(),
-                      actionButton(ns("btn_load_example_data"), label = "Load example datasets")
-             ))
+             uploadFilePanel(ns),
+             serverDataPanel(ns),
+             exampleDataPanel(ns)
+             )
     } else {
       tabBox(width=12,
              title = "Data Source", selected=start_with,
-             tabPanel("Upload files",fileInput(ns("file_upload"), width = "600px", "", multiple = TRUE)),
-             tabPanel("Example data",
-                      HTML("Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
-        from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
-        patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
-        from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
-        analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."),
-                      br(),br(),
-                      actionButton(ns("btn_load_example_data"), label = "Load example datasets")
-             ))
+             uploadFilePanel(ns),
+             exampleDataPanel(ns)
+      )
     }
     },
     uiOutput(ns("upload_info")),
@@ -86,7 +97,7 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
 dataInputModule <- function(input, output, session,
                             #server_dirs = c(pavian_lib_dir=system.file("shinyapp", "example-data", package = "pavian"),
                             #                root = "/home/fbreitwieser"),
-                            pattern = "sample_data.csv$",
+                            #pattern = "sample_data.csv$",
                             cache_tree = TRUE) {
 
   sample_sets <- reactiveValues(val = list(),         # val is the list of all sample sets
@@ -95,6 +106,14 @@ dataInputModule <- function(input, output, session,
 
 
   ns <- session$ns
+  recently_used_dir_user_config <- file.path(user_config_dir("pavian", expand = FALSE), "recently_used_dirs.txt")
+  recently_used_dirs <- reactiveValues(val=NULL)
+  if (file.exists(recently_used_dir_user_config)) {
+    recently_used_dirs$val <- readLines(recently_used_dir_user_config)
+  }
+
+
+
   #shinyFiles::shinyDirChoose(input, ns('txt_data_dir'), roots = server_dirs, filetypes = c(""))
 
   read_error_msg <- reactiveValues(val_pos=NULL, val_neg=NULL)
@@ -115,17 +134,17 @@ dataInputModule <- function(input, output, session,
     message("reading files in ", data_dir)
     if (!dir.exists(data_dir)) {
       read_error_msg$val_neg <- paste("Directory ", data_dir, "does not exist.")
-      return()
+      return(FALSE)
     }
     if (length(list.files(data_dir)) == 0) {
       read_error_msg$val_neg <- paste("No files in directory ", data_dir, ".")
-      return()
+      return(FALSE)
     }
     n_files <- length(list.files(data_dir))
     max_files <- getOption("pavian.maxFiles", 50)
     if (n_files > max_files) {
       read_error_msg$val_neg <- paste("There are ",n_files," in the directory, but the highest allowed number is ",max_files," files ", data_dir, " - please subdivide the data into smaller directories, or set the option 'pavian.maxFiles' to a higher number (e.g. 'options(pavian.maxFiles=250)').")
-      return()
+      return(FALSE)
     }
 
     my_sample_sets <- isolate(sample_sets$val)
@@ -180,11 +199,12 @@ dataInputModule <- function(input, output, session,
     }
 
     if (is.null(read_error_msg$val_pos))
-      return()
+      return(FALSE)
 
     validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
     sample_sets$val <- c(my_sample_sets[!names(my_sample_sets) %in% names(new_sample_sets)], new_sample_sets)
     sample_sets$selected <- names(new_sample_sets)[1]
+    return(TRUE)
   }
 
   output$uploaded_sample_sets <- renderUI({
@@ -217,10 +237,31 @@ dataInputModule <- function(input, output, session,
 
   observeEvent(input$read_server_dir, {
     req(input$txt_data_dir)
-    withProgress(message = "Reading server directory ...", {
+    res <- withProgress(message = "Reading server directory ...", {
       read_server_directory(input$txt_data_dir)
     })
+    if (res && !input$txt_data_dir %in% recently_used_dirs$val) {
+      recently_used_dirs$val <- c(input$txt_data_dir,recently_used_dirs$val)
+      writeLines(recently_used_dirs$val, recently_used_dir_user_config)
+    }
   })
+
+  output$rud <- renderUI({
+    req(recently_used_dirs$val)
+
+    shiny::tagList(br(),
+                   "Recently used directories: ",lapply(seq(from=1, to=min(length(recently_used_dirs$val),5)),
+           function(i) actionLink(ns(paste0("rud_",i)), recently_used_dirs$val[i])))
+
+  })
+
+  observeEvent(input$rud_1, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[1]) })
+  observeEvent(input$rud_2, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[2]) })
+  observeEvent(input$rud_3, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[3]) })
+  observeEvent(input$rud_4, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[4]) })
+  observeEvent(input$rud_5, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[5]) })
+
+
 
 
   update_sample_set_hot <- reactive({
