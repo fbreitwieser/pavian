@@ -67,6 +67,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
 
     samples_summary <- get_samples_summary()
     validate(need(samples_summary, message = "Error in getting samples summary - please re-select the sample set."))
+    validate(need(nrow(samples_summary)==nrow(sample_data()), message = "Different number of rows in summary and sample data"))
 
     start_color_bar_at <- 2  ## length of extra_cols + 1
     number_range <-  c(0, max(samples_summary[, 2], na.rm = TRUE))
@@ -87,12 +88,17 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
       samples_summary[,seq(from=start_color_bar_at, to=ncol(samples_summary))] <- signif(samples_summary[,seq(from=start_color_bar_at, to=ncol(samples_summary))], 4)
     }
 
+    add_columns <- setdiff(colnames(sample_data()), colnames(samples_summary))
+    n_data_cols <- ncol(samples_summary)
+    samples_summary <- cbind(samples_summary, sample_data()[,add_columns])
+
     dt <- DT::datatable(
       samples_summary,
       rownames = FALSE,
       selection = 'single',
       extensions = datatable_opts$extensions,
-      options(buttons = common_buttons(basename(attr(sample_data(), "set_name")), "summary")),
+      options(buttons = common_buttons(basename(attr(sample_data(), "set_name")), "summary"),
+              columnDefs=list(list(targets = seq(from=n_data_cols, to=ncol(samples_summary)), visible = FALSE))),
       escape = FALSE,
       class = datatable_opts$class,
     )
@@ -114,12 +120,12 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
            colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],
            background = styleColorBar2(number_range, 'lightsalmon')
          ) %>%
-         DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=ncol(samples_summary))],
+         DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=n_data_cols)],
                          background = DT::styleColorBar(c(0, max(
                            samples_summary[, microbial_col], na.rm = TRUE
                          )), 'lightgreen')) %>%
          DT::formatCurrency(start_color_bar_at - 1, currency = '', digits = 0) %>%
-         DT::formatString(seq(from=start_color_bar_at, to=ncol(samples_summary)),
+         DT::formatString(seq(from=start_color_bar_at, to=n_data_cols),
                       suffix = '%')  ## TODO: display as percent
     #   ## not implemented for now as formatPercentage enforces a certain number of digits, but I like to round
     #   ## with signif.
@@ -129,13 +135,13 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
          colnames(samples_summary)[seq(from=start_color_bar_at, to=microbial_col-1)],
          background = styleColorBar2(number_range, 'lightblue')
        ) %>%
-         DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=ncol(samples_summary))],
+         DT::formatStyle(colnames(samples_summary)[seq(from=microbial_col,to=n_data_cols)],
                          background = DT::styleColorBar(c(0, max(
                            samples_summary[, microbial_col], na.rm = TRUE
                          )), 'lightgreen'))
 
        if (max(samples_summary[,2]) > 1000) {
-        dt <- dt %>% DT::formatCurrency(seq(from=start_color_bar_at, to=ncol(samples_summary)),
+        dt <- dt %>% DT::formatCurrency(seq(from=start_color_bar_at, to=n_data_cols),
                                currency = '', digits = 0)
        }
      }
