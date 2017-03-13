@@ -9,7 +9,7 @@ library(shinyBS)
 library(rappdirs)
 
 if (!dir.exists(user_config_dir("pavian", expand = FALSE))) {
-  dir.create(user_config_dir("pavian", expand = FALSE))
+  dir.create(user_config_dir("pavian", expand = FALSE), recursive = TRUE)
 }
 
 protist_taxids <- c("-_Diplomonadida"=5738,
