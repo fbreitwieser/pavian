@@ -1,7 +1,28 @@
+REPORTATTR_vec <- c(
+  data_column_start = "data_column_start",
+  data_columns = "data_columns",
+  reads_columns = "read_columns",
+  reads_stay_columns = "reads_stay_columns",
+  stat_column = "stat_column",
+  taxonid_column = "taxonid_column"
+)
 
-normalize_data_cols <- function(merged_reports, normalize_col = "reads_stay_columns", sum_reads = NULL) {
-  data_columns <- attr(merged_reports, "data_columns")
-  normalize_columns <- attr(merged_reports, normalize_col)
+REPORTATTR <- function(name) {
+  if (!name %in% REPORTATTR_vec) {
+    stop(name, " is not a report attribute")
+  }
+  REPORTATTR_vec[[name, exact=TRUE]]
+}
+
+req_attr <- function(mydf, myattr) {
+  validate(need(myattr), "Need valid attribute definition!")
+  validate(need(attr(mydf,myattr, exact=TRUE)), paste("Attribute", myattr, "is not truthy!"))
+  return(attr(mydf,myattr, exact=TRUE))
+}
+
+normalize_data_cols <- function(merged_reports, normalize_col = REPORTATTR("reads_stay_columns"), sum_reads = NULL) {
+  data_columns <- req_attr(merged_reports, REPORTATTR("data_columns"))
+  normalize_columns <- req_attr(merged_reports, normalize_col)
 
   validate(need(data_columns, message="data_columns is NULL"),
            need(normalize_columns, message=paste(normalize_col,"is NULL")))
@@ -23,14 +44,14 @@ normalize_data_cols <- function(merged_reports, normalize_col = "reads_stay_colu
 }
 
 log_data_cols <- function(merged_reports) {
-  data_columns <- attr(merged_reports, "data_columns")
+  data_columns <- req_attr(merged_reports, REPORTATTR("data_columns"))
   merged_reports[, data_columns] <- log10(merged_reports[, data_columns, drop=F] + 1)
 
   merged_reports
 }
 
 calc_robust_zscore <- function(merged_reports, min_scale = 1) {
-  data_columns <- attr(merged_reports, "data_columns")
+  data_columns <- req_attr(merged_reports, REPORTATTR("data_columns"))
   stopifnot(!is.null(data_columns))
 
   dp2 <- merged_reports[, data_columns, drop=F]
@@ -114,8 +135,6 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
         beautify_colnames(merged_reports[, id_cols_after, drop = FALSE])
       )
 
-
-
   ## make a link to NCBI genome browser in the taxonID column
   if (!"Taxonid" %in% colnames(merged_reports)) {
     taxonid_column <- NA
@@ -134,10 +153,10 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
   }
 
 
-  attr(merged_reports, "data_column_start") <- length(id_cols) + 2
-  attr(merged_reports, "data_columns") <- idx_of_numeric_col_merged + 1
-  attr(merged_reports, "stat_column") <- which(colnames(merged_reports) == "STAT")
-  attr(merged_reports, "taxonid_column") <- taxonid_column
+  attr(merged_reports, REPORTATTR("data_column_start")) <- length(id_cols) + 2
+  attr(merged_reports, REPORTATTR("data_columns")) <- idx_of_numeric_col_merged + 1
+  attr(merged_reports, REPORTATTR("stat_column")) <- which(colnames(merged_reports) == "STAT")
+  attr(merged_reports, REPORTATTR("taxonid_column")) <- taxonid_column
 
   class(merged_reports) <- append(class(merged_reports),"merged_reports")
 
@@ -146,6 +165,6 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
 
 assayData <- function(x, ...) UseMethod("assayData", x)
 assayData.merged_reports <- function(x)
-  list("reads"=x[, attr(x, "reads_columns")],
-       "reads_stay"=x[, attr(x, "reads_stay_columns")])
+  list("reads"=x[, req_attr(x, REPORTATTR("reads_columns"))],
+       "reads_stay"=x[, req_attr(x, REPORTATTR("reads_stay_columns"))])
 

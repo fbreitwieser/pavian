@@ -78,7 +78,7 @@ comparisonModuleUI <- function(id) {
           column(6,
                  div(class="col-lg-5 col-md-5 lessPadding lessMargin",
                      selectizeInput(ns("opt_statistic"), label = " Statistic",
-                                    choices = c("Mean", "Median", "Max", "Sd",
+                                    choices = c("Mean", "Median", "Max", "Min", "Sd",
                                                 "Maximum absolute deviation", "Max Z-score"),
                                     selected = "Mean"),
                      shinyBS::bsTooltip(id=ns("opt_statistic"),
@@ -87,10 +87,11 @@ comparisonModuleUI <- function(id) {
                  ),
                  div(class="col-lg-7 col-md-7 lessPadding lessMargin",
                      checkboxGroupInput(ns("opts_normalization"), label = NULL,
-                                        choices = c("Normalize reads"="opt_display_percentage",
-                                                    "Use library size for normalization (instead of filtered taxa)"="opt_display_percentage_lib",
-                                                    "Log data"="opt_vst_data", ## TODO: Change to VST
-                                                    "Robust z-score"="opt_zscore"),
+                                        choices = c("Use library size for normalization (instead of filtered taxa)"="opt_display_percentage_lib",
+                                                    #"Log data"="opt_vst_data", ## TODO: Change to VST
+                                                    #"Robust z-score"="opt_zscore",
+                                                    "Transform percentage/z-score into ranks"="opt_ranks",
+                                                    "Make ranks per sample"="opt_ranks_1"),
                                         inline = FALSE)
                  )
           ),
@@ -109,6 +110,14 @@ comparisonModuleUI <- function(id) {
                          "both"
                        ), inline = FALSE)
                  )
+          ),
+          fluidRow(
+          checkboxGroupInput(ns("opts_columns"), label = NULL,
+                             choices = c("Normalized abundance"="opt_column_percentage",
+                                         #"Log data"="opt_vst_data", ## TODO: Change to VST
+                                         "Robust z-score on counts"="opt_column_zscore",
+                                         "Robust z-score on percentage"="opt_column_zscore_counts"),
+                             inline = TRUE)
           )
       ),
       box(
@@ -164,6 +173,7 @@ stat_name_to_f <- list(
   "Mean"=mean,
   "Median"=median,
   "Max"=max,
+  "Min"=min,
   "Standard deviation"=sd,
   "Sd"=sd,
   "Maximum absolute deviation"=function(x) { max(x - median(x)) },
@@ -267,11 +277,13 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
   #  reports()[unique(sort(selected))]
   #})
 
-  get_summarized_report1 <- reactive({
-    if (!is.null(filter_func))
-      filter_func(summarized_report())
-    else
-      summarized_report()
+  filtered_summarized_report <- reactive({
+    sr <- summarized_report()
+    if (!is.null(filter_func)) {
+      sr <- tryCatch(filter_func(sr),
+                     error = function(e) {message("Could not apply filter function: ",e)})
+    }
+    return(sr)
   })
 
   and <- function(x) {
@@ -284,9 +296,23 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
     return (and(x[-1]))
   }
 
+  get_report_metadata <- reactive({
+    sr <- filted_summarized_report()
+
+  })
+
+  report_data_matrix <- reactive({
+    sr <- filted_summarized_report()
+
+  })
+
+  report_clade_data_matrix <- reactive({
+    sr <- filted_summarized_report()
+  })
+
   get_summarized_reportc <- reactive({
     #requireNamespace("dplyr")
-    summarized_report <-  get_summarized_report1()
+    summarized_report <-  filtered_summarized_report()
     validate(need(summarized_report, message = "No data available for current selection."),
       need(nrow(summarized_report) > 0, message = "No data available for current selection."))
 
@@ -329,6 +355,7 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
     summarized_report
   })
 
+
   get_summarized_reportp <- reactive({
     merged_reports <- get_summarized_reportc()
     req(merged_reports)
@@ -355,13 +382,46 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
   }
 
 
+  display_integer <- reactive({
+      isTRUE("opt_ranks" %in% input$opts_normalization) || !any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)
+  })
+
+  display_percentage <- reactive({
+      isTRUE("opt_display_percentage" %in% input$opts_normalization) && !any(c("opt_ranks","opt_zscore") %in% input$opts_normalization)
+  })
+
+  report_part <- function(mr, name) {
+    mr[,attr(mr,REPORTATTR(name))]
+  }
+
+  COLS <- c(
+    "read-counts-clade"=1,
+    "read-counts-taxon"=2,
+    "normalized-read-counts-clade"=3,
+    "normalized-read-counts-taxon"=4,
+    "zscore-read-counts-clade"=5,
+    "zscore-read-counts-taxon"=6,
+    "zscore-normalized-read-counts-clade"=7,
+    "zscore-normalized-read-counts-taxon"=8
+  )
+
+
+
+
+
   r_summarized_report <- reactive({
-    req(get_summarized_reportc())
-    if ("opt_display_percentage" %in% input$opts_normalization) {
-      summarized_report <- get_summarized_reportp()
-    } else {
-      summarized_report <- get_summarized_reportc()
+    summarized_report <- get_summarized_reportc()
+    req(summarized_report)
+
+    data_mat <- as.matrix(report_part(summarized_report, "data_columns"))
+
+    if ("opt_column_percentage" %in% input$opts_columns) {
+      message("Percentage")
+      normalized_data_mat <- scale(data_mat)
+      summarized_report <- cbind(summarized_report, normalized_data_mat)
     }
+    #library(tibble)
+    #add_column()
 
     validate(need(summarized_report, message = "summarized_report??"))
 
@@ -401,6 +461,19 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
     }
     mostattributes(summarized_report) <- sav_attr
 
+    if ("opt_ranks" %in% input$opts_normalization) {
+        data_cols <- attr(summarized_report, "data_columns")
+        if ("opt_ranks_1" %in% input$opts_normalization) {
+            for (dc in data_cols) {
+                summarized_report[,dc] <- rank(-summarized_report[,dc, drop=F])
+            }
+        } else {
+            summarized_report[,data_cols] <- rank(-summarized_report[,data_cols, drop=F])
+        }
+    }
+
+    round_digits <- ifelse(display_percentage(), 3, 1)
+
     validate(
       need(length(summarized_report) > 0, message = "summarized report is empty"),
       need(colnames(summarized_report), message = "summarized report has no column names"),
@@ -408,15 +481,13 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
     data_cols <- attr(summarized_report, "data_columns")
     validate(need(all(sapply(summarized_report[data_cols], is.numeric)),
                   message = "Not all data columns are numeric?!"))
-    round_digits <- ifelse(isTRUE("opt_display_percentage" %in% input$opts_normalization), 3, 1)
 
     summarized_report$STAT <- signif(apply(zero_if_na(summarized_report[,data_cols, drop=F]), 1, stat_name_to_f[[input$opt_statistic]]), 3)
 
     colnames(summarized_report)[colnames(summarized_report) == "STAT"] <- input$opt_statistic
 
-    if (any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
+    if (!display_integer())
       summarized_report[,data_cols] <- signif(summarized_report[,data_cols, drop=F], 4)
-    }
 
     table_attr <- c("data_columns", "stat_column", "data_column_start", "reads_stay_columns", "reads_columns")
 
@@ -517,14 +588,14 @@ comparisonModule <- function(input, output, session, sample_data, summarized_rep
 
   formatDT <- function(dt, summarized_report) {
     ## Give the correct format to the columns: thousands separators for numbers, and percent sign for percents
-    if (!any(c("opt_display_percentage","opt_zscore", "opt_vst_data") %in% input$opts_normalization)) {
+    if (display_integer()) {
       dt <- dt %>%
         DT::formatCurrency(attr(summarized_report, 'stat_column'), currency = '', digits = 1 )
       if (max(summarized_report[,attr(summarized_report, 'data_columns')], na.rm = TRUE) > 1000) {
         dt <- dt %>% DT::formatCurrency(attr(summarized_report, 'data_columns'), currency = '', digits = 0 )
       }
     } else {
-      suffix <- ifelse(any(c("opt_zscore", "opt_vst_data") %in% input$opts_normalization),"","%")
+      suffix <- ifelse(display_percentage(),"%","")
       dt <- dt %>%
         DT::formatString(attr(summarized_report, 'stat_column'), suffix = suffix) %>%
         DT::formatString(attr(summarized_report, 'data_columns'), suffix = suffix)
