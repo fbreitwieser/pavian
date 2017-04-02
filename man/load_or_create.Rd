@@ -28,4 +28,3 @@ Load a file from a cache directory, or create and save it
  }, "rnorm-results.rds", recreate=FALSE, cache_dir="cache")
 }
 }
-

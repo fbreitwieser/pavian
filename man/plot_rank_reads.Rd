@@ -22,4 +22,3 @@ Barplot of rank reads
 \description{
 Barplot of metagenomics results at a certain rank
 }
-

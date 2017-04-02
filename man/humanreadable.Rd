@@ -24,4 +24,3 @@ Make a number human readable
 \examples{
 humanreadable(1234.567)
 }
-

@@ -17,4 +17,3 @@ Number of reads for each sequence.
 \description{
 Get number of aligned reads from a bam file
 }
-

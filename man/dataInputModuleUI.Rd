@@ -20,4 +20,3 @@ Shiny UI elements
 \description{
 UI part of pavian data input module
 }
-

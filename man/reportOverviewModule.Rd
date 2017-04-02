@@ -26,4 +26,3 @@ Report overview module server functionality.
 \description{
 Shiny modules to display an overview of metagenomics reports
 }
-

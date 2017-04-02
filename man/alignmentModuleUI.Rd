@@ -15,4 +15,3 @@ UI part of alignment module
 \description{
 UI part of alignment module
 }
-

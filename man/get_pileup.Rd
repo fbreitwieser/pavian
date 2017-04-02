@@ -23,4 +23,3 @@ Returns per-base pileup statistics, or a moving average.
 TODO: Non-overlapping mean is probably the better idea, here,
 as only one value per bin is reported
 }
-

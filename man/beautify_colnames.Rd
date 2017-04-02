@@ -15,4 +15,3 @@ data.frame or matrix with nicer colnames
 \description{
 Beautify colnames
 }
-

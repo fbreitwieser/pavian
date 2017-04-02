@@ -20,4 +20,3 @@ Copied to circumvent R CMD check warning when using non-exported function from a
 \examples{
 getDependency('sparkline')
 }
-

@@ -15,4 +15,3 @@ data.frame or matrix in which all negative and NA values are set to zero
 \description{
 Helper function that sets NAs to zeros in a supplied data.frame
 }
-

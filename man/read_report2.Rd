@@ -29,4 +29,3 @@ report data.frame
 \description{
 Read kraken or centrifuge-style report
 }
-

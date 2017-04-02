@@ -22,4 +22,3 @@ filtered report
 It updates the read_stay counts, and removes any children below the
 entry, and any parent entries that have no reads that stay
 }
-

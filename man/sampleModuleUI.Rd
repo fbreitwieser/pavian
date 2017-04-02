@@ -15,4 +15,3 @@ UI elements for sample module
 \description{
 UI part for sample module
 }
-
