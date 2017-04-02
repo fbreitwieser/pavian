@@ -21,4 +21,3 @@ ggplot of pileup
 \description{
 Plot a pileup
 }
-

@@ -19,4 +19,3 @@ report data.frame
 \description{
 Read Kraken-style and MetaPhlAn reports
 }
-

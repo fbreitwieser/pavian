@@ -15,4 +15,3 @@ named vector with lengths of each sequence.
 \description{
 Get sequence lengths from a bam file
 }
-

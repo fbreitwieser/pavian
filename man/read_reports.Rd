@@ -5,7 +5,7 @@
 \title{Read report files, with Shiny progress bar}
 \usage{
 read_reports(report_files, report_names = basename(report_files),
-  cache_dir = NULL, with_progress = TRUE)
+  cache_dir = NULL)
 }
 \arguments{
 \item{report_files}{character vector with files}
@@ -22,4 +22,3 @@ List of reports
 \description{
 Read report files, with Shiny progress bar
 }
-

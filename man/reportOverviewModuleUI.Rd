@@ -15,4 +15,3 @@ UI elements for report overview module.
 \description{
 UI part of report overview module
 }
-

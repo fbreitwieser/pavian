@@ -19,4 +19,3 @@ runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
 \description{
 Run Pavian web interface
 }
-

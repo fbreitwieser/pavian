@@ -26,4 +26,3 @@ Sample module server functionality
 \description{
 Server part for sample module
 }
-

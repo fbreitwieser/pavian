@@ -20,4 +20,3 @@ Summarize the result of a metagenomics report
   summarize_kraken_report(krakenres)
 }
 }
-

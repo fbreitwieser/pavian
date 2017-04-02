@@ -23,4 +23,3 @@ Alignment module server functionality
 \description{
 Server part of alignment module
 }
-
