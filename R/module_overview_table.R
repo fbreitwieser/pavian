@@ -11,7 +11,7 @@ reportOverviewModuleUI <- function(id) {
   shiny::tagList(
     HTML("This page shows the summary of the classifications in the selected sample set.
          The table cells have a barchart that shows the relation of the cell value to other cell values in the same category, with the microbiota columns being a separate category from the rest."),
-    checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = FALSE),
+    checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of cladeReads", value = FALSE),
     DT::dataTableOutput(ns('dt_samples_overview')),
     br(),
     HTML("If the table does not display at first, double-click the checkbox to reload it.")
@@ -19,6 +19,9 @@ reportOverviewModuleUI <- function(id) {
   )
 
 }
+
+## TODO: use replacedata to replace the data https://github.com/rstudio/DT/issues/168
+## this stops flickering in the when displaying percent - but might not work with changing the formatting
 
 #' Shiny modules to display an overview of metagenomics reports
 #'
@@ -99,7 +102,7 @@ format_datatable <- function(samples_summary, sample_data, datatable_opts, displ
     rownames = FALSE,
     selection = 'single',
     extensions = datatable_opts$extensions,
-    options(buttons = common_buttons(basename(attr(sample_data, "set_name")), "summary"),
+    options(buttons = common_buttons(basename(attr(sample_data, "set_name")), "summary"), processing = FALSE,
             columnDefs=list(list(targets = seq(from=n_data_cols, to=ncol(samples_summary)-1), visible = FALSE))),
     escape = FALSE,
     class = datatable_opts$class

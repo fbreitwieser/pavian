@@ -4,9 +4,9 @@ library(shinyjs)
 
 
 
-## TODOL Make Sankey work for '-' ranks
-tax_ranks <- c("D","K","P","C","O","F","G","S")
-tax_rank_names <- c("D"="Domain","K"="Kingdom","P"="Phylum","C"="Clade","O"="Order","F"="Family","G"="Genus","S"="Species", "-"="-", "T"="Strain")
+## TODOL Make Sankey work for '-' taxRanks
+tax_taxRanks <- c("D","K","P","C","O","F","G","S")
+tax_taxRank_names <- c("D"="Domain","K"="Kingdom","P"="Phylum","C"="Clade","O"="Order","F"="Family","G"="Genus","S"="Species", "-"="-", "T"="Strain")
 
 #' UI part for sample module
 #'
@@ -47,7 +47,7 @@ sampleModuleUI <- function(id) {
                           uiOutput(ns("sankey_hover_plots"))),
                  tabPanel("Figure options",
 
-                          checkboxGroupInput(ns("ranks"),"Taxonomical ranks to display",tax_ranks,setdiff(tax_ranks,c("O","-")), inline = TRUE),
+                          checkboxGroupInput(ns("taxRanks"),"Taxonomical taxRanks to display",tax_taxRanks,setdiff(tax_taxRanks,c("O","-")), inline = TRUE),
                           sliderInput(ns("sankey_maxn"), "Number of taxa at each level", 1, 25, value = 10, step = 1),
                           sliderInput(ns("scalingFactor"),"Scale distance between nodes", value = .9, min = .5, max = 1.5, step=.05),
                           sliderInput(ns("height"),"Figure height", value = 600, min = 300, max = 1200, step=50),
@@ -126,7 +126,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   output$sankey_hover_plots <- renderUI({
     req(hover_plots$taxon)
     ns <- session$ns
-    ## Todo: Add rank (species, genus, etc)
+    ## Todo: Add taxRank (species, genus, etc)
     ## Add link to NCBI and other sides
     my_report <- sample_view_report()
     my_report$name <- sub("^._","",my_report$name)
@@ -134,13 +134,13 @@ sampleModule <- function(input, output, session, sample_data, reports,
     req(sel_row)
 
     shiny::tagList(br(),
-                   HTML(sub("\\(.*\\)>.*","\\1", beautify_taxonstring(sel_row$taxonstring))),
+                   HTML(sub("\\(.*\\)>.*","\\1", beautify_taxLineage(sel_row$taxLineage))),
                    h3(hover_plots$taxon, style='margin-top: 0;'),
-                   p(HTML(paste0("Taxonomy rank ", strong(tax_rank_names[sel_row$rank]),
-                                 {if ("taxonid" %in% colnames(sel_row)) {
-                                   HTML(paste0(", ID ", sel_row$taxonid, ". Links: ",
-                     a(href=sprintf("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=%s", sel_row$taxonid), "NCBI Taxonomy"), ", ",
-                     a(href=sprintf("https://www.ncbi.nlm.nih.gov/assembly/?term=txid%s[Organism:exp]", sel_row$taxonid), "Assemblies")))
+                   p(HTML(paste0("Taxonomy taxRank ", strong(tax_taxRank_names[sel_row$taxRank]),
+                                 {if ("taxID" %in% colnames(sel_row)) {
+                                   HTML(paste0(", ID ", sel_row$taxID, ". Links: ",
+                     a(href=sprintf("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=%s", sel_row$taxID), "NCBI Taxonomy"), ", ",
+                     a(href=sprintf("https://www.ncbi.nlm.nih.gov/assembly/?term=txid%s[Organism:exp]", sel_row$taxID), "Assemblies")))
                                    }},". ",
                      "Search ",a(href=sprintf("https://www.ncbi.nlm.nih.gov/pubmed/?term=%s", sel_row$name), "PubMed"),", ",
                      a(href=sprintf("https://www.google.com/#q=%s", sel_row$name), "Google")," or ",
@@ -172,58 +172,58 @@ sampleModule <- function(input, output, session, sample_data, reports,
         ))
   })
 
-  sum_reads <- reactive({
+  sum_cladeReads <- reactive({
     sapply(reports(), function(x) {
       sel_rows <- sub("^._","",x$name) %in% input$contaminant_selector
       ## select also child rows - as we always remove the whole clade here
-      for (ts in x$taxonstring[sel_rows])
-        sel_rows <- sel_rows | startsWith(x$taxonstring,ts)
+      for (ts in x$taxLineage[sel_rows])
+        sel_rows <- sel_rows | startsWith(x$taxLineage,ts)
 
       sel_rows <- sel_rows | x$name %in% c("-_root","u_unclassified")
-      sum(x$reads_stay[!sel_rows], na.rm=T)
+      sum(x$taxonReads[!sel_rows], na.rm=T)
     }
     )
   })
 
-  hover_reads <- reactive({
-    res <- lapply(reports(), function(x) x$reads[sub("^._", "", x$name) == hover_plots$taxon])
+  hover_cladeReads <- reactive({
+    res <- lapply(reports(), function(x) x$cladeReads[sub("^._", "", x$name) == hover_plots$taxon])
     sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
   })
 
-  hover_reads_stay <- reactive({
-    res <- lapply(reports(), function(x) x$reads_stay[sub("^._", "", x$name) == hover_plots$taxon])
+  hover_taxonReads <- reactive({
+    res <- lapply(reports(), function(x) x$taxonReads[sub("^._", "", x$name) == hover_plots$taxon])
     sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
   })
 
   plot_it <- function(normalize = FALSE) {
     req(hover_plots$taxon)
-    req(sum_reads())
-    len <- length(sum_reads())
-    stopifnot(length(hover_reads()) == len)
-    stopifnot(length(hover_reads_stay()) == len)
-    mydf <- data.frame(reads=c(hover_reads() - hover_reads_stay(),hover_reads_stay()),
-                       type=rep(c("reads", "reads_stay"), each = len),
-                       sample=rep(names(sum_reads()),2))
+    req(sum_cladeReads())
+    len <- length(sum_cladeReads())
+    stopifnot(length(hover_cladeReads()) == len)
+    stopifnot(length(hover_taxonReads()) == len)
+    mydf <- data.frame(reads=c(hover_cladeReads() - hover_taxonReads(),hover_taxonReads()),
+                       type=rep(c("cladeReads", "taxonReads"), each = len),
+                       sample=rep(names(sum_cladeReads()),2))
 
-    mydf <- mydf[mydf$type == "reads" || mydf$reads > 0, ]
+    mydf <- mydf[mydf$type == "cladeReads" || mydf$reads > 0, ]
 
-    my_names <- names(sum_reads())
+    my_names <- names(sum_cladeReads())
     colvec <- ifelse(my_names == input$sample_selector, "red","black")
 
     type1 <- factor(mydf$type,
-                    levels = c("reads_stay","reads"),
+                    levels = c("taxonReads","cladeReads"),
                     labels = c("at taxon","in total"), ordered=T)
 
-    mydf$sample <- factor(mydf$sample, names(sum_reads()) ,my_names)
+    mydf$sample <- factor(mydf$sample, names(sum_cladeReads()) ,my_names)
 
     mydf <- mydf[order(mydf$sample, type1),]
     if (normalize)
-      mydf$reads <- 100*mydf$reads / rep(sum_reads(), each = 2)
+      mydf$reads <- 100*mydf$reads / rep(sum_cladeReads(), each = 2)
 
     mydf$pos <- unlist(tapply(mydf$reads, mydf$sample, function(reads) cumsum(reads)))
 
     mydf$type <- factor(mydf$type,
-                        levels = c("reads","reads_stay"),
+                        levels = c("cladeReads","taxonReads"),
                         labels = c("in total","at taxon"), ordered=T)
 
     ## TODO: Replace by D3 graph?
@@ -244,8 +244,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   output$header1 <- renderText({
     req(hover_plots$taxon)
-    #paste("Number of reads for ", hover_plots$taxon, "across all samples")
-    paste("Number of reads across all samples")
+    #paste("Number of cladeReads for ", hover_plots$taxon, "across all samples")
+    paste("Number of cladeReads across all samples")
   })
 
   output$save_plot1 <- downloadHandler(
@@ -265,8 +265,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
 
   output$header2 <- renderText({
     req(hover_plots$taxon)
-    #paste0("Percent of reads for ", hover_plots$taxon, " (excluding filtered clades)")
-    paste0("Percent of reads (excluding filtered clades)")
+    #paste0("Percent of cladeReads for ", hover_plots$taxon, " (excluding filtered clades)")
+    paste0("Percent of cladeReads (excluding filtered clades)")
   })
 
   output$save_plot2 <- downloadHandler(
@@ -328,7 +328,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     req(input$dt_sample_view_rows_selected)
 
     #scanTabix(tbx(),
-    #          GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxonid"], IRanges(c(50), width=100000)))[[1]]
+    #          GRanges(sample_view_report()[input$dt_sample_view_rows_selected, "taxID"], IRanges(c(50), width=100000)))[[1]]
   })
 
   tbx_results_df <- reactive({
@@ -371,23 +371,23 @@ sampleModule <- function(input, output, session, sample_data, reports,
       my_report <- my_report[sort(input$dt_sample_view_rows_all), ]
 
     #my_report$name <- sub("._", "", my_report$name)
-    #my_report <- my_report[, c("depth", "reads", "name")]
+    #my_report <- my_report[, c("depth", "cladeReads", "name")]
     #my_report$name <- sub("^._","",my_report$name)
     #eng <- get_nodes_and_links(my_report, 10)
 
-    my_report <- subset(my_report, rank %in% input$ranks)
-    #my_report <- my_report[utils::tail(order(my_report$reads,-my_report$depth), n=input$sankey_maxn), , drop = FALSE]
-    my_report <- plyr::ddply(my_report, "rank", function(x) x[utils::tail(order(x$reads,-x$depth), n=input$sankey_maxn), , drop = FALSE])
+    my_report <- subset(my_report, taxRank %in% input$taxRanks)
+    #my_report <- my_report[utils::tail(order(my_report$cladeReads,-my_report$depth), n=input$sankey_maxn), , drop = FALSE]
+    my_report <- plyr::ddply(my_report, "taxRank", function(x) x[utils::tail(order(x$cladeReads,-x$depth), n=input$sankey_maxn), , drop = FALSE])
 
-    #my_report <- subset(my_report, rank %in% input$ranks)
-    my_report <- my_report[, c("name","taxonstring","reads_stay", "reads","depth", "rank")]
+    #my_report <- subset(my_report, taxRank %in% input$taxRanks)
+    my_report <- my_report[, c("name","taxLineage","taxonReads", "cladeReads","depth", "taxRank")]
 
     my_report <- my_report[!my_report$name %in% c('-_root'), ]
     #my_report$name <- sub("^-_root.", "", my_report$name)
 
-    splits <- strsplit(my_report$taxonstring, "\\|")
+    splits <- strsplit(my_report$taxLineage, "\\|")
 
-    ## for the root nodes, we'll have to add an 'other' link to account for all reads
+    ## for the root nodes, we'll have to add an 'other' link to account for all cladeReads
     root_nodes <- sapply(splits[sapply(splits, length) ==2], function(x) x[2])
 
     sel <- sapply(splits, length) >= 3
@@ -396,19 +396,19 @@ sampleModule <- function(input, output, session, sample_data, reports,
     links <- data.frame(do.call(rbind,
                                 lapply(splits, function(x) utils::tail(x[x %in% my_report$name], n=2))), stringsAsFactors = FALSE)
     colnames(links) <- c("source","target")
-    links$value <- my_report[sel,"reads"]
+    links$value <- my_report[sel,"cladeReads"]
 
-    my_ranks <- input$ranks[input$ranks %in% my_report$rank]
-    rank_to_depth <- stats::setNames(seq_along(my_ranks)-1, my_ranks)
+    my_taxRanks <- input$taxRanks[input$taxRanks %in% my_report$taxRank]
+    taxRank_to_depth <- stats::setNames(seq_along(my_taxRanks)-1, my_taxRanks)
 
 
     nodes <- data.frame(name=my_report$name,
-                        depth=rank_to_depth[my_report$rank],
-                        value=my_report$reads,
+                        depth=taxRank_to_depth[my_report$taxRank],
+                        value=my_report$cladeReads,
                         stringsAsFactors=FALSE)
 
     for (node_name in root_nodes) {
-      diff_sum_vs_all <- my_report[my_report$name == node_name, "reads"] - sum(links$value[links$source == node_name])
+      diff_sum_vs_all <- my_report[my_report$name == node_name, "cladeReads"] - sum(links$value[links$source == node_name])
       if (diff_sum_vs_all > 0) {
         nname <- paste("other", sub("^._","",node_name))
         #nname <- node_name
@@ -439,7 +439,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
         NodeValue = "value",
         dragY = TRUE,
         colourScale = colourScale(),
-        xAxisDomain = my_ranks,
+        xAxisDomain = my_taxRanks,
         xScalingFactor = input$scalingFactor,
         numberFormat = "pavian",
         title = NULL, #input$sample_selector,
@@ -452,7 +452,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
         height = input$height,
         nodeCornerRadius = 5,
         showNodeValues = input$show_numbers,
-        units = "reads",
+        units = "cladeReads",
         linkType = input$linkType,
         curvature = input$curvature,
         LinkGroup = ifelse(input$color_links, "source_name", NA),
@@ -478,8 +478,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
     div(style="line-height: 1;",
     text_representation(my_report,
                         name_format = name_format,
-                        reads_format = function(x, color) sprintf("<span style='background-color:%s;'>%s</span>", color, x),
-                        min_reads = quantile(my_report$reads[my_report$reads_stay > 0], probs=1-input$quantile/100), collapse = "<br/>\n")
+                        cladeReads_format = function(x, color) sprintf("<span style='background-color:%s;'>%s</span>", color, x),
+                        min_cladeReads = quantile(my_report$cladeReads[my_report$taxonReads > 0], probs=1-input$quantile/100), collapse = "<br/>\n")
     )
 #    )
 
@@ -491,14 +491,14 @@ sampleModule <- function(input, output, session, sample_data, reports,
   output$dt_sample_view <- DT::renderDataTable({
     my_report <- sample_view_report()
 
-    my_report$taxonstring <- beautify_taxonstring(my_report$taxonstring)
+    my_report$taxLineage <- beautify_taxLineage(my_report$taxLineage)
 
 
-    my_report$rank <- as.factor(my_report$rank)
+    my_report$taxRank <- as.factor(my_report$taxRank)
     #my_report$Percent <-
-    #  100 * signif(my_report$reads / sum(my_report$reads_stay, na.rm = TRUE), 3)
+    #  100 * signif(my_report$cladeReads / sum(my_report$taxonReads, na.rm = TRUE), 3)
     my_report$coverage <- NULL
-    my_report$rankperc <- NULL
+    my_report$taxRankperc <- NULL
     my_report$percentage <- NULL
     my_report$name <- my_report$name %>% sub("^._", "", .) %>% gsub(" ", "&nbsp;", .)
 

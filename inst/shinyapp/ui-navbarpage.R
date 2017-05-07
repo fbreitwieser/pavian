@@ -83,7 +83,7 @@ shinyUI(navbarPage(
                     tabPanel("Samples overview",
                              fluidRow(
                                box(
-                                 checkboxInput("opt_samples_overview_percent", label = "Show percentages instead of number of reads"),
+                                 checkboxInput("opt_samples_overview_percent", label = "Show percentages instead of number of "cladeReads""),
                                  div(style = 'overflow-x: scroll', DT::dataTableOutput('dt_samples_overview')),
                                  uiOutput("view_in_sample_viewer"),
                                  width = 12
@@ -183,11 +183,11 @@ shinyUI(navbarPage(
                                                    FALSE)),
                             column(3,
                                    radioButtons(
-                                     "opt_show_reads_stay",
+                                     "opt_show_taxonReads",
                                      label = "",
                                      choices = c(
-                                       "Reads at taxon" = "reads_stay",
-                                       "Reads at taxon or lower" = "reads",
+                                       "Reads at taxon" = "taxonReads",
+                                       "Reads at taxon or lower" = "cladeReads",
                                        "both"
                                      )
                                    )
@@ -272,7 +272,7 @@ shinyUI(navbarPage(
                                             NULL, label = "RefSeq Assemblies"),
                     shiny::actionButton("btn_load_assembly_info", "Load RefSeq assemblies"),
                     div(style = 'overflow-x: scroll', DT::dataTableOutput("dt_assembly_info")),
-                    shiny::actionButton("btn_get_reads", "Get reads")
+                    shiny::actionButton("btn_get_reads", "Get "cladeReads"")
                   )
                 )
               )

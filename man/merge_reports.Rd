@@ -5,7 +5,7 @@
 \title{Merge report files into a wide format, with column(s) for each
 report.}
 \usage{
-merge_reports(my_reports, numeric_col = c("reads", "reads_stay"))
+merge_reports(my_reports, numeric_col = c("cladeReads", "taxonReads"))
 }
 \arguments{
 \item{my_reports}{Report data.frames.}

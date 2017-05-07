@@ -2,9 +2,9 @@ REPORTATTR_vec <- c(
   data_column_start = "data_column_start",
   data_columns = "data_columns",
   reads_columns = "read_columns",
-  reads_stay_columns = "reads_stay_columns",
+  taxonReads_columns = "taxonReads_columns",
   stat_column = "stat_column",
-  taxonid_column = "taxonid_column"
+  taxID_column = "taxID_column"
 )
 
 REPORTATTR <- function(name) {
@@ -20,7 +20,7 @@ req_attr <- function(mydf, myattr) {
   return(attr(mydf,myattr, exact=TRUE))
 }
 
-normalize_data_cols <- function(merged_reports, normalize_col = REPORTATTR("reads_stay_columns"), sum_reads = NULL) {
+normalize_data_cols <- function(merged_reports, normalize_col = REPORTATTR("taxonReads_columns"), sum_reads = NULL) {
   data_columns <- req_attr(merged_reports, REPORTATTR("data_columns"))
   normalize_columns <- req_attr(merged_reports, normalize_col)
 
@@ -50,6 +50,21 @@ log_data_cols <- function(merged_reports) {
   merged_reports
 }
 
+#' Calculate robust z-score on matrix
+#'
+#' @param m matrix
+#' @param min_scale minimum scale
+#'
+#' @return robust z-score of matrix
+#' @export
+robust_zscore <- function(m, min_scale = 1) {
+  m1 <- m
+  m1[is.na(m1)] <- 0
+  t(scale(t(m),
+          center = apply(m1,1,median),
+          scale  = pmax(apply(m1,1,stats::mad), min_scale)))
+}
+
 calc_robust_zscore <- function(merged_reports, min_scale = 1) {
   data_columns <- req_attr(merged_reports, REPORTATTR("data_columns"))
   stopifnot(!is.null(data_columns))
@@ -63,18 +78,15 @@ calc_robust_zscore <- function(merged_reports, min_scale = 1) {
   merged_reports
 }
 
-filter_reports_to_rank <- function(my_reports, classification_rank) {
+filter_reports_to_taxRank <- function(my_reports, classification_taxRank) {
   lapply(my_reports, function(my_report) {
 
-    ## subset report to the requested rank
-    if (!is.null(classification_rank) && !(any(classification_rank == "-"))) {
-      my_report[my_report$Rank == classification_rank, ]
+    ## subset report to the requested taxRank
+    if (!is.null(classification_taxRank) && !(any(classification_taxRank == "-"))) {
+      my_report[my_report$Rank == classification_taxRank, ]
     }
   })
 }
-
-
-
 
 
 #' Merge report files into a wide format, with column(s) for each
@@ -85,15 +97,15 @@ filter_reports_to_rank <- function(my_reports, classification_rank) {
 #'
 #' @return Combined data.frame
 #' @export
-merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
-  ## generate data.frame which has a name column (species name) and a further reads column for each sample
-  id_cols_before <- c("name", "rank")
+merge_reports <- function(my_reports, numeric_col = c("cladeReads","taxonReads")) {
+  ## generate data.frame which has a name column (species name) and a further "cladeReads" column for each sample
+  id_cols_before <- c("name", "taxRank")
 
-  if (all(sapply(my_reports, function(x) "taxonid" %in% colnames(x) ))) {
-    id_cols_before <- c(id_cols_before, "taxonid")
+  if (all(sapply(my_reports, function(x) "taxID" %in% colnames(x) ))) {
+    id_cols_before <- c(id_cols_before, "taxID")
   }
 
-  id_cols_after <- c("taxonstring")
+  id_cols_after <- c("taxLineage")
   id_cols <- c(id_cols_before, id_cols_after)
 
   if (is.null(my_reports) || length(my_reports) == 0) {
@@ -137,11 +149,11 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
 
   ## make a link to NCBI genome browser in the taxonID column
   if (!"Taxonid" %in% colnames(merged_reports)) {
-    taxonid_column <- NA
+    taxID_column <- NA
   } else {
-    taxonid_column <- which(colnames(merged_reports) == "Taxonid")
-    stopifnot(length(taxonid_column) == 1)
-    merged_reports[, taxonid_column] <- sub("^  *", "", merged_reports[, taxonid_column])
+    taxID_column <- which(colnames(merged_reports) == "Taxonid")
+    stopifnot(length(taxID_column) == 1)
+    merged_reports[, taxID_column] <- sub("^  *", "", merged_reports[, taxID_column])
   }
   ## remove s_, g_, etc
   merged_reports[, 1] <- sub("^[a-z-]_", "", merged_reports[, 1])
@@ -156,7 +168,7 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
   attr(merged_reports, REPORTATTR("data_column_start")) <- length(id_cols) + 2
   attr(merged_reports, REPORTATTR("data_columns")) <- idx_of_numeric_col_merged + 1
   attr(merged_reports, REPORTATTR("stat_column")) <- which(colnames(merged_reports) == "STAT")
-  attr(merged_reports, REPORTATTR("taxonid_column")) <- taxonid_column
+  attr(merged_reports, REPORTATTR("taxID_column")) <- taxID_column
 
   class(merged_reports) <- append(class(merged_reports),"merged_reports")
 
@@ -165,6 +177,142 @@ merge_reports <- function(my_reports, numeric_col = c("reads","reads_stay")) {
 
 assayData <- function(x, ...) UseMethod("assayData", x)
 assayData.merged_reports <- function(x)
-  list("reads"=x[, req_attr(x, REPORTATTR("reads_columns"))],
-       "reads_stay"=x[, req_attr(x, REPORTATTR("reads_stay_columns"))])
+  list("cladeReads"=x[, req_attr(x, REPORTATTR("reads_columns"))],
+       "taxonReads"=x[, req_attr(x, REPORTATTR("taxonReads_columns"))])
 
+
+
+#' Merge report files into a wide format, with column(s) for each
+#' report.
+#'
+#' @param my_reports Report data.frames.
+#' @param col_names Column names.
+#'
+#' @return Combined data.frame
+#' @export
+merge_reports2 <- function(my_reports, col_names = NULL) {
+  id_cols <- c("name", "taxRank", "taxID", "taxLineage")
+  numeric_cols <- c("cladeReads","taxonReads")
+
+  if (is.null(my_reports) || length(my_reports) == 0)
+    return(NULL)
+
+  stopifnot(all(c(id_cols,numeric_cols) %in% colnames(my_reports[[1]])))
+
+  my_reports <- lapply(seq_along(my_reports), function(i) {
+    mm <- my_reports[[i]][,c(id_cols, numeric_cols)]
+    colnames(mm)[colnames(mm) == numeric_cols] <- sprintf("%s.%s", colnames(mm)[colnames(mm) == numeric_cols], i)
+    mm
+  })
+
+  merged_reports <- Reduce(function(x, y) dplyr::full_join(x, y, by = id_cols), my_reports)
+
+  tax_data <- merged_reports[, id_cols, drop = FALSE]
+  ## remove s_, g_, etc
+  tax_data[, 1] <- sub("^[a-z-]_", "", tax_data[, 1])
+
+  idx_cladeReads <- seq(from = length(id_cols) + 1, to = ncol(merged_reports), by = 2)
+  idx_taxonReads <- seq(from = length(id_cols) + 2, to = ncol(merged_reports), by = 2)
+
+  cladeReads <- as.matrix(merged_reports[, idx_cladeReads, drop = FALSE])
+  taxonReads <- as.matrix(merged_reports[, idx_taxonReads, drop = FALSE])
+
+  if (!is.null(col_names)) {
+    stopifnot(length(col_names) == ncol(cladeReads))
+    colnames(cladeReads) <- col_names
+    colnames(taxonReads) <- col_names
+  }
+
+  list(tax_data = tax_data, cladeReads = cladeReads, taxonReads = taxonReads)
+}
+
+
+#' Filter taxon
+#'
+#' @param tax_data tax_data
+#' @param rm_clades clades to remove
+#' @param rm_taxa taxa to remove
+#' @param taxRank taxRank to keep
+#'
+#' @return selected rows
+#' @export
+filter_taxa <- function(tax_data, rm_clades = NULL, rm_taxa = NULL, taxRank = "-") {
+  stopifnot(all(c("name","taxLineage","taxRank") %in% colnames(tax_data)))
+
+  sel_rm_taxa <- tax_data[["name"]] %in% rm_clades | tax_data[["name"]] %in% rm_taxa
+  sel_rm_clades <- tax_data[["name"]] %in% rm_clades
+
+  taxLineages <- tax_data[["taxLineage"]]
+  if (sum(sel_rm_clades) > 0) {
+    for (taxLineage in taxLineages[sel_rm_clades]) {
+      sel_rm_taxa <- sel_rm_taxa | startsWith(taxLineages, taxLineage)
+    }
+  }
+
+  my_shown_rows <- !sel_rm_taxa
+  if (!is.null(taxRank) && taxRank != "-") {
+    if (!taxRank %in% tax_data[["taxRank"]])
+      stop("taxRank ",taxRank," not in tax_data!")
+    my_shown_rows <- my_shown_rows & tax_data[["taxRank"]] %in% taxRank
+  }
+
+  my_shown_rows
+}
+
+##
+##
+#' Remove specified taxa or whole clades this function removes the read numbers from the parents, too
+#'
+#' @param cladeReads clade "cladeReads"
+#' @param tax_data tax data
+#' @param rm_taxa taxa to remove
+#'
+#' @return filtered clade "cladeReads"
+#' @export
+filter_cladeReads <- function(cladeReads, tax_data, rm_taxa) {
+  stopifnot(all(c("name","taxLineage","taxRank") %in% colnames(tax_data)))
+  taxLineages <- tax_data[["taxLineage"]]
+  sel_rm_taxa <- tax_data[["name"]] %in% rm_taxa
+
+  if (sum(sel_rm_taxa) > 0) {
+    ## Update all the parent numbers
+    for (contaminant_i in which(sel_rm_taxa)) {
+      reads_clade <- cladeReads[contaminant_i, ,drop=FALSE]
+      tax_string <- taxLineages[contaminant_i]
+      update_indices <- taxLineages == tax_string
+      repeat {
+        new_tax_string <- sub("(.*)\\|.*", "\\1",tax_string)
+        if (length(tax_string) == 0 || isTRUE(tax_string == new_tax_string)) break;
+        update_indices <- update_indices | taxLineages == new_tax_string
+        tax_string <- new_tax_string
+      }
+      cladeReads[update_indices, ] <- cladeReads[update_indices, ,drop=FALSE] - rep(reads_clade, each=sum(update_indices))
+    }
+  }
+  cladeReads
+}
+
+#' Helper function to normalize data
+#'
+#' @param m matrix
+#' @param sums column sums
+#'
+#' @return normalized matrix
+#' @export
+normalize <- function(m, sums = colSums(m, na.rm=T)) {
+  sweep(m, 2, sums, FUN="/")
+}
+
+combine_df <- function(tax_data, reads) {
+
+  #for (stat in input$opt_statistic) {
+  #  str(apply("cladeReads", 1, stat_name_to_f[[stat]]))
+    #summarized_report[[stat]] <- apply(mydata, 1, stat_name_to_f[[stat]])
+  #}
+
+  data.frame(Name=get_col(tax_data,"name"),
+             TaxID=get_col(tax_data,"taxID"),
+             reads,
+             TaxLineage = get_col(tax_data(),"taxLineage"),
+             stringsAsFactors = FALSE)
+}

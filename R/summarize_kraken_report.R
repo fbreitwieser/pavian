@@ -1,11 +1,11 @@
 
-extract_from_report <- function(my_report,name,rank=NULL) {
+extract_from_report <- function(my_report,name,taxRank=NULL) {
   my_report <- my_report[cumsum(my_report$name==name)==1,,drop=FALSE]
 
   depth <- my_report[my_report$name==name,"depth"]
   my_report <- my_report[cumsum(my_report$depth <= depth)==1,,drop=FALSE]
-  if (!is.null(rank))
-    my_report <- my_report[my_report$rank == rank,,drop=FALSE]
+  if (!is.null(taxRank))
+    my_report <- my_report[my_report$taxRank == taxRank,,drop=FALSE]
 
   my_report
 }
@@ -25,7 +25,7 @@ protist_taxids <- c("-_Diplomonadida"=5738,
 #'
 #' @param my_report kraken report
 #'
-#' @return data.frame with number of raw read, classified at certain ranks, etc
+#' @return data.frame with number of raw read, classified at certain taxRanks, etc
 #' @export
 #'
 #' @examples
@@ -35,15 +35,15 @@ protist_taxids <- c("-_Diplomonadida"=5738,
 summarize_report <- function(my_report) {
   my_report <- my_report[!duplicated(my_report$name),]
   row.names(my_report) <- my_report[["name"]]
-  unidentified_reads <- my_report["u_unclassified","reads"]
-  identified_reads <- my_report["-_root","reads"]
-  artificial_reads <- zero_if_na1(my_report["s_synthetic construct","reads"])
-  human_reads <- zero_if_na1(my_report["s_Homo sapiens","reads"])
-  mammal_reads <- zero_if_na1(my_report["c_Mammalia","reads"])
+  unidentified_reads <- my_report["u_unclassified","cladeReads"]
+  identified_reads <- my_report["-_root","cladeReads"]
+  artificial_reads <- zero_if_na1(my_report["s_synthetic construct","cladeReads"])
+  human_reads <- zero_if_na1(my_report["s_Homo sapiens","cladeReads"])
+  mammal_reads <- zero_if_na1(my_report["c_Mammalia","cladeReads"])
 
-  #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"reads"])
-  #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"reads"])
-  #eupath_reads <- my_report["d_Eukaryota","reads"] - my_report["d_Eukaryota","reads_stay"] - my_report["-_Opisthokonta","reads"]
+  #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"cladeReads"])
+  #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"cladeReads"])
+  #eupath_reads <- my_report["d_Eukaryota","cladeReads"] - my_report["d_Eukaryota","taxonReads"] - my_report["-_Opisthokonta","cladeReads"]
 
   data.frame(
     number_of_raw_reads=unidentified_reads+identified_reads,
@@ -52,17 +52,28 @@ summarize_report <- function(my_report) {
     artificial_reads=artificial_reads,
     unclassified_reads=unidentified_reads,
     microbial_reads=identified_reads-mammal_reads-artificial_reads,
-    bacterial_reads=zero_if_na1(my_report["d_Bacteria","reads"]) + zero_if_na1(my_report["k_Bacteria","reads"]), ## MetaPhLan reports bacteria as kingdom; Kraken as domain. Sum them
-    viral_reads=zero_if_na1(my_report["d_Viruses","reads"]) + zero_if_na1(my_report["k_Viruses","reads"]), ## same as for Bacteria
-    fungal_reads=zero_if_na1(my_report["k_Fungi","reads"]),
-    protozoan_reads=sum(zero_if_na1(my_report[names(protist_taxids),"reads"]))
+    bacterial_reads=zero_if_na1(my_report["d_Bacteria","cladeReads"]) + zero_if_na1(my_report["k_Bacteria","cladeReads"]), ## MetaPhLan reports bacteria as kingdom; Kraken as domain. Sum them
+    viral_reads=zero_if_na1(my_report["d_Viruses","cladeReads"]) + zero_if_na1(my_report["k_Viruses","cladeReads"]), ## same as for Bacteria
+    fungal_reads=zero_if_na1(my_report["k_Fungi","cladeReads"]),
+    protozoan_reads=sum(zero_if_na1(my_report[names(protist_taxids),"cladeReads"]))
     #s_cerevisia_reads=s_cerevisiae_reads,
     #eupath_reads=eupath_reads,
-    #p_apicomplexa_reads=my_report["p_Apicomplexa","reads"],
-    #o_kinetoplastida_reads=my_report["o_Kinetoplastida","reads"],
-    #Amoebozoa_reads=my_report["-_Amoebozoa","reads"],
-    #Heterolobosea_reads=my_report["c_Heterolobosea","reads"],
-    #Fornicata_reads=my_report["-_Fornicata","reads"],
-    #nonhuman_reads_at_species_rank=sum(my_report$reads[my_report$rank=="S"])-my_report["s_Homo sapiens","reads"]-artificial_reads
+    #p_apicomplexa_reads=my_report["p_Apicomplexa","cladeReads"],
+    #o_kinetoplastida_reads=my_report["o_Kinetoplastida","cladeReads"],
+    #Amoebozoa_reads=my_report["-_Amoebozoa","cladeReads"],
+    #Heterolobosea_reads=my_report["c_Heterolobosea","cladeReads"],
+    #Fornicata_reads=my_report["-_Fornicata","cladeReads"],
+    #nonhuman_reads_at_species_taxRank=sum(my_report$cladeReads[my_report$taxRank=="S"])-my_report["s_Homo sapiens","cladeReads"]-artificial_reads
   )
 }
+
+#' Summarize list of reports
+#'
+#' @param reports list of reports
+#'
+#' @return summary of list of reports
+#' @export
+summarize_reports <- function(reports) {
+  do.call(rbind, lapply(reports, pavian::summarize_report))
+}
+

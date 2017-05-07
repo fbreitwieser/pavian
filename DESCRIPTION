@@ -26,13 +26,12 @@ Imports:
     dplyr,
     yaml,
     rappdirs
-Suggests:
-    phyloseq,
-    rmarkdown,
-    Rsamtools
+Suggests: testthat, testit, Rsamtools,
+    knitr,
+    rmarkdown
 Remotes:
     github::fbreitwieser/sankeyD3
 License: GPL-3
 LazyData: TRUE
-RoxygenNote: 5.0.1
-Suggests: testthat
+RoxygenNote: 6.0.1
+VignetteBuilder: knitr

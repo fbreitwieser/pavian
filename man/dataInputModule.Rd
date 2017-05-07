@@ -14,8 +14,6 @@ dataInputModule(input, output, session, cache_tree = TRUE)
 \item{session}{Shiny session.}
 
 \item{cache_tree}{\code{boolean}. Whether the file tree should be cached (currently not implemented).}
-
-\item{pattern}{File name pattern for definition file.}
 }
 \value{
 Shiny module server function, to be called by callModule.

@@ -5,7 +5,8 @@
 \title{Server part of comparison module}
 \usage{
 comparisonModule(input, output, session, sample_data, tax_data, clade_reads,
-  taxon_reads, datatable_opts = NULL, filter_func = NULL, search = NULL)
+  taxon_reads, datatable_opts = NULL, filter_func = NULL,
+  tax_data_add = NULL, search = NULL)
 }
 \arguments{
 \item{input}{Shiny input object.}
@@ -16,13 +17,19 @@ comparisonModule(input, output, session, sample_data, tax_data, clade_reads,
 
 \item{sample_data}{A \code{data.frame} specifying sample names and file paths (read from a defs.csv file).}
 
+\item{tax_data}{TODO}
+
+\item{clade_reads}{TODO}
+
+\item{taxon_reads}{TODO}
+
 \item{datatable_opts}{Additional options for creating the datatable.}
 
 \item{filter_func}{If not NULL, \code{filter_func} is applied to every data.frame in \code{reports}.}
 
-\item{search}{Search term to initialize table with.}
+\item{tax_data_add}{TODO}
 
-\item{summarized_report}{Summerized report.}
+\item{search}{Search term to initialize table with.}
 }
 \value{
 Comparison module server functionality

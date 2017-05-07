@@ -32,6 +32,23 @@ options(DT.options = list(pageLength = 15,
                           lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
                           search = list(regex = TRUE, caseInsensitive = TRUE)))
 
+taxRankSliderJS <-
+  "
+function taxRankSlider (sliderId, sci = false) {
+ $('#'+sliderId).data('ionRangeSlider').update({
+      'prettify': function (num) {
+        switch(num) {
+          case 0: return('Domain');
+          case 1: return('Phylum');
+          case 2: return('Class');
+          case 3: return('Order');
+          case 3: return('Family');
+          case 3: return('Genus');
+          case 3: return('Specues');
+        }
+; }
+"
+
 ui <- dashboardPage(skin="blue", title = "Pavian",
   dashboardHeader(title = "",
                   tags$li(class = "dropdown",
@@ -85,7 +102,7 @@ ui <- dashboardPage(skin="blue", title = "Pavian",
     tags$head(
       includeCSS(system.file(package="pavian","shinyapp","www","style.css")),
       #tags$style(rel = "stylesheet", type = "text/css", href = "style.css"),
-      tags$script(HTML("
+      tags$script(HTML(paste("
 setInterval(function(){
   if ($('html').attr('class')=='shiny-busy') {
     $('div.busy').show()
@@ -95,7 +112,8 @@ setInterval(function(){
 },100);
 
 /*$(document).ready(function() { $('#dy_menu_comp').children[0].click(); })*/
-"))
+",
+                             taxRankSliderJS)))
     ),
     tabItems(
       tabItem("Home",
@@ -139,6 +157,12 @@ setInterval(function(){
 
 server <- function(input, output, session) {
   #query <- parseQueryString(session$clientData$url_search)
+
+  vir_host_1_file <- system.file("virushostdb1.tsv.gz",package="pavian")
+  if (vir_host_1_file == "") {
+    stop("virushostdb1.tsv.gz not found")
+  }
+  virushostdb1 <- read.delim(vir_host_1_file)
 
   datatable_opts <- reactiveValues(rownames = FALSE,
                                    selection = 'single',
@@ -247,7 +271,7 @@ server <- function(input, output, session) {
       message("Getting lib size from sample data")
       attr(res,"LibrarySize") <- sample_data()$LibrarySize
     } else {
-      attr(res,"LibrarySize") <- sapply(res, function(x) sum(x$reads_stay))
+      attr(res,"LibrarySize") <- sapply(res, function(x) sum(x$taxonReads))
     }
     validate(need(length(res) > 0, message = "There are no valid reports in this sample set!"))
     res
@@ -261,38 +285,45 @@ server <- function(input, output, session) {
   #})
 
   summarized_report <- reactive({
-    rep <- reports()
-    req(rep)
-    withProgress(message="Merging samples ...", { merge_reports(rep, c("reads", "reads_stay")) })
+    withProgress(message="Merging samples ...", { merge_reports(reports(), c("cladeReads", "taxonReads")) })
   })
 
+  summarized_report2 <- reactive({
+    withProgress(message="Merging samples ...", { merge_reports2(reports(), col_names = sample_data()[["Name"]]) })
+  })
+
+  tax_data <- reactive({ summarized_report2()[[1]] })
+  clade_reads <- reactive({ summarized_report2()[[2]] })
+  taxon_reads <- reactive({ summarized_report2()[[3]] })
+
   callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = datatable_opts)
-  callModule(comparisonModule, "Alldata", sample_data, summarized_report,
+  callModule(comparisonModule, "comparison", sample_data, tax_data, clade_reads, taxon_reads,
              reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
-  callModule(comparisonModule, "comparison", sample_data, summarized_report,
-             reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
-  callModule(comparisonModule, "bacteria", sample_data, summarized_report, reports,
-             filter_func = function(x) x[grepl("[dk]_Bacteria", x[["Taxonstring"]]) | grepl("[dk]_Archaea", x[["Taxonstring"]]), , drop=F],
+  #callModule(comparisonModule, "comparison", sample_data, summarized_report,
+  #           reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
+  #callModule(comparisonModule, "bacteria", sample_data, summarized_report, reports,
+  #           filter_func = function(x) x[grepl("[dk]_Bacteria", x[["Taxonstring"]]) | grepl("[dk]_Archaea", x[["Taxonstring"]]), , drop=F],
+  #           datatable_opts = datatable_opts)
+  callModule(comparisonModule, "viruses", sample_data, tax_data, clade_reads, taxon_reads, reports,
+             tax_data_add = virushostdb1,
+  #           filter_func = function(x) x[grep("[dk]_Viruses", x[["Taxonstring"]]), , drop=F],
              datatable_opts = datatable_opts)
-  callModule(comparisonModule, "viruses", sample_data, summarized_report, reports,
-             filter_func = function(x) x[grep("[dk]_Viruses", x[["Taxonstring"]]), , drop=F],
-             datatable_opts = datatable_opts)
-  callModule(comparisonModule, "eukaryotes", sample_data, summarized_report, reports,
-             filter_func = function(x) x[grepl("d_Eukaryota", x[["Taxonstring"]]), , drop=F],
-             datatable_opts = datatable_opts)
-  callModule(comparisonModule, "fungi", sample_data, summarized_report, reports,
-             filter_func = function(x) x[grepl("k_Fungi", x[["Taxonstring"]]), , drop=F],
-             datatable_opts = datatable_opts)
+  #callModule(comparisonModule, "eukaryotes", sample_data, summarized_report, reports,
+  #           filter_func = function(x) x[grepl("d_Eukaryota", x[["Taxonstring"]]), , drop=F],
+  #           datatable_opts = datatable_opts)
+  #callModule(comparisonModule, "fungi", sample_data, summarized_report, reports,
+  #           filter_func = function(x) x[grepl("k_Fungi", x[["Taxonstring"]]), , drop=F],
+  #           datatable_opts = datatable_opts)
 
   protist_taxids <- c("-_Diplomonadida"=5738,
                       "-_Amoebozoa"=554915,
                       "-_Alveolata"=33630)
 
-  callModule(comparisonModule, "protists", sample_data, summarized_report, reports,
-             filter_func = function(x) x[grepl("-_Diplomonadida", x[["Taxonstring"]]) |
-                                           grepl("-_Amoebozoa", x[["Taxonstring"]]) |
-                                           grepl("-_Alveolata", x[["Taxonstring"]]) , , drop=F],
-             datatable_opts = datatable_opts)
+  #callModule(comparisonModule, "protists", sample_data, summarized_report, reports,
+  #           filter_func = function(x) x[grepl("-_Diplomonadida", x[["Taxonstring"]]) |
+  #                                         grepl("-_Amoebozoa", x[["Taxonstring"]]) |
+  #                                         grepl("-_Alveolata", x[["Taxonstring"]]) , , drop=F],
+  #           datatable_opts = datatable_opts)
 
   callModule(alignmentModule, "alignment", sample_data, datatable_opts = datatable_opts)
 

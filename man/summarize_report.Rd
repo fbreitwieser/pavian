@@ -10,7 +10,7 @@ summarize_report(my_report)
 \item{my_report}{kraken report}
 }
 \value{
-data.frame with number of raw read, classified at certain ranks, etc
+data.frame with number of raw read, classified at certain taxRanks, etc
 }
 \description{
 Summarize the result of a metagenomics report

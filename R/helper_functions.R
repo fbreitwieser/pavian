@@ -10,6 +10,13 @@ startsWith <- function(x, prefix) {
   }
 }
 
+get_col <- function(df, col) {
+  if (!col %in% colnames(df)) {
+    stop(col, " is not a column of df! Valid columns: ", paste(colnames(df), collapse=", "))
+  }
+  df[[col]]
+}
+
 common_buttons <- function(...) {
   opts <- list(...)
   dl_fname <- paste(unlist(c(opts, format(Sys.time(), "%y%m%d"))), collapse="-")
@@ -41,7 +48,7 @@ beautify_string <- function(x) {
   x
 }
 
-beautify_taxonstring <- function(x) {
+beautify_taxLineage <- function(x) {
   x %>%
     sub("^-_root.","", .) %>%
     sub("^._","", .) %>%
@@ -66,11 +73,11 @@ text_representation <- function(my_report,
   for (i in seq(from=n-1, to=1)) {
     curr_name <- c(my_name[i], curr_name)
     if (i == 1 ||
-        my_report[i-1, "reads"] != my_report[i, "reads"] ||
+        my_report[i-1, "cladeReads"] != my_report[i, "cladeReads"] ||
         my_report[i-1, "depth"] != my_report[i, "depth"] - 1) {
-      if (my_report[i, "reads"] >= min_reads) {
+      if (my_report[i, "cladeReads"] >= min_reads) {
         res_name <- c(name_format(curr_name),res_name)
-        res_reads <- c(my_report[i, "reads"], res_reads)
+        res_reads <- c(my_report[i, "cladeReads"], res_reads)
         res_depth <- c(my_report[i, "depth"], res_depth)
         res_plus <- c(ifelse(has_plus, "+", ""), res_plus)
         has_plus <- FALSE
@@ -87,14 +94,14 @@ text_representation <- function(my_report,
   }
 
   space   <- "&nbsp;&nbsp;"
-  vline   <- "│&nbsp;"
-  cornerc <- "├&nbsp;"
-  corner  <- "╰&nbsp;"
+  vline   <- "&9474;&nbsp;"
+  cornerc <- "&9500;&nbsp;"
+  corner  <- "&9492;&nbsp;"
 
   space   <- "&nbsp;"
-  vline   <- "│"
-  cornerc <- "├"
-  corner  <- "╰"
+  vline   <- "&9474;"
+  cornerc <- "&9500;"
+  corner  <- "&9492;"
 
 
   res_path <- as.list(rep(NA, nn))
@@ -106,13 +113,13 @@ text_representation <- function(my_report,
     sel <- seq(from=1, to=min(length(old_path), length(my_path)))
     my_path[sel] <- old_path[sel]
     res_path[[i]] <- c(my_path,
-                       ifelse(length(old_path) >= (length(my_path) + 1) && 
+                       ifelse(length(old_path) >= (length(my_path) + 1) &&
                               old_path[length(my_path) + 1] == vline, cornerc, corner))
   }
   #path <- sapply(res_depth, function(x) paste(rep(" ",x-1), collapse = ""))
   path <- sapply(res_path, function(x) { paste(x,collapse = ""); } )
   white_to_red <- colorRampPalette(c("white", "red"))( 20 )
-  #brks <- quantile(my_report$reads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
+  #brks <- quantile(my_report$cladeReads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
   brks <- quantile(res_reads, probs = c(0,cumsum(1/2^(1:19))), na.rm =TRUE)
   int <- findInterval(res_reads, brks)
 

@@ -5,12 +5,12 @@
 \title{Merge report files into a wide format, with column(s) for each
 report.}
 \usage{
-merge_reports2(my_reports)
+merge_reports2(my_reports, col_names = NULL)
 }
 \arguments{
 \item{my_reports}{Report data.frames.}
 
-\item{numeric_col}{Numeric columns to keep.}
+\item{col_names}{Column names.}
 }
 \value{
 Combined data.frame

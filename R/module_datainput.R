@@ -89,7 +89,6 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
 #' @param input Scoped input.
 #' @param output Module output.
 #' @param session Shiny session.
-#' @param pattern File name pattern for definition file.
 #' @param cache_tree \code{boolean}. Whether the file tree should be cached (currently not implemented).
 #'
 #' @return Shiny module server function, to be called by callModule.
@@ -97,7 +96,6 @@ For help, and to report an issue with the tool, please go to <a target='blank' h
 dataInputModule <- function(input, output, session,
                             #server_dirs = c(pavian_lib_dir=system.file("shinyapp", "example-data", package = "pavian"),
                             #                root = "/home/fbreitwieser"),
-                            #pattern = "sample_data.csv$",
                             cache_tree = TRUE) {
 
   sample_sets <- reactiveValues(val = list(),         # val is the list of all sample sets
@@ -126,86 +124,6 @@ dataInputModule <- function(input, output, session,
     )
   })
 
-  read_server_directory <- function(data_dir, sample_set_name = NULL,
-                                    include_base_dir = T) {
-    read_error_msg$val_neg <- NULL
-    read_error_msg$val_pos <- NULL
-
-    message("reading files in ", data_dir)
-    if (!dir.exists(data_dir)) {
-      read_error_msg$val_neg <- paste("Directory ", data_dir, "does not exist.")
-      return(FALSE)
-    }
-    if (length(list.files(data_dir)) == 0) {
-      read_error_msg$val_neg <- paste("No files in directory ", data_dir, ".")
-      return(FALSE)
-    }
-    n_files <- length(list.files(data_dir))
-    max_files <- getOption("pavian.maxFiles", 50)
-    if (n_files > max_files) {
-      read_error_msg$val_neg <- paste("There are ",n_files," in the directory, but the highest allowed number is ",max_files," files ", data_dir, " - please subdivide the data into smaller directories, or set the option 'pavian.maxFiles' to a higher number (e.g. 'options(pavian.maxFiles=250)').")
-      return(FALSE)
-    }
-
-    my_sample_sets <- isolate(sample_sets$val)
-
-    if (!is.null(sample_set_name)) {
-      old_names <- names(my_sample_sets)
-      counter <- 1
-
-      while (paste(sample_set_name,counter) %in% old_names) {
-        counter <- counter + 1
-      }
-      sample_set_name <- paste(sample_set_name, counter)
-    }
-
-    base_name <- ifelse(!is.null(sample_set_name),
-                        sample_set_name,
-                        basename(data_dir))
-
-    new_sample_sets <- list()
-    if (include_base_dir) {
-      new_sample_sets <- list(read_sample_data(data_dir, ext=NULL))
-      names(new_sample_sets) <- base_name
-    }
-
-    dirs <- grep("^\\.", list.dirs(data_dir, recursive = FALSE), invert = TRUE, value = TRUE)
-    n_dirs <- length(dirs)
-    max_dirs <- getOption("pavian.maxSubDirs", 25)
-    if (n_dirs > max_dirs) {
-      read_error_msg$val_neg <- c(read_error_msg$val_neg, paste("There are ",n_dirs," sub-directories in ", data_dir,
-                                                                " but the highest allowed number is ",max_dirs,"  - specify individual directories with reports one at a time to load data or set the option 'pavian.maxSubDirs' to a higher number (e.g. 'options(pavian.maxSubDirs=50)')."))
-    } else if (length(dirs) > 0) {
-      sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
-      names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
-      new_sample_sets <- c(new_sample_sets, sub_dir_sets)
-    }
-
-    bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
-    sel_bad_sets <- sapply(new_sample_sets, function(x) is.null(x) || nrow(x) == 0)
-    bad_sample_set_names <- names(new_sample_sets)[sel_bad_sets]
-    new_sample_sets <- new_sample_sets[!sel_bad_sets]
-
-    if (length(new_sample_sets) > 0) {
-      read_error_msg$val_pos <- sprintf("Added sample set%s <b>%s</b> with <b>%s</b> valid reports in total.",
-                                        ifelse(length(new_sample_sets) == 1, "", "s"),
-                                        paste(names(new_sample_sets), collapse="</b>, <b>"),
-                                        sum(unlist(sapply(new_sample_sets, function(x) sum(x$FormatOK)))))
-    }
-    if (length(bad_files) > 0) {
-      read_error_msg$val_neg <- c(read_error_msg$val_neg,
-                                  sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",
-                                          paste(bad_files, collapse="</b><br/> - <b>")))
-    }
-
-    if (is.null(read_error_msg$val_pos))
-      return(FALSE)
-
-    validate(need(new_sample_sets, message = "No sample sets available. Set a different directory"))
-    sample_sets$val <- c(my_sample_sets[!names(my_sample_sets) %in% names(new_sample_sets)], new_sample_sets)
-    sample_sets$selected <- names(new_sample_sets)[1]
-    return(TRUE)
-  }
 
   output$uploaded_sample_sets <- renderUI({
     req(sample_sets$val)
@@ -227,6 +145,33 @@ dataInputModule <- function(input, output, session,
         actionButton(ns("btn_save_table"),"Save table (required to make changes persistent)")
     )
   })
+
+  read_server_directory <- function(data_dir, sample_set_name = NULL, ...) {
+    res <- read_server_directory1(data_dir, sample_set_name=sample_set_name, ..., display_messages = FALSE)
+    read_error_msg$val_pos <- res$error_msg$val_pos
+    read_error_msg$val_neg <- res$error_msg$val_neg
+    if (is.null(read_error_msg$val_pos))
+      return(FALSE)
+
+    my_sample_sets <- list()
+    if (!is.null(sample_set_name)) {
+      for (i in seq_along(res$sample_sets)) {
+        sample_set_name <- names(res$sample_sets)[i]
+        old_names <- names(isolate(sample_sets))
+        counter <- 1
+
+        while (paste(sample_set_name,counter) %in% old_names) {
+          counter <- counter + 1
+        }
+        names(res$sample_sets)[i] <- paste(sample_set_name, counter)
+      }
+    }
+
+    validate(need(res$sample_sets, message = "No sample sets available. Set a different directory"))
+    sample_sets$val <- c(sample_sets$val, res$sample_sets[!names(res$sample_sets) %in% names(sample_sets$val)])
+    sample_sets$selected <- names(res$sample_sets)[1]
+    return(TRUE)
+  }
 
   observeEvent(input$btn_load_example_data, {
     withProgress(message = "Reading example directory ...", {
@@ -260,9 +205,6 @@ dataInputModule <- function(input, output, session,
   observeEvent(input$rud_3, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[3]) })
   observeEvent(input$rud_4, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[4]) })
   observeEvent(input$rud_5, { updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[5]) })
-
-
-
 
   update_sample_set_hot <- reactive({
     req(input$table)

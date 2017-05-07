@@ -13,8 +13,6 @@ read_reports(report_files, report_names = basename(report_files),
 \item{report_names}{character vector with names}
 
 \item{cache_dir}{cache directory path}
-
-\item{with_progress}{Show Shiny progress bar - if FALSE the function can also be used outside of a Shiny session}
 }
 \value{
 List of reports

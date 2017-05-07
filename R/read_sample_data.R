@@ -1,4 +1,12 @@
 
+#' Read sample_data.csv from directory, or create it
+#'
+#' @param my_dir directory
+#' @param def_filename filename
+#' @param ext extension of report files
+#'
+#' @return sample_data data.frame
+#' @export
 read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
                              ext = c("report","profile")) {
 
