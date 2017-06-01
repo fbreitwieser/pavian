@@ -405,7 +405,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     if (is.null(report)) { return(NULL); }
   }
 
-  if (colnames(report)[1] == "X.SampleID") {
+  if (colnames(report)[2] == "Metaphlan2_Analysis") {
     ## Metaphlan report
     colnames(report) <- c("taxonstring", "reads")
     report <- report[order(report$taxonstring), ]
