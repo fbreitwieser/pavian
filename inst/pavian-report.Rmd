@@ -1,0 +1,217 @@
+---
+output: 
+  html_document:  
+    mathjax: null
+    style: "yeti"
+    toc: true 
+    toc_float: true
+#    logo: logo.png
+#    favicon: favicon.png
+#    css: custom.css
+#  flexdashboard::flex_dashboard:
+#    vertical_layout: scroll
+params:
+  doc_title: "Example report on metagenomics classification results"
+  doc_author: !r paste("generated with Pavian v",packageVersion("pavian"))
+  doc_date: !r date()
+  set_name: "example_data"
+  all_data_loaded: FALSE
+  sample_data: NA
+  reports: NA
+---
+
+---
+title: `r params$doc_title`
+author: `r params$doc_author`
+date: `r params$doc_date`
+---
+
+```{r setup, include=FALSE}
+devtools::load_all("~/projects/refactor-pavian/pavian")
+library(DT)
+knitr::opts_chunk$set(echo = FALSE)
+options(DT.options = list(pageLength = 15,
+                          saveState = TRUE,
+                          searchHighlight = TRUE,
+                          scrollX = TRUE,
+                          colReorder = TRUE,
+                          #deferRender = FALSE,
+                          #scrollY = 400,
+                          #scroller = TRUE,
+                          #dom = 'Bfrtip',
+                          selection = 'single',
+                          dom = 'Bfrtip',
+                          class = "stripe hover row-border compact",
+                          lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
+                          search = list(regex = TRUE, caseInsensitive = TRUE)))
+
+set_name <- params$set_name
+```
+
+Sample set summary
+=====================================  
+
+```{r, message=FALSE}
+if (isTRUE(params$all_data_loaded)) {
+  sample_data <- params$sample_data
+  reports <- params$reports
+} else {
+  sample_directory <- system.file("shinyapp","example-data","brain-biopsies",package="pavian")
+  sample_data <- pavian::read_sample_data(sample_directory)
+  reports <- pavian::read_reports(sample_data$ReportFilePath, sample_data$Name)
+}
+
+samples_summary <- pavian::summarize_reports(reports)
+samples_summary$Name <- rownames(samples_summary)
+extra_cols <- c("Name")
+samples_summary <- samples_summary[,c(extra_cols, setdiff(colnames(samples_summary),extra_cols))]
+colnames(samples_summary) <- beautify_string(colnames(samples_summary))
+
+start_color_bar_at <- 3
+samples_summary_percent <- samples_summary
+samples_summary_percent[, start_color_bar_at:ncol(samples_summary)] <- 100 * signif(sweep(samples_summary[, start_color_bar_at:ncol(samples_summary)], 1, samples_summary[, 2], `/`), 4)
+
+tabsetPanel(
+    tabPanel("Classification summary",
+           DT::datatable(samples_summary_percent,   
+                         rownames = FALSE,
+              class = "stripe hover row-border compact",
+              extensions = 'Buttons', 
+              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))) %>% formatSummaryDT(display_percent = TRUE)
+  ), 
+  tabPanel("Raw read numbers",
+    DT::datatable(samples_summary,  
+                  rownames = FALSE,
+                class = "stripe hover row-border compact",
+                extensions = 'Buttons', 
+                options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))) %>% formatSummaryDT(display_percent = FALSE)
+  ),
+  tabPanel("Sample information",
+           DT::datatable(sample_data,   
+              class = "stripe hover row-border compact nowrap",
+              extensions = 'Buttons', 
+              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))))
+)
+```
+
+Classification results
+=====================================  
+
+Only species with at least 10 reads in at least one sample are displayed.
+
+```{r, message = FALSE, warning=FALSE, eval=TRUE}
+## Classificationas across samples
+merged_reports <- pavian::merge_reports2(reports, col_names = sample_data$Name)
+taxonReads <- merged_reports$taxonReads
+cladeReads <- merged_reports$cladeReads
+tax_data <- merged_reports[["tax_data"]]
+numericCols <- c("taxonReads","cladeReads", "taxonReads %","cladeReads %","taxonReads z-score","cladeReads z-score")
+numericCols <- c("taxonReads","cladeReads")
+stat_columns <- c("Mean", "Median", "Max", "Min", "Sd", "Maximum absolute deviation", "Max Z-score")
+stat_columns <- c("Mean")
+shown_rows <- seq_len(nrow(tax_data))
+
+sel <- apply(cladeReads, 1, function(x) any(x >= 10, na.rm = T))
+tax_data <- tax_data[sel,]
+taxonReads <- taxonReads[sel,]
+cladeReads <- cladeReads[sel,]
+
+taxonReads[taxonReads == 0] <- NA
+cladeReads[cladeReads == 0] <- NA
+
+sel_bacteria = grepl("d_Bacteria",tax_data[,4]) & tax_data[,2] == 'S'
+sel_viruses = grepl("d_Viruses",tax_data[,4])  & tax_data[,2] == 'S'
+sel_fungi = grepl("k_Fungi",tax_data[,4])  & tax_data[,2] == 'S'
+sel_protists = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
+sel_euk = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
+
+my_df <- data.frame(tax_data[,1:3],cladeReads[,],tax_data[,4])
+my_dt <- function(sel)
+  DT::datatable(my_df[sel,,drop=F],height = "600px",
+              class = "stripe hover row-border compact nowrap", extensions = 'Buttons',  options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name), scrollX = TRUE))
+tabsetPanel(
+  tabPanel("Bacteria", my_dt(sel_bacteria)),
+  tabPanel("Viruses", my_dt(sel_viruses)),
+  tabPanel("Eukaryotes", my_dt(sel_euk)),
+  tabPanel("Eukaryotes/Fungi", my_dt(sel_fungi)),
+  tabPanel("Eukaryotes/Protists", my_dt(sel_protists))
+)
+#,tabPanel("Clade percentage",
+#           DT::datatable(data.frame(tax_data[,1:3],100*signif(sweep(cladeReads,2,colSums(cladeReads[1:2,],na.rm=T),"/"),4),tax_data[4]),
+#             class = "stripe hover row-border compact nowrap",
+#              extensions = 'Buttons', 
+#              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name), scrollX = TRUE)))
+#)
+```
+
+
+```{r, eval=FALSE}
+tax_taxRanks <- c("D","K","P","C","O","F","G","S")
+
+do.call(tabsetPanel,lapply(names(reports), function(n) {
+  my_report <- reports[[n]]
+
+  tabPanel(n, 
+           DT::datatable(my_report,
+              class = "stripe hover row-border compact nowrap",
+              extensions = 'Buttons', 
+              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name)))
+           )
+}))
+```
+
+Sankey visualization {data-height=500}
+=====================================  
+
+```{r}
+tax_taxRanks <- c("D","K","P","C","O","F","G","S")
+
+all_names <- sub("^._","",sort(unique(unlist(sapply(reports,"[","name")))))
+colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20b).domain([%s])",
+                                     paste0('"',c(all_names,"other"),'"',collapse=",")))
+
+
+# library(bsplus)
+# ac <- bsplus::bs_accordion_sidebar("sankey")
+# for (n in names(reports)) {
+#   my_report <- reports[[n]]
+#   my_report2 <- filter_taxon(my_report, "Chordata")
+#   my_report2 <- filter_taxon(my_report2, "synthetic construct")
+#  
+#   ac <- ac %>% bs_append(title_side=n,content_side="",content_main=build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale) )
+# }
+# 
+
+library(D3partitionR)
+#htmltools::tagList(lapply(names(reports), function(n) {
+  n="PT1"
+  my_report <- reports[[n]]
+
+  my_report2 <- filter_taxon(my_report, "Chordata")
+  my_report2 <- filter_taxon(my_report2, "other sequences")
+  my_report2 <- my_report2[my_report2$cladeReads > 0 & my_report2$taxonReads > 0 & grepl("^._root",my_report2$taxLineage), ]
+  path_in <- lapply(strsplit(gsub("._","",my_report2$taxLineage),"|",fixed=T), as.list)
+  value_in <- my_report2$taxonReads
+  D3partitionR(data=list(path=path_in,value=value_in), title=list(text=n), trail=TRUE)
+  #htmltools::tagList(
+  #  br(),
+    #h2(n)
+  #  tabsetPanel(
+  #    tabPanel("Sankey visualization",
+               
+        #build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale)
+        
+  #    )#,
+      #tabPanel("All data",
+      #         DT::datatable(my_report,
+      #        class = "stripe hover row-border compact nowrap",
+      #        extensions = 'Buttons', 
+      #        options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))))
+  #  )
+  #)
+#}))
+```
+
+About
+=====
+This file was generated with the Pavian R package version `r packageVersion('pavian')` on `r date()`. 

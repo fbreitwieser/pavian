@@ -1,333 +1,47 @@
 library(shiny)
-library(pavian)
-library(rhandsontable)
-library(magrittr)
-library(shinydashboard)
 library(shinyjs)
-library(DT)
-library(shinyBS)
-library(rappdirs)
+library(shinycssloaders)
+library(shinydashboard)
 
-if (!dir.exists(user_config_dir("pavian", expand = FALSE))) {
-  dir.create(user_config_dir("pavian", expand = FALSE), recursive = TRUE)
+for (f in list.files("~/projects/refactor-pavian/pavian/R", full.names = T))
+  source(f)
+
+libraries_needed_for_shinyapp <- c("rappdirs")
+if (!dir.exists(rappdirs::user_config_dir("pavian", expand = FALSE))) {
+  dir.create(rappdirs::user_config_dir("pavian", expand = FALSE),
+             recursive = TRUE)
 }
 
-protist_taxids <- c("-_Diplomonadida"=5738,
-                    "-_Amoebozoa"=554915,
-                    "-_Alveolata"=33630)
 
-options(shiny.maxRequestSize=50*1024^2)
-cache_dir <- tempdir()
+### Option specifications
+## Shiny options
+# Specify the maximum web request size, which serves as a size limit for file uploads. If unset, the maximum request size defaults to 5MB
+# see https://shiny.rstudio.com/reference/shiny/latest/shiny-options.html for global shiny options
+options(shiny.maxRequestSize = 50 * 1024 ^ 2) # set to 50 MB
 
-options(DT.options = list(pageLength = 15,
-                          lengthMenu = c(15, 25, 50, 100),
-                          saveState = TRUE,
-                          searchHighlight = TRUE,
-                          scrollX = TRUE,
-                          #colReorder = TRUE,
-                          #deferRender = FALSE,
-                          #scrollY = 400,
-                          #scroller = TRUE,
-                          dom = 'Bfrtip',
-                          lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
-                          search = list(regex = TRUE, caseInsensitive = TRUE)))
-
-taxRankSliderJS <-
-  "
-function taxRankSlider (sliderId, sci = false) {
- $('#'+sliderId).data('ionRangeSlider').update({
-      'prettify': function (num) {
-        switch(num) {
-          case 0: return('Domain');
-          case 1: return('Phylum');
-          case 2: return('Class');
-          case 3: return('Order');
-          case 3: return('Family');
-          case 3: return('Genus');
-          case 3: return('Specues');
-        }
-; }
-"
-
-ui <- dashboardPage(skin="blue", title = "Pavian",
-  dashboardHeader(title = "",
-                  tags$li(class = "dropdown",
-                          tags$img(src="baboon2.png")
-                  ),
-                  tags$li(class = "dropdown",
-                          tags$a(href="https://ccb.jhu.edu",
-                                 target="_blank",
-                                 style = "font-size: 20px;",
-                                 tags$b("Pavian metagenomics data explorer"))
-                          ),
-                  #tags$li(class = "dropdown",
-                  #        tags$a(href="https://ccb.jhu.edu", target="_blank",
-                  #               "CCB @ JHU")
-                  #),
-                  #tags$li(class = "dropdown",
-                  #        tags$a(href="http://twitter.com/share?url=http://ccb.jhu.edu/pavian&amp;text=Explore metagenomics data with @pavian ", target="_blank", tags$img(icon('twitter')))),
-                  tags$li(class = "dropdown",
-                          tags$a(href="http://github.com/fbreitwieser/pavian", target="_blank", tags$img(icon('github'))))
-                  ),
-  dashboardSidebar(
-    shinyjs::disabled(selectInput("sample_set_names", choices=c("Not available"=""), label="Select sample set", selectize = TRUE)),
-    shinyjs::hidden(shinyjs::disabled(actionButton("btn_remove_cache_files", "Remove cached files ↻"))),
-    sidebarSearchForm(
-      textId = "txt_sidebarSearch",
-      buttonId = "btn_sidebarSearch",
-      label = "Search microbes ..."
-    ),
-    br(),
-    sidebarMenu(
-      id = "tabs",
-      menuItem("Data Input", tabName="Home", icon = icon("cloud-upload"), selected = TRUE),
-      menuItemOutput("dy_menu_overview"),
-      menuItemOutput("dy_menu_comp"),
-      menuItemOutput("dy_menu_sample"),
-      menuItem("Alignment viewer", tabName = "Alignment", icon = icon("asterisk")),
-      menuItem("About", tabName = "About")),
-    uiOutput("sidebartext"),
-    div(class = "busy", style="padding-left: 10px;",
-        p("Calculation in progress.."),
-        img(src="default.gif")
-    ),
-
-    br(),
-    checkboxInput("compact_format", "Compact format", value = T),
-    br(),
-    tags$p(class="sidebartext", style="padding-left: 10px;","@fbreitw, 2016")
-    ),
-  dashboardBody(
-    useShinyjs(),
-    tags$head(
-      includeCSS(system.file(package="pavian","shinyapp","www","style.css")),
-      #tags$style(rel = "stylesheet", type = "text/css", href = "style.css"),
-      tags$script(HTML(paste("
-setInterval(function(){
-  if ($('html').attr('class')=='shiny-busy') {
-    $('div.busy').show()
-  } else {
-    $('div.busy').hide()
-  }
-},100);
-
-/*$(document).ready(function() { $('#dy_menu_comp').children[0].click(); })*/
-",
-                             taxRankSliderJS)))
-    ),
-    tabItems(
-      tabItem("Home",
-              dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", TRUE))
-      ),
-      tabItem("Overview",
-              reportOverviewModuleUI("overview"),
-              uiOutput("view_in_sample_viewer") ### <<<<<< TODO
-      ),
-      tabItem("Alldata", comparisonModuleUI("alldata")),
-      tabItem("Comparison", comparisonModuleUI("comparison")),
-      tabItem("Bacteria", comparisonModuleUI("bacteria")),
-      tabItem("Viruses", comparisonModuleUI("viruses")),
-      tabItem("Eukaryotes", comparisonModuleUI("eukaryotes")),
-      tabItem("Fungi", comparisonModuleUI("fungi")),
-      tabItem("Protists", comparisonModuleUI("protists")),
-      tabItem("Sample", sampleModuleUI("sample")),
-      tabItem("Alignment", alignmentModuleUI("alignment")),
-      tabItem(
-        "About",
-        box(width=12,
-            HTML(
-        "<h2>Pavian metagenomics data explorer</h2>
-
-        <p>This tool was developed by Florian Breitwieser in Steven Salzberg's lab at the Center for
-        Computational Biology at Johns Hopkins Medical Institution. This work was supported by
-        the U.S. National Institutes of Health [R01-HG006677,R01-GM083873]; and by the U.S. Army Research
-        Office [W911NF-1410490]. </p>")),
-        br(),
-        br(),
-        box(width=12,
-            title="Session Information",
-            collapsible=TRUE,
-            collapsed=FALSE,
-            verbatimTextOutput("session_info")
-        )
-      )
-    )
+## DT options
+# see https://datatables.net/reference/option/
+options(
+  DT.options = list(
+    pageLength = 15,
+    stateSave = TRUE,
+    searchHighlight = TRUE,
+    #scrollX = TRUE,
+    dom = 'Bfrtip',
+    ## Define the table control elements to appear
+    #  B - Buttons
+    #  f - filtering input
+    #  r - processing display element
+    #  t - The table!
+    #  i - Table information summary
+    #  p - pagination control
+    lengthMenu = list(c(15, 25, 50, 100), c('15', '25', '50', '100')),
+    search = list(regex = TRUE, caseInsensitive = TRUE)
   )
 )
 
-server <- function(input, output, session) {
-  #query <- parseQueryString(session$clientData$url_search)
-
-  vir_host_1_file <- system.file("virushostdb1.tsv.gz",package="pavian")
-  if (vir_host_1_file == "") {
-    stop("virushostdb1.tsv.gz not found")
-  }
-  virushostdb1 <- read.delim(vir_host_1_file)
-
-  datatable_opts <- reactiveValues(rownames = FALSE,
-                                   selection = 'single',
-                                   extensions = c('Buttons'),
-                                   # Maybe use 'Scroller' for some tables
-                                   # 'ColReorder' isn't really useful
-                                   # 'FixedColumns' is too buggy
-                                   # Consider adding 'Responsive' / see https://datatables.net/extensions/responsive/priority
-                                   class = "stripe hover row-border")
-
-  observeEvent(input$compact_format, {
-    if (isTRUE(input$compact_format)) {
-      #shinyjs::addClass(class="lineheight1", selector = "body")
-      datatable_opts$class <- "stripe hover row-border compact"
-    } else {
-      #shinyjs::removeClass(class="lineheight1", selector = "body")
-      datatable_opts$class <- "stripe hover row-border"
-    }
-  })
-
-  output$dy_menu_overview <- renderMenu({
-    req(input$sample_set_names)
-    menuItem("Results Overview", tabName="Overview", icon = icon("table"))
-  })
-  output$dy_menu_comp <- renderMenu({
-    req(input$sample_set_names)
-    shiny::tagList(
-    menuItem("Comparison", icon = icon("line-chart"),
-             tabName = "Alldata",
-             menuSubItem("All data", tabName="Comparison"),
-             menuSubItem("Bacteria and Archaea", tabName="Bacteria"),
-             menuSubItem("Viruses", tabName="Viruses"),
-             menuSubItem("Eukaryotes", tabName="Eukaryotes"),
-             menuSubItem("Eukaryotes/Fungi", tabName="Fungi"),
-             menuSubItem("Eukaryotes/Protists", tabName="Protists")
-    )
-    )
-  })
-  output$sidebartext <- renderUI({
-    if (is.null(input$sample_set_names) || input$sample_set_names == "") {
-    shiny::tagList(
-    br(),
-    tags$p(class="sidebartext", "To start exploring metagenomics data, upload a dataset in the 'Data Input' tab."),
-    tags$p(class="sidebartext", "Or view alignments and download genomes in the 'Alignment viewer'."))
-    br()
-    }
-  })
-
-  output$dy_menu_sample <- renderMenu({
-    req(input$sample_set_names)
-    menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
-  })
-
-  observeEvent(input$btn_sidebarSearch, {
-
-  })
+## The navbarpage UI does not work well, currently
 
 
-  observeEvent(input$sample_set_names,{
-    if (isTRUE(input$sample_set_names == "upload_files")) {
-      updateTabItems(session,"tabs","Home")
-    } #else {
-    #  updateTabItems(session,"tabs","Overview")
-    #}
-  })
-
-  sample_sets <- callModule(dataInputModule, "datafile")
-
-
-  observeEvent(sample_sets(),{
-    if (length(sample_sets()$val) > 0) {
-      sample_set_names <- names(sample_sets()$val)
-      #sample_set_names["Upload samples ..."] <- "upload_files"
-      shinyjs::enable("sample_set_names")
-      shinyjs::enable("btn_remove_cache_files")
-
-      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_sets()$selected_set)
-    } else {
-      #updateSelectizeInput(session, "sample_set_names", choices = c("Not available"=""))
-      updateSelectInput(session, "sample_set_names", choices = c("Not available"=""))
-      shinyjs::disable("sample_set_names")
-      shinyjs::disable("btn_remove_cache_files")
-    }
-  })
-
-  sample_data <- reactive({
-    req(input$sample_set_names)
-    res <- isolate(sample_sets()$val)[[input$sample_set_names]]
-    req(res)
-    res <- res[res$Include, ]
-    attr(res, "set_name") <- input$sample_set_names
-    res
-  })
-
-  observeEvent(input$btn_remove_cache_files, {
-    file.remove(list.files(cache_dir,full.names = T))
-  })
-
-  reports <- reactive({
-    validate(
-      need("ReportFilePath" %in% colnames(sample_data()), "ReportFilePath not available!"),
-      need("Name" %in% colnames(sample_data()), "Name not available!")
-    )
-    res <- read_reports(sample_data()$ReportFilePath, sample_data()$Name, cache_dir = cache_dir)
-    if ("LibrarySize" %in% colnames(sample_data())) {
-      message("Getting lib size from sample data")
-      attr(res,"LibrarySize") <- sample_data()$LibrarySize
-    } else {
-      attr(res,"LibrarySize") <- sapply(res, function(x) sum(x$taxonReads))
-    }
-    validate(need(length(res) > 0, message = "There are no valid reports in this sample set!"))
-    res
-  })
-
-  callModule(sampleModule, "sample", sample_data, reports, datatable_opts=datatable_opts)
-
-  #observeEvent(sample_module_selected(), {
-  #  req(sample_module_selected())
-  #  updateTabItems(session, "tabs", "Comparison")
-  #})
-
-  summarized_report <- reactive({
-    withProgress(message="Merging samples ...", { merge_reports(reports(), c("cladeReads", "taxonReads")) })
-  })
-
-  summarized_report2 <- reactive({
-    withProgress(message="Merging samples ...", { merge_reports2(reports(), col_names = sample_data()[["Name"]]) })
-  })
-
-  tax_data <- reactive({ summarized_report2()[[1]] })
-  clade_reads <- reactive({ summarized_report2()[[2]] })
-  taxon_reads <- reactive({ summarized_report2()[[3]] })
-
-  callModule(reportOverviewModule, "overview", sample_data, reports, datatable_opts = datatable_opts)
-  callModule(comparisonModule, "comparison", sample_data, tax_data, clade_reads, taxon_reads,
-             reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
-  #callModule(comparisonModule, "comparison", sample_data, summarized_report,
-  #           reports, datatable_opts = datatable_opts)#, search = sample_module_selected)
-  #callModule(comparisonModule, "bacteria", sample_data, summarized_report, reports,
-  #           filter_func = function(x) x[grepl("[dk]_Bacteria", x[["Taxonstring"]]) | grepl("[dk]_Archaea", x[["Taxonstring"]]), , drop=F],
-  #           datatable_opts = datatable_opts)
-  callModule(comparisonModule, "viruses", sample_data, tax_data, clade_reads, taxon_reads, reports,
-             tax_data_add = virushostdb1,
-  #           filter_func = function(x) x[grep("[dk]_Viruses", x[["Taxonstring"]]), , drop=F],
-             datatable_opts = datatable_opts)
-  #callModule(comparisonModule, "eukaryotes", sample_data, summarized_report, reports,
-  #           filter_func = function(x) x[grepl("d_Eukaryota", x[["Taxonstring"]]), , drop=F],
-  #           datatable_opts = datatable_opts)
-  #callModule(comparisonModule, "fungi", sample_data, summarized_report, reports,
-  #           filter_func = function(x) x[grepl("k_Fungi", x[["Taxonstring"]]), , drop=F],
-  #           datatable_opts = datatable_opts)
-
-  protist_taxids <- c("-_Diplomonadida"=5738,
-                      "-_Amoebozoa"=554915,
-                      "-_Alveolata"=33630)
-
-  #callModule(comparisonModule, "protists", sample_data, summarized_report, reports,
-  #           filter_func = function(x) x[grepl("-_Diplomonadida", x[["Taxonstring"]]) |
-  #                                         grepl("-_Amoebozoa", x[["Taxonstring"]]) |
-  #                                         grepl("-_Alveolata", x[["Taxonstring"]]) , , drop=F],
-  #           datatable_opts = datatable_opts)
-
-  callModule(alignmentModule, "alignment", sample_data, datatable_opts = datatable_opts)
-
-  output$session_info <- renderPrint( { sessionInfo() } )
-}
-
-shinyApp(ui, server)
+## alternative UI: navbarpageUI
+shinyApp(dashboardUI, pavianServer, enableBookmarking="server")

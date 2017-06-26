@@ -1,34 +1,21 @@
 Package: pavian
 Type: Package
-Title: Analyze and dispaly metagenomics data in R
-Version: 0.3.6.1
+Title: Visualize and analyze metagenomics classification results
+Version: 0.4
 URL: https://github.com/fbreitwieser/pavian
 BugReports: https://github.com/fbreitwieser/pavian/issues
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
-Description: R package to visualize and analyse metagenomics classification results from
+Description: R package to visualize and analyze metagenomics classification results from
     Kraken, Centrifuge and MetaPhlAn.
 Imports:
     shiny (>= 0.1.12),
-    markdown,
     shinydashboard,
     shinyjs,
-    shinyBS,
-    sparkline (>= 1.0),
-    htmlwidgets (>= 0.5.1),
-    DT (>= 0.1.56),
-    RColorBrewer,
-    sankeyD3 (>= 0.3),
-    scatterD3,
-    ggplot2 (>= 1.0.1),
-    rhandsontable,
-    htmltools,
-    plyr,
-    dplyr,
-    yaml,
-    rappdirs
-Suggests: testthat, testit, Rsamtools,
-    knitr,
-    rmarkdown
+    shinycssloaders,
+    ggplot2,
+    rhandsontable
+Suggests: 
+    Rsamtools, knitr
 Remotes:
     github::fbreitwieser/sankeyD3
 License: GPL-3
