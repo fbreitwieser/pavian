@@ -107,12 +107,6 @@ comparisonModuleUI <- function(id) {
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format'),
         #uiOutput(ns("filter_buttons"))
-        shinyjs::hidden(
-          div(id=ns("scatter_div"),
-              column(6, scatterD3::scatterD3Output(ns("scatter_plot"))),
-              column(6, scatterD3::scatterD3Output(ns("ma_plot")))
-          )
-        )
     ))
 }
 
@@ -181,17 +175,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     
     report
   })
-  
-  output$scatter_plot <- scatterD3::renderScatterD3({
-    report <- small_report()
-    req(all(c(input$sample_selector1,input$sample_selector2) %in% colnames(report)))
-    scatterD3::scatterD3(
-      x = report[,input$sample_selector1], y = report[,input$sample_selector2],
-      lab = report$Name, tooltip_text = report$tooltip,
-      xlab = input$sample_selector1, ylab = input$sample_selector2,
-      lines = data.frame(slope = 1, intercept = 0))
-  })
-  
+   
   base_set_name <- reactive({
     validate(need(attr(sample_data(), "set_name"), message = "Attribute set_name not set for sample_data"))
     basename(attr(sample_data(), "set_name"))
@@ -201,19 +185,6 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     if (!any(grepl("clade", input$opt_numericColumns)) && input$opt_taxRank != "-") {
       return(tags$p("Warning: A specific taxonomic rank is selected, but data is not on the clade level. Thus any data from the taxa's children are not visible. Consider adding clade-level data."))
     }
-  })
-  
-  output$ma_plot <- scatterD3::renderScatterD3({
-    report <- small_report()
-    log10_mean <- log10((report[,input$sample_selector1]+report[,input$sample_selector2])/2)
-    log2_ratio <- log2(report[,input$sample_selector1]/report[,input$sample_selector2])
-    log2_ratio[log2_ratio > 5] <- 5
-    log2_ratio[log2_ratio < -5] <- -5
-    
-    scatterD3::scatterD3(
-      x = log10_mean, y = log2_ratio, lab = report$Name,
-      tooltip_text = report$tooltip,
-      xlab = "log10 mean", ylab = "log2 ratio")
   })
   
   output$downloadData <- downloadHandler(

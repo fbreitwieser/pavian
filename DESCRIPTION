@@ -12,6 +12,16 @@ Imports:
     shinydashboard,
     shinyjs,
     shinycssloaders,
+    shinyWidgets,
+    DT,
+    dplyr,
+    htmltools,
+    htmlwidgets,
+    plyr,
+    rmarkdown,
+    sankeyD3,
+    RColorBrewer,
+    colorspace,
     ggplot2,
     rhandsontable
 Suggests: 
