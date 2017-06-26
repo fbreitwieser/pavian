@@ -105,21 +105,24 @@ comparisonModuleUI <- function(id) {
         div(style="display:inline-block", dropdown_options(ns)),
         htmlOutput(ns("messages")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
-        downloadButton(ns('downloadData'), 'Download full table in tab-separated value format'),
+        downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')
         #uiOutput(ns("filter_buttons"))
     ))
 }
 
+na0 <- function(x) {
+  x[is.na(x)] <- 0
+  x
+}
 
 stat_name_to_f <- list(
-  "Mean"=mean,
-  "Median"=median,
-  "Max"=max,
-  "Min"=min,
-  "Standard deviation"=sd,
+  "Mean"=function(x) sum(x,na.rm=T)/length(x),
+  "Median"=function(x) median(na0(x)),
+  "Max"=function(x) max(x, na.rm=T),
+  "Min"=function(x) min(x, na.rm=T),
   "Sd"=sd,
-  "Maximum absolute deviation"=function(x) { max(x - median(x)) },
-  "Max Z-score"=function(x) { (max(x) - median(x))/max(1,mad(x)) }
+  "MAD"=function(x) { x[is.na(x)] <- 0; x(x - median(x)) },
+  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (max(x) - median(x))/max(1,mad(x)) }
 )
 
 #' Server part of comparison module

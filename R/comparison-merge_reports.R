@@ -383,35 +383,38 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
     } else { stop("column ", column, "??") }
 
     if (length(column) == 2) {
-
       mydata[!shown_rows, ] <- NA
       if (column[2] == "%") {
-      normalize_by_colSums <- column[1] == "taxReads" || specific_tax_rank
-      if (normalize_by_colSums) {
-        sum_reads <- colSums(mydata[shown_rows, , drop = F], na.rm=TRUE)
-      } else {
-        ## For clade reads (when all are displayed), normalize by the sum of all taxon reads
-        sum_reads <- colSums(taxonReads[shown_rows, , drop = F], na.rm=TRUE)
-      }
+        normalize_by_colSums <- column[1] == "taxReads" || specific_tax_rank
+        if (normalize_by_colSums) {
+          sum_reads <- colSums(mydata[shown_rows, , drop = F], na.rm=TRUE)
+        } else {
+          ## For clade reads (when all are displayed), normalize by the sum of all taxon reads
+          sum_reads <- colSums(taxonReads[shown_rows, , drop = F], na.rm=TRUE)
+        }
         mydata <- signif(normalize(mydata,sum_reads),4) * 100
       } else if (column[2] == "rank") {
         mydata.na <- is.na(mydata)
-        mydata <- data.frame(apply(mydata,2,order, decreasing=TRUE))
+        mydata[shown_rows,] <- data.frame(apply(-mydata[shown_rows,], 2, rank))
         mydata[mydata.na] <- NA
       } else {
         stop("Unknown columnd definition ",column[2],"?!")
       }
-      #if (add_names_to_columns)
     }
-    #column <- sub("Reads$", "", column)
     colnames(mydata) <- paste(colnames(mydata),paste(column,collapse=" "),sep="\n")
     mydata[mydata == 0] <- NA
 
     if (!is.null(statsColumns)) {
       stats <- lapply(statsColumns,function(stat) {
+        if (length(column) > 1 && column[2] == "rank" && stat == "Max") {
+          stat <- "Min"
+        }
         apply(mydata, 1, function(x) {
-          x[is.na(x)] <- 0
-          signif(stat_name_to_f[[stat]](x), 5)
+            if (all(is.na(x))) {
+              return(NA)
+            } else {
+              return(signif(stat_name_to_f[[stat]](x), 5))
+            }
         })
       })
       names(stats) <- statsColumns
@@ -432,7 +435,6 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
 			     TaxLineage = get_col(tax_data,"taxLineage"))[shown_rows, ]
 
   # filter empty rows
-  str(numeric_data1)
   sel <- apply(is.na(numeric_data1) | numeric_data1 == 0, 1, all)
   list(summarized_report[!sel,], dt_container)
 }
