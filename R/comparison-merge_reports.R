@@ -367,7 +367,8 @@ get_dt_container <- function(numericColumns, taxColumns, sampleNames, groupSampl
 
 one_df <- function(cladeReads, taxonReads, tax_data, sample_data, 
 		   shown_rows, numericColumns, statsColumns,
-                   groupSampleColumns = FALSE, specific_tax_rank = FALSE) {
+                   groupSampleColumns = FALSE, specific_tax_rank = FALSE,
+                   min_scale_reads = 1, min_scale_percent = 0.001) {
 
   taxColumns <- colnames(tax_data)
   taxColumns <- taxColumns[taxColumns != "taxLineage"]
@@ -381,10 +382,10 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
     if (isTRUE(column[1] == "cladeReads")) {       mydata <- data.frame(cladeReads)
     } else if (isTRUE(column[1] == "taxonReads")) {  mydata <- data.frame(taxonReads)
     } else { stop("column ", column, "??") }
-
-    if (length(column) == 2) {
-      mydata[!shown_rows, ] <- NA
-      if (column[2] == "%") {
+    is_percent <- FALSE
+    for (col in column[-1]) {
+      if (col == "%") {
+        is_percent <- TRUE
         normalize_by_colSums <- column[1] == "taxReads" || specific_tax_rank
         if (normalize_by_colSums) {
           sum_reads <- colSums(mydata[shown_rows, , drop = F], na.rm=TRUE)
@@ -393,10 +394,20 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
           sum_reads <- colSums(taxonReads[shown_rows, , drop = F], na.rm=TRUE)
         }
         mydata <- signif(normalize(mydata,sum_reads),4) * 100
-      } else if (column[2] == "rank") {
+      } else if (col == "rank") {
         mydata.na <- is.na(mydata)
         mydata[shown_rows,] <- data.frame(apply(-mydata[shown_rows,], 2, rank))
         mydata[mydata.na] <- NA
+      } else if (col == "z-score") {
+        min_scale <- ifelse(is_percent, min_scale_percent, min_scale_reads)
+        m1 <- mydata[shown_rows,]
+	m1[is.na(m1)] <- 0
+        med1 <- apply(m1,1,median)
+        mad1 <- pmax(apply(m1,1,stats::mad), min_scale)
+  	mydata[shown_rows,] <- t(scale(t(mydata[shown_rows,, drop=F]),
+                                           center = med1,
+                                           scale  = mad1))
+
       } else {
         stop("Unknown columnd definition ",column[2],"?!")
       }

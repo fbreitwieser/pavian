@@ -69,6 +69,8 @@ dropdown_options <- function(ns) {
                    choices = c("Mean", "Median", "Max", "Min", "Sd",
                                "Maximum absolute deviation", "Max Z-score"),
                    selected = c("Max")), 
+    numericInput(ns("opt_min_scale_reads"), "Minimum scale for reads z-score", value = 1, min = 0),
+    numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
     checkboxInput(ns("opt_groupSamples"),"Group samples", value = TRUE),
     #icon=icon("gear"),
     circle = FALSE, label = "more options ...", 
