@@ -1,6 +1,3 @@
-# Pavian - Interactive analysis of metagenomics data
-[![Build Status](https://travis-ci.org/fbreitwieser/pavian.svg?branch=master)](https://travis-ci.org/fbreitwieser/pavian)
-
 Pavian is a interactive browser application for analyzing and visualization metagenomics classification results from classifiers such as 
 Kraken, Centrifuge and MetaPhlAn. Pavian also provides an alignment viewer for validation of matches to a particular genome.
 
@@ -23,3 +20,5 @@ With Docker:
     docker run --rm -p 5000:80 florianbw/pavian
 
 In both cases Pavian will be available at http://127.0.0.1:5000 .
+
+[![Build Status](https://travis-ci.org/fbreitwieser/pavian.svg?branch=master)](https://travis-ci.org/fbreitwieser/pavian)
