@@ -64,16 +64,16 @@ pavianServer <- function(input, output, session) {
     if (length(sample_sets$val) > 0) {
       sample_set_names <- names(sample_sets$val)
       #sample_set_names["Upload data ..."] <- "upload_files"
-      shinyjs::enable("sample_set_names")
       #shinyjs::enable("btn_remove_cache_files")
       updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_set_names[1])
+      shinyjs::show("sample_set_names")
     } else {
-      updateSelectInput(session, "sample_set_names", choices = c("Upload data ..."=""))
-      shinyjs::disable("sample_set_names")
+      updateSelectInput(session, "sample_set_names", choices = NULL, selected= NULL)
+      shinyjs::hide("sample_set_names")
       #shinyjs::disable("btn_remove_cache_files")
     }
   })
-  
+
   
   ##########################
   ## Render dynamic menus
