@@ -27,6 +27,12 @@ th.numeric_header2 {
   padding-top:0px !important;
 }
 
+.dropdown-menu {
+    min-width: 300px;
+    background-color: rgba(220,220,220,0.95);
+    border: 1px solid #ccc;
+}
+
 body {
   font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
   overflow-x: hidden;
