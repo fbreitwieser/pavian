@@ -88,12 +88,12 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     
     DT::datatable(
       samples_summary,
-      options(buttons = common_buttons(set_name, "summary"), processing = FALSE, 
+      options=list(buttons = common_buttons(set_name, "summary"), processing = TRUE, 
               columnDefs=list(list(targets = seq(from=1, to=ncol(samples_summary)-1), visible=TRUE, orderSequence = c('desc','asc')))
       ),
       class = dt_class, rownames = FALSE, selection = "single", escape = FALSE,
       extensions = dt_extensions) %>% formatSummaryDT(sample_data = sample_data(), display_percent=FALSE)
-  })
+  }, server = FALSE)
   
   output$dt_percent <- DT::renderDataTable({
     samples_summary <- get_samples_summary_percent()
@@ -105,15 +105,16 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     if(is.null(datatable_opts$extensions)) { dt_extensions <- list() } else { dt_extensions <- datatable_opts$extensions }
     if(is.null(datatable_opts$class)) { dt_class <- "display" } else { dt_class <- datatable_opts$class }
     set_name <- ifelse(is.null(attr(sample_data(), "set_name")), "classification", basename(attr(sample_data(), "set_name")))
+    req(set_name)
     
     DT::datatable(
       samples_summary,
-      options(buttons = common_buttons(set_name, "summary"), processing = FALSE, 
+      options=list(buttons = common_buttons(set_name, "summary"), processing = TRUE, 
               columnDefs=list(list(targets = seq(from=1, to=ncol(samples_summary)-1), visible=TRUE, orderSequence = c('desc','asc')))
       ),
       class = dt_class, rownames = FALSE, selection = "single",
       extensions = dt_extensions) %>% formatSummaryDT(sample_data = sample_data(), display_percent=TRUE)
-  })
+  }, server = FALSE)
   
   output$btn_sample_percent_ui <- renderUI({
     req(input$dt_percent_rows_selected)
