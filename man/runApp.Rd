@@ -5,7 +5,8 @@
 \title{Run Pavian web interface}
 \usage{
 runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
-  server_access = FALSE, ...)
+  server_access = FALSE, load_example_data = FALSE,
+  load_server_directory = FALSE, ...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files.}

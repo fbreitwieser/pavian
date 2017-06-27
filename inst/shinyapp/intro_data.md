@@ -1,2 +1,0 @@
-Pavian metagenomics data explorer
-=====================================

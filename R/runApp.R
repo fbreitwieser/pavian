@@ -11,6 +11,8 @@
 runApp <- function(cache_dir = "cache",
                    server_dir = Sys.glob("~"),
                    server_access = FALSE,
+                   load_example_data = FALSE,
+                   load_server_directory = FALSE,
                    ...) {
 
   appDir <- system.file("shinyapp", package = "pavian")
@@ -21,6 +23,8 @@ runApp <- function(cache_dir = "cache",
   options(pavian.cache_dir = cache_dir)
   options(pavian.server_dir = server_dir)
   options(pavian.server_access = server_access)
+  options(pavian.load_server_directory = load_server_directory)
+  options(pavian.load_example_data = load_example_data)
 
   shiny::runApp(appDir, display.mode="normal", ...)
 }

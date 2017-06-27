@@ -1,0 +1,152 @@
+/* Pavian style sheet */
+
+/* reduce space in tables */
+td {
+    white-space: nowrap;
+}
+
+th.numeric_header1 {
+  border-bottom: 0px !important; 
+  line-height: 1 !important;
+  text-align: center; 
+  padding-bottom: 0px !important;
+}
+
+th.numeric_header2 {
+    line-height: 1 !important; 
+    vertical-align: top !important;
+    text-align: center !important;
+  padding-top:0px !important;
+}
+
+.border_left {
+  line-height: 1 !important; 
+  vertical-align: top !important;
+  text-align: center !important;
+  border-left: 1px solid darkgrey !important; 
+  padding-top:0px !important;
+}
+
+.dropdown-menu {
+    min-width: 300px;
+    background-color: rgba(220,220,220,0.95);
+    border: 1px solid #ccc;
+}
+
+body {
+  font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+#bookmark_btn {
+  background-color: transparent; 
+  color: #b8c7ce; 
+  padding: 0px;
+  border: 0px;
+}
+
+.no_padding div {
+  padding-top:0px !important;
+  margin-bottom:0px;
+}
+
+/* Hide some sidebar items when the sidebar gets collapsed (with sidebar-mini) */
+body.sidebar-collapse .hide_when_sidebar_collapsed {
+    display: none;
+}
+
+/* Style sample set selector */
+div.set_selector select {
+    background: transparent;
+    color: lightblue;
+    padding: 2px;
+}
+
+header > .logo {
+  font-size: 14px !important; 
+  color: darkgreen  !important;
+  padding: 0 5px !important;
+}
+
+div#comparison-opt_taxRank {
+    width: 100%;
+}
+
+.styled-radios input[type="radio"]:checked+span {
+    color: darkgreen;
+    /*padding: 0px 4px;*/
+    font-size: 16px;
+}
+
+.has-feedback .form-control {
+    padding: 2px;
+}
+
+/* no top border for boxes without status */
+.box {
+    border-top: none;
+}
+
+.box.box-primary {
+    border-top: 3px solid #3c8dbc;
+}
+
+/* Make the header of tab-boxes bold */
+.nav-tabs-custom>.nav-tabs>li>a, .nav-tabs-custom>.nav-tabs>li>a:hover {
+    font-weight: bold;
+}
+
+/* Make the DT buttons look better (smaller) */
+button.dt-button, div.dt-button, a.dt-button {
+    padding: 2px 4px !important;
+    border: 1px solid #ccc !important;
+}
+
+button.dt-button:hover, div.dt-button:hover, a.dt-button:hover {
+  border: 1px solid #666 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  padding: 2px 4px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  border: 1px solid #ccc !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  border: 1px solid #666 !important;
+}
+
+/* custom styles */
+
+.name-link {
+  white-space: nowrap;
+}
+
+.underlineOnHover:hover {
+  text-decoration: underline !important;
+}
+
+.lessPadding {
+  padding-right: 5px;
+  padding-left: 5px;
+}
+
+.lessMargin > .form-group {
+  margin-bottom: 0px;
+}
+
+.lessMargin > div > div > .checkbox, .lessMargin > div > div > .radio {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.lessMargin > div > div > .selectize-control {
+  margin-bottom: 0px;
+}
+
+.lineheight1 {
+  line-height: 1;
+}
