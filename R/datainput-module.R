@@ -115,7 +115,7 @@ dataInputModuleUI <- function(id,
 #' @param output Module output.
 #' @param session Shiny session.
 #' @param config_dir Directory for configuration files.
-#' @param load_server_data Load server data.
+#' @param load_server_directory Load server directory.
 #' @param load_example_data Load example data.
 #'
 #' @return Shiny module server function, to be called by callModule.
@@ -125,7 +125,7 @@ dataInputModule <- function(input, output, session,
                             #                root = "/home/fbreitwieser"),
                             config_dir = NULL,
                             server_access = getOption("pavian.server_access", default = TRUE),
-                            load_server_data = getOption("pavian.load_server_data", default = FALSE),
+                            load_server_directory = getOption("pavian.load_server_directory", default = FALSE),
                             load_example_data = getOption("pavian.load_example_data", default = FALSE)) {
   
   sample_sets <- reactiveValues(val=NULL) # val is the list of all sample sets

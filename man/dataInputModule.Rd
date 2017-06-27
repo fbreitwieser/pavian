@@ -6,8 +6,9 @@
 \usage{
 dataInputModule(input, output, session, config_dir = NULL,
   server_access = getOption("pavian.server_access", default = TRUE),
-  load_server_data = getOption("pavian.load_server_data", default = FALSE),
-  load_example_data = getOption("pavian.load_example_data", default = FALSE))
+  load_server_directory = getOption("pavian.load_server_directory", default =
+  FALSE), load_example_data = getOption("pavian.load_example_data", default =
+  FALSE))
 }
 \arguments{
 \item{input}{Scoped input.}
@@ -18,7 +19,7 @@ dataInputModule(input, output, session, config_dir = NULL,
 
 \item{config_dir}{Directory for configuration files.}
 
-\item{load_server_data}{Load server data.}
+\item{load_server_directory}{Load server directory.}
 
 \item{load_example_data}{Load example data.}
 }
