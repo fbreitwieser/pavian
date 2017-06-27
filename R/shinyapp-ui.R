@@ -1,5 +1,6 @@
 
 
+#' @export
 dashboardUI <- function(request) {
   dashboardPage(skin="black", title = "Pavian",
                 dashboardHeader(title = "",

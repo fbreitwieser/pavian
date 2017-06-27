@@ -3,15 +3,11 @@ library(shinyjs)
 library(shinycssloaders)
 library(shinydashboard)
 
-for (f in list.files("~/projects/refactor-pavian/pavian/R", full.names = T))
-  source(f)
-
 libraries_needed_for_shinyapp <- c("rappdirs")
 if (!dir.exists(rappdirs::user_config_dir("pavian", expand = FALSE))) {
   dir.create(rappdirs::user_config_dir("pavian", expand = FALSE),
              recursive = TRUE)
 }
-
 
 ### Option specifications
 ## Shiny options
@@ -44,4 +40,4 @@ options(
 
 
 ## alternative UI: navbarpageUI
-shinyApp(dashboardUI, pavianServer, enableBookmarking="server")
+shinyApp(pavian::dashboardUI, pavian::pavianServer, enableBookmarking="server")

@@ -1,3 +1,4 @@
+#' @export
 pavianServer <- function(input, output, session) {
   
   # The cache directory stores Rds files for read reports
