@@ -39,6 +39,12 @@ pavianServer <- function(input, output, session) {
     # Consider adding 'Responsive' / see https://datatables.net/extensions/responsive/priority
     class = "stripe hover row-border"
   )
+
+  # Trigger bookmarking
+  setBookmarkExclude("bookmark_btn")
+  observeEvent(input$bookmark_btn, {
+    session$doBookmark()
+  })
   
   # Compact styling for datatables, and in the future maybe more elements
   observeEvent(input$compact_format, {
