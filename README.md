@@ -5,7 +5,7 @@ Kraken, Centrifuge and MetaPhlAn. Pavian also provides an alignment viewer for v
 
 ![image](https://cloud.githubusercontent.com/assets/516060/20188595/5c8b9808-a747-11e6-9235-296a2314659a.png)
 
-## Installing and running Pavian
+** Installation and deployment
 
 In R / RStudio:
 
