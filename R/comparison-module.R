@@ -45,7 +45,7 @@ taxRanks <- c(
 )
 
 dropdown_options <- function(ns) {
-  shinyWidgets::dropdownButton(
+  shiny::tagList(
     #div(class="col-lg-6 col-md-6 lessPadding",
     selectizeInput(
       ns('contaminant_selector'),
@@ -71,10 +71,9 @@ dropdown_options <- function(ns) {
                    selected = c("Max")), 
     numericInput(ns("opt_min_scale_reads"), "Minimum scale for reads z-score", value = 1, min = 0),
     numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
-    checkboxInput(ns("opt_groupSamples"),"Group samples", value = TRUE),
-    #icon=icon("gear"),
-    circle = FALSE, label = "more options ...", 
-    tooltip = shinyWidgets::tooltipOptions(title = "Click to see more options."))
+    numericInput(ns("opt_min_clade_reads"), "Minimum number of reads to display", value = 1, min = 1, step = 1),
+    checkboxInput(ns("opt_groupSamples"),"Group samples", value = TRUE)
+    )
 }
 
 
@@ -104,7 +103,10 @@ comparisonModuleUI <- function(id) {
 					       "Rank"="cladeReads rank","Z-score (reads)"="cladeReads z-score","Z-score (%)"="cladeReads % z-score"), justified = FALSE, 
                                                status = "primary",
                                                checkIcon = list(yes = icon("ok", lib = "glyphicon")), selected = "cladeReads")),
-        div(style="display:inline-block", dropdown_options(ns)),
+        div(style="display:inline-block", shinyWidgets::dropdownButton(dropdown_options(ns),#icon=icon("gear"),
+                                                                       circle = FALSE, label = "more options ..."
+                                                                       #,tooltip = shinyWidgets::tooltipOptions(title = "Click to see more options."
+                                                                       )),
         htmlOutput(ns("messages")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')
@@ -148,39 +150,12 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   
   dt_options <- reactiveValues(search = "", order = NULL, colnames = NULL)
   
-  observeEvent(input$comparison_type, {
-    if (input$comparison_type == "table") {
-      shinyjs::hide("sample_selector1")
-      shinyjs::hide("sample_selector2")
-      shinyjs::hide("scatter_div")
-      #shinyjs::show("sample_selector")
-      shinyjs::show("table_div")
-    } else {
-      shinyjs::show("sample_selector1")
-      shinyjs::show("sample_selector2")
-      shinyjs::show("scatter_div")
-      #shinyjs::hide("sample_selector")
-      shinyjs::hide("table_div")
-    }
-  })
+  get_input <- function(x) {
+    ni <- isolate(names(input))
+    validate(need(x %in% ni, message = sprintf("Error: Expect %s in input! Available: %s", x, paste0(sort(ni), collapse = ", "))))
+    input[[x]]
+  }
   
-  small_report <- reactive({
-    report <- r_summarized_report()
-    req(all(c(input$sample_selector1,input$sample_selector2) %in% colnames(report)))
-    report <- zero_if_na(report[,c(input$sample_selector1,input$sample_selector2, "Name"), drop = F])
-    report <- report[report[,1] > 0 | report[,2] > 0, , drop=FALSE]
-    
-    max_r <- ifelse(report[,1] > report[,2], report[,1], report[,2])
-    report <- report[head(order(max_r, decreasing=TRUE), n=50), , drop=FALSE]
-    #apply(report[,c(input$sample_selector1,input$sample_selector2)], 1, max, na.rm=T)
-    report$tooltip <-
-      sprintf("<b>%s</b>: %s</br><b>%s</b>: %s",
-              input$sample_selector1, report[,1],
-              input$sample_selector2, report[,2])
-    
-    report
-  })
-   
   base_set_name <- reactive({
     validate(need(attr(sample_data(), "set_name"), message = "Attribute set_name not set for sample_data"))
     basename(attr(sample_data(), "set_name"))
@@ -228,12 +203,20 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     tax_data()$name %in% input$contaminant_selector_clade | tax_data()$name %in% input$contaminant_selector
   })
   
+  na_false <- function(x) {
+    x[is.na(x)] <- FALSE
+    x
+  }
   
   shown_rows <- reactive({
-    filter_taxa(tax_data(),
+    fmax <- !apply(is.na(filtered_clade_reads()),1,all) & apply(filtered_clade_reads(),1,max,na.rm=T) >= get_input("opt_min_clade_reads")
+    res <- filter_taxa(tax_data(),
                 rm_clades = input$contaminant_selector_clade,
                 rm_taxa = input$contaminant_selector,
-                taxRank = input$opt_taxRank)
+                taxRank = input$opt_taxRank) & fmax %>% na_false
+    stopifnot(all(!is.na(res)))
+    print(summary(res))
+    res
   })
   
   filtered_clade_reads <- reactive({
@@ -269,9 +252,13 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   summarized_report_df <- reactive({
     req(input$opt_numericColumns)
     
-    one_df(filtered_clade_reads(), taxon_reads(), tax_data(), sample_data(),
-           shown_rows(), numericColumns(), statsColumns = input$opt_statsColumns,
-           groupSampleColumns = input$opt_groupSamples, specific_tax_rank = input$opt_taxRank != "-")
+    sel_rows <- shown_rows()
+    one_df(filtered_clade_reads()[sel_rows,,drop=F], taxon_reads()[sel_rows,,drop=F], tax_data()[sel_rows,,drop=F], 
+           sample_data(),
+           numericColumns = numericColumns(), statsColumns = input$opt_statsColumns, sum_reads = NULL,
+           groupSampleColumns = input$opt_groupSamples, specific_tax_rank = input$opt_taxRank != "-",
+           min_scale_reads = get_input("opt_min_scale_reads"), min_scale_percent = get_input("opt_min_scale_percent"),
+           min_clade_reads = get_input("opt_min_clade_reads"))
   })
   
   ## Different DT version handle namespaces differently. Make sure it works in all of them.
