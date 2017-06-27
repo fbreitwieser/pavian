@@ -5,7 +5,7 @@ For more information look at the preprint at http://biorxiv.org/content/early/20
 
 **Installation and deployment**
 
-Pavian is a R package, and thus requires R to run. Look [here](http://a-little-book-of-r-for-bioinformatics.readthedocs.io/en/latest/src/installr.html) for how to install R. Once you started R, the following commands will install the package:
+Pavian is a R package, and thus requires R to run. Look [here](http://a-little-book-of-r-for-bioinformatics.readthedocs.io/en/latest/src/installr.html) for how to install R. On Windows, you probably need to install [Rtools](cran.r-project.org/bin/windows/Rtools/), too. Once you started R, the following commands will install the package:
 ```r
 if (!require(devtools)) { install.packages("devtools") }
 devtools::install_github("fbreitwieser/pavian")
@@ -16,6 +16,24 @@ pavian::runApp(port=5000)
 ```
 
 Pavian will then be available at http://127.0.0.1:5000 in the web browser of you choice.
+
+**Installing Rsamtools**
+
+The alignment viewer uses `Rsamtools`. To install this package from Bioconductor, use the following commands
+
+```r
+source("https://bioconductor.org/biocLite.R")
+biocLite("Rsamtools")
+```
+
+**Docker image**
+
+As an alternative to installing Pavian in R, a Docker image is available at [florianbw/pavian](https://hub.docker.com/r/florianbw/pavian/). When you run this docker image, Pavian will start automatically on port 80, which you need to make available to the hosting machine. On the shell, you can pull the image and remap the Docker port to port 5000 with the following commands:
+
+```sh
+docker pull 'florianbw/pavian'
+docker run --rm -p 5000:80 florianbw/pavian
+```
 
 **Screenshots**
 
