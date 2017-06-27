@@ -224,9 +224,12 @@ pavianServer <- function(input, output, session) {
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
-      withProgress({rmarkdown::render(tempReport, output_file = file,
+      withProgress({
+	tryCatch(rmarkdown::render(tempReport, output_file = file,
                         params = params,
-                        envir = new.env(parent = globalenv()))}, message="Rendering report ...")
+                        envir = new.env(parent = globalenv())),
+                 error = function(e) writeLines(paste("Error in generating the report:",conditionMessage(e)), con=file))
+	}, message="Rendering report ...")
       
     }
   )
