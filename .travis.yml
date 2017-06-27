@@ -1,5 +1,5 @@
-warnings_are_errors: false
 language: r
+warnings_are_errors: false
 cache: packages
 r:
   - bioc-release
