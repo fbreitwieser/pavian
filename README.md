@@ -5,19 +5,17 @@ For more information look at the preprint at http://biorxiv.org/content/early/20
 
 **Installation and deployment**
 
-In R / RStudio:
+Pavian is a R package, and thus requires R to run. Look [here](http://a-little-book-of-r-for-bioinformatics.readthedocs.io/en/latest/src/installr.html) for how to install R. Once you started R, the following commands will install the package:
+```r
+if (!require(devtools)) { install.packages("devtools") }
+devtools::install_github("fbreitwieser/pavian")
+```
+To run Pavian from R, type
+```r
+pavian::runApp(port=5000)
+```
 
-    ## Installs required packages from CRAN and Bioconductor
-    if (!require(devtools)) { install.packages("devtools") }
-    devtools::install_github("fbreitwieser/pavian")
-    pavian::runApp(port=5000)
-
-With Docker:
-
-    docker pull 'florianbw/pavian'
-    docker run --rm -p 5000:80 florianbw/pavian
-
-In both cases Pavian will be available in the web browser of you choise at http://127.0.0.1:5000 .
+Pavian will then be available at http://127.0.0.1:5000 in the web browser of you choice.
 
 **Screenshots**
 
