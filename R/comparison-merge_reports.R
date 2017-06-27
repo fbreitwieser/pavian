@@ -199,7 +199,13 @@ merge_reports2 <- function(my_reports, col_names = NULL) {
   
   if (!"taxID" %in% colnames(my_reports[[1]]))
     id_cols <- c("name", "taxRank", "taxLineage")
-  stopifnot(all(c(id_cols,numeric_cols) %in% colnames(my_reports[[1]])))
+  
+  if (!all(c(id_cols,numeric_cols) %in% colnames(my_reports[[1]]))) {
+    stop("Not all required columns are colnames. Required: ",
+         paste0(c(id_cols,numeric_cols), collapse=", "),". Present: ",
+         paste0(colnames(my_reports[[1]]), collapse=", "))
+  }
+  
   
   my_reports <- lapply(seq_along(my_reports), function(i) {
     mm <- my_reports[[i]][,c(id_cols, numeric_cols)]
