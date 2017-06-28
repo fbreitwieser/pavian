@@ -23,7 +23,8 @@ Imports:
     RColorBrewer,
     colorspace,
     ggplot2,
-    rhandsontable
+    rhandsontable,
+    rappdirs
 Suggests: 
     Rsamtools, knitr
 Remotes:
