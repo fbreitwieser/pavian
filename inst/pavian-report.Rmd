@@ -27,7 +27,7 @@ date: `r params$doc_date`
 ---
 
 ```{r setup, include=FALSE}
-devtools::load_all("~/projects/refactor-pavian/pavian")
+library(pavian)
 library(DT)
 knitr::opts_chunk$set(echo = FALSE)
 options(DT.options = list(pageLength = 15,
@@ -182,24 +182,27 @@ colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20
 # }
 # 
 
-library(D3partitionR)
-#htmltools::tagList(lapply(names(reports), function(n) {
-  n="PT1"
+#library(D3partitionR)
+htmltools::tagList(lapply(names(reports), function(n) {
+#  n="PT1"
   my_report <- reports[[n]]
 
   my_report2 <- filter_taxon(my_report, "Chordata")
   my_report2 <- filter_taxon(my_report2, "other sequences")
-  my_report2 <- my_report2[my_report2$cladeReads > 0 & my_report2$taxonReads > 0 & grepl("^._root",my_report2$taxLineage), ]
-  path_in <- lapply(strsplit(gsub("._","",my_report2$taxLineage),"|",fixed=T), as.list)
-  value_in <- my_report2$taxonReads
-  D3partitionR(data=list(path=path_in,value=value_in), title=list(text=n), trail=TRUE)
-  #htmltools::tagList(
+  
+  # for D3partitionR
+  # my_report2 <- my_report2[my_report2$cladeReads > 0 & my_report2$taxonReads > 0 & grepl("^._root",my_report2$taxLineage), ]
+  #path_in <- lapply(strsplit(gsub("._","",my_report2$taxLineage),"|",fixed=T), as.list)
+  #value_in <- my_report2$taxonReads
+  #D3partitionR(data=list(path=path_in,value=value_in), title=list(text=n), trail=TRUE)
+
+  htmltools::tagList(
   #  br(),
-    #h2(n)
+    h2(n),
   #  tabsetPanel(
   #    tabPanel("Sankey visualization",
                
-        #build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale)
+        build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale)
         
   #    )#,
       #tabPanel("All data",
@@ -208,8 +211,8 @@ library(D3partitionR)
       #        extensions = 'Buttons', 
       #        options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))))
   #  )
-  #)
-#}))
+  )
+}))
 ```
 
 About

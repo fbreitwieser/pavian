@@ -205,8 +205,11 @@ pavianServer <- function(input, output, session) {
     filename = function() { sprintf("%s-report.html", input$sample_set_names) },
     content = function(file) {
       req(input$sample_set_names)
-      rmd_file <- "~/projects/refactor-pavian/pavian/inst/pavian-report.Rmd"
-      stopifnot(file.exists(rmd_file))
+      rmd_file <- system.file("pavian-report.Rmd",package="pavian")
+      if (!file.exists(rmd_file)) {
+        writeLines("Error in generating the report - didn't find Rmd file")
+      	return()
+      }
       # Copy the report file to a temporary directory before processing it, in
       # case we don't have write permissions to the current working dir (which
       # can happen when deployed).
