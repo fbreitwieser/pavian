@@ -178,7 +178,7 @@ colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20
 #   my_report2 <- filter_taxon(my_report, "Chordata")
 #   my_report2 <- filter_taxon(my_report2, "synthetic construct")
 #  
-#   ac <- ac %>% bs_append(title_side=n,content_side="",content_main=build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale) )
+#   ac <- ac %>% bs_append(title_side=n,content_side="",content_main=pavian:::build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale) )
 # }
 # 
 
@@ -202,7 +202,7 @@ htmltools::tagList(lapply(names(reports), function(n) {
   #  tabsetPanel(
   #    tabPanel("Sankey visualization",
                
-        build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale)
+        pavian:::build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale)
         
   #    )#,
       #tabPanel("All data",
