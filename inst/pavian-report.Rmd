@@ -77,20 +77,20 @@ tabsetPanel(
                          rownames = FALSE,
               class = "stripe hover row-border compact",
               extensions = 'Buttons', 
-              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))) %>% formatSummaryDT(display_percent = TRUE)
+              options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))) %>% formatSummaryDT(display_percent = TRUE)
   ), 
   tabPanel("Raw read numbers",
     DT::datatable(samples_summary,  
                   rownames = FALSE,
                 class = "stripe hover row-border compact",
                 extensions = 'Buttons', 
-                options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))) %>% formatSummaryDT(display_percent = FALSE)
+                options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))) %>% formatSummaryDT(display_percent = FALSE)
   ),
   tabPanel("Sample information",
            DT::datatable(sample_data,   
               class = "stripe hover row-border compact nowrap",
               extensions = 'Buttons', 
-              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))))
+              options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))))
 )
 ```
 
@@ -128,7 +128,7 @@ sel_euk = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
 my_df <- data.frame(tax_data[,1:3],cladeReads[,],tax_data[,4])
 my_dt <- function(sel)
   DT::datatable(my_df[sel,,drop=F],height = "600px",
-              class = "stripe hover row-border compact nowrap", extensions = 'Buttons',  options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name), scrollX = TRUE))
+              class = "stripe hover row-border compact nowrap", extensions = 'Buttons',  options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name), scrollX = TRUE))
 tabsetPanel(
   tabPanel("Bacteria", my_dt(sel_bacteria)),
   tabPanel("Viruses", my_dt(sel_viruses)),
@@ -140,7 +140,7 @@ tabsetPanel(
 #           DT::datatable(data.frame(tax_data[,1:3],100*signif(sweep(cladeReads,2,colSums(cladeReads[1:2,],na.rm=T),"/"),4),tax_data[4]),
 #             class = "stripe hover row-border compact nowrap",
 #              extensions = 'Buttons', 
-#              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name), scrollX = TRUE)))
+#              options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name), scrollX = TRUE)))
 #)
 ```
 
@@ -155,7 +155,7 @@ do.call(tabsetPanel,lapply(names(reports), function(n) {
            DT::datatable(my_report,
               class = "stripe hover row-border compact nowrap",
               extensions = 'Buttons', 
-              options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name)))
+              options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name)))
            )
 }))
 ```
@@ -209,7 +209,7 @@ htmltools::tagList(lapply(names(reports), function(n) {
       #         DT::datatable(my_report,
       #        class = "stripe hover row-border compact nowrap",
       #        extensions = 'Buttons', 
-      #        options = list( dom = 'Bfrtip', buttons = pavian::common_buttons(set_name))))
+      #        options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))))
   #  )
   )
 }))
