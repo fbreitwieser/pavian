@@ -21,13 +21,15 @@ RUN wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubu
     gdebi -n ss-latest.deb && \
     rm -f version.txt ss-latest.deb 
 
+# Special installation for git2r ...
 RUN wget https://github.com/ropensci/git2r/archive/master.zip; \
 unzip master.zip && mv git2r-master git2r; \
 cd git2r; \
 make install
-RUN R -e " install.packages(c('shiny', 'rmarkdown', 'devtools'))"
-RUN R -e " source('https://bioconductor.org/biocLite.R'); biocLite('Rsamtools')"
-RUN R -e " devtools::install_github('fbreitwieser/pavian')"
+
+RUN R -e "options(repos = c(CRAN = 'http://cran.rstudio.com')); install.packages(c('devtools'));"
+RUN R -e "source('https://bioconductor.org/biocLite.R'); biocLite('Rsamtools')"
+RUN R -e "devtools::install_github('fbreitwieser/pavian')"
 
 COPY shiny-server.conf  /etc/shiny-server/shiny-server.conf
 RUN rm -f /srv/shiny-server/*
