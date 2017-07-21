@@ -1,3 +1,9 @@
+
+#' Pavian server function
+#'
+#' @param input Input object
+#' @param output Output object
+#' @param session Session object
 #' @export
 pavianServer <- function(input, output, session) {
   
@@ -187,7 +193,7 @@ pavianServer <- function(input, output, session) {
     modalDialog(
       title="Generate sample report",
       textInput(ns("report_title"), "Title", sprintf("Classification report for %s",input$sample_set_names), width="100%"),
-      textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", packageVersion("pavian")), width="100%"),
+      textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
       textInput(ns("report_date"), "Date", date(), width="100%"),
       #checkboxInput(ns("opt_include_sankey"),"Include sample Sankeys"),
       footer = tagList(

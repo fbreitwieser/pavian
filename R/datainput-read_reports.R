@@ -28,9 +28,11 @@ read_reports <- function(report_files, report_names = basename(report_files), ca
                            detail = paste(n_reports - i, "left ..."))
              load_or_create(
                function() {
-                 tryCatch({
-                   read_report(report_files[i])
-                 }, error = function(e) print(e))
+                 report <- read_report(report_files[i]) %>% shinyTryCatch(message=paste("reading file",report_files[i]))
+                 if (is.null(report)|| nrow(report) == 0) {
+                   validate(need(FALSE, message=paste("Error reading file",report_files[i])))
+                 }
+                 report
                },
                sprintf("%s.rds", basename(report_files[i])),
                cache_dir = cache_dir

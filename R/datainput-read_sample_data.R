@@ -12,7 +12,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
   gd_sample_data <- FALSE
 
   if (file.exists(file.path(my_dir,def_filename))) {
-    sample_data <- read.delim(file.path(my_dir,def_filename), header = TRUE, sep = ";", stringsAsFactors = FALSE)
+    sample_data <- utils::read.delim(file.path(my_dir,def_filename), header = TRUE, sep = ";", stringsAsFactors = FALSE)
 
     if (!"ReportFile" %in% colnames(sample_data)){
       warning("Required column 'ReportFile' not present in ",def_filename)

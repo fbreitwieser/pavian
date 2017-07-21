@@ -79,7 +79,7 @@ dropdown_options <- function(ns) {
 
 #taxRanks <- list(
 #  "At taxon" = taxRanks,
-#  "At taxon and children" = setNames(paste("C",taxRanks),paste(names(taxRanks),"clade"))
+#  "At taxon and children" = stats::setNames(paste("C",taxRanks),paste(names(taxRanks),"clade"))
 #)
 
 #' UI part of the comparison module
@@ -120,13 +120,13 @@ na0 <- function(x) {
 }
 
 stat_name_to_f <- list(
-  "Mean"=function(x) sum(x,na.rm=T)/length(x),
-  "Median"=function(x) median(na0(x)),
-  "Max"=function(x) max(x, na.rm=T),
-  "Min"=function(x) min(x, na.rm=T),
+  "Mean"=function(x) stats::sum(x,na.rm=T)/length(x),
+  "Median"=function(x) stats::median(na0(x)),
+  "Max"=function(x) stats::max(x, na.rm=T),
+  "Min"=function(x) stats::min(x, na.rm=T),
   "Sd"=sd,
-  "MAD"=function(x) { x[is.na(x)] <- 0; x(x - median(x)) },
-  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (max(x) - median(x))/max(1,mad(x)) }
+  "MAD"=function(x) { x[is.na(x)] <- 0; x(x - stats::median(x)) },
+  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (stats::max(x) - stats::median(x))/stats::max(1,stats::mad(x)) }
 )
 
 #' Server part of comparison module
@@ -170,7 +170,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   output$downloadData <- downloadHandler(
     filename = function() { sprintf("%s-matrix-all-%s.tsv", base_set_name(), format(Sys.time(), "%y%m%d")) },
     content = function(file) {
-      write.table(r_summarized_report(), file, row.names = FALSE, sep = "\t")
+      utils::write.table(r_summarized_report(), file, row.names = FALSE, sep = "\t")
     }
   )
   
@@ -220,7 +220,9 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   })
   
   filtered_clade_reads <- reactive({
-    filter_cladeReads(clade_reads(), tax_data(), rm_taxa = c(input$contaminant_selector,input$contaminant_selector_clade))
+    filter_cladeReads(clade_reads(), tax_data(), 
+                      rm_taxa = c(input$contaminant_selector,input$contaminant_selector_clade)) %>%
+      shinyTryCatch(message="filtering clade reads")
   })
   
   get_tax_columns <- reactive({
@@ -379,18 +381,16 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     }
     
     cols <- c("255,0,0","0,255,0","0,0,255")
-    library(colorspace)
-    library(RColorBrewer)
-    cols1 <- rainbow_hcl(8, start=30,end=300)
-    cols1 <- brewer.pal(8, "Set1")
-    cols <- apply(hex2RGB(cols1)@coords*255,1,paste,collapse=",")
+    cols1 <- colorspace::rainbow_hcl(8, start=30,end=300)
+    cols1 <- RColorBrewer::brewer.pal(8, "Set1")
+    cols <- apply(colorspace::hex2RGB(cols1)@coords*255,1,paste,collapse=",")
     cols <- c(cols,cols,cols,cols)
     
     for (i in seq_along(numericColumns)) {
       columns <- col_seq(i)
       #rg <- range(dt[[1]]$data[,columns], na.rm = TRUE)
       #brks <- seq(from=rg[1],to=rg[2], length.out=20)
-      brks <- unique(quantile(dt[[1]]$data[,columns], probs = cumsum(1/2^(1:20)), na.rm =TRUE))
+      brks <- unique(stats::quantile(dt[[1]]$data[,columns], probs = cumsum(1/2^(1:20)), na.rm =TRUE))
       clrs <- round(seq(0, 1, length.out = length(brks) + 1),4) %>% {sprintf("rgba(%s,%s)", cols[i],.)}
       dt <- dt %>% DT::formatStyle(columns, backgroundColor = DT::styleInterval(brks, clrs))
     }

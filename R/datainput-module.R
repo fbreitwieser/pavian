@@ -115,6 +115,7 @@ dataInputModuleUI <- function(id,
 #' @param output Module output.
 #' @param session Shiny session.
 #' @param config_dir Directory for configuration files.
+#' @param server_access Whether a directory on the server can be loaded.
 #' @param load_server_directory Load server directory.
 #' @param load_example_data Load example data.
 #'
@@ -218,6 +219,8 @@ dataInputModule <- function(input, output, session,
       if (!is.null(sample_set_name)) {
         for (i in seq_along(res$sample_sets)) {
           sample_set_name <- names(res$sample_sets)[i]
+          
+          ## Set a unique name for the uploaded samples 
           old_names <- names(isolate(sample_sets))
           counter <- 1
           
@@ -231,6 +234,7 @@ dataInputModule <- function(input, output, session,
       validate(
         need(res$sample_sets, message = "No sample sets available. Set a different directory")
       )
+      
       sample_sets$val <-
         c(sample_sets$val, res$sample_sets[!names(res$sample_sets) %in% names(sample_sets$val)])
       sample_sets_selected <- names(res$sample_sets)[1]
@@ -345,16 +349,12 @@ dataInputModule <- function(input, output, session,
         "FormatOK",
         renderer = "
         function(instance, td, row, col, prop, value, cellProperties) {
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        if (value ) {
-        value = '&#x2713';
-        td.style.color = 'green';
-        } else {
-        value = '&#x2717';
-        td.style.color = 'red';
-        cellProperties.comment = 'The file format does not validate. Pavian supports the outputs from kraken-report, centrifuge-kreport (but not the centrifuge --report-file!), and metaphlan2.py. You can create a valid centrifuge report with centrifuge-kreport -x IDX OUT_FILE.';
-        }
-        return td;
+          Handsontable.renderers.TextRenderer.apply(this, arguments);
+          if (value ) { value = '&#x2713'; td.style.color = 'green';
+          } else      { value = '&#x2717'; td.style.color = 'red';
+            cellProperties.comment = 'The file format does not validate. Pavian supports the outputs from kraken-report, centrifuge-kreport (but not the centrifuge --report-file!), and metaphlan2.py. You can create a valid centrifuge report with centrifuge-kreport -x IDX OUT_FILE.';
+          }
+          return td;
         }"
       ) %>%
       hot_col("Name", readOnly = FALSE)

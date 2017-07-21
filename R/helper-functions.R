@@ -42,15 +42,6 @@ get_sample_name <- function(file_names, regex_pattern) {
   sapply(file_names, function(file_name) sub(regex_pattern,"\\1",file_name))
 }
 
-#' Upper-case first letter of string and use white-space for dot and underscore
-#'
-#' @param x string
-#'
-#' @return beautified string
-#' @export
-#'
-#' @examples
-#' beatuify_string(c("this.is.not.beautiful"))
 beautify_string <- function(x) {
   x <- gsub("[\\._]"," ",x)
   x <- sub("^([[:alpha:]])", "\\U\\1", x, perl=TRUE)
@@ -134,9 +125,9 @@ text_representation <- function(my_report,
   }
   #path <- sapply(res_depth, function(x) paste(rep(" ",x-1), collapse = ""))
   path <- sapply(res_path, function(x) { paste(x,collapse = ""); } )
-  white_to_red <- colorRampPalette(c("white", "red"))( 20 )
-  #brks <- quantile(my_report$cladeReads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
-  brks <- quantile(res_reads, probs = c(0,cumsum(1/2^(1:19))), na.rm =TRUE)
+  white_to_red <- grDevices::colorRampPalette(c("white", "red"))( 20 )
+  #brks <- stats::quantile(my_report$cladeReads, probs = cumsum(1/2^(1:20)), na.rm =TRUE)
+  brks <- stats::quantile(res_reads, probs = c(0,cumsum(1/2^(1:19))), na.rm =TRUE)
   int <- findInterval(res_reads, brks)
 
 
@@ -224,4 +215,20 @@ f2si2<-function (number)
   sistring <- sub("^0", "", paste0(number2,pre[ix]))
 
   return(sistring)
+}
+
+shinyTryCatch <- function(..., message = NULL) {
+  tryCatch(...,
+           error=function(e) {
+             full_message = sprintf("Error in %s:\n%s",message,e)
+             warning(full_message)
+             validate(need(FALSE, message=message))
+           })
+}
+
+withProgress1 <- function(expr, ..., quoted=F, message=NULL) {
+  if (!quoted)
+    expr <- substitute(expr)
+  
+  withProgress(shinyTryCatch(expr, message=message), ..., quoted=F, message=message)
 }

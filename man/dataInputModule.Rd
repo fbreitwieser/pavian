@@ -19,6 +19,8 @@ dataInputModule(input, output, session, config_dir = NULL,
 
 \item{config_dir}{Directory for configuration files.}
 
+\item{server_access}{Whether a directory on the server can be loaded.}
+
 \item{load_server_directory}{Load server directory.}
 
 \item{load_example_data}{Load example data.}

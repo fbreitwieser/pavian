@@ -34,7 +34,7 @@ plot_pileup <- function(pileup, seq_info_df = NULL,
 
 
   pileup <- plyr::ddply(pileup, c("seqnames","strand"), function(x) {
-    library("ggplot2")
+    requireNamespace("ggplot2")
     
     if (!is.null(nwin) && nrow(x)/nwin > 1) {
       #message("nwin")
@@ -64,7 +64,7 @@ plot_pileup <- function(pileup, seq_info_df = NULL,
       ## find the positions in between that we want to set to zero
       possible_zero_positions <- sort(unique(c(min_pos,x$pos - 1, x$pos + 1,max_pos)))
       possible_zero_positions <- possible_zero_positions[possible_zero_positions >= min_pos & possible_zero_positions <= max_pos]
-      pos_count <- setNames(rep(0, length(possible_zero_positions)),
+      pos_count <- stats::setNames(rep(0, length(possible_zero_positions)),
                             possible_zero_positions)
 
       pos_count[as.character(x$pos)] <- x$count

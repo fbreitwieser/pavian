@@ -52,7 +52,7 @@ get_pileup <- function(bam_file, min_mapq = 0, top_n = NULL, ...) {
 get_nreads <- function(bam_file, min_mapq=0) {
   req(requireNamespace("Rsamtools"))
   p2 <- Rsamtools::ScanBamParam(what = c("qname","rname", "strand", "pos", "qwidth", "mapq"))
-  bam <- as.data.frame(Rsamtools::scanBam(bam_file, param = p2)[[1]]) %>% filter(mapq >= min_mapq)
+  bam <- as.data.frame(Rsamtools::scanBam(bam_file, param = p2)[[1]]) %>% dplyr::filter(mapq >= min_mapq)
 
   res <- tapply(bam$qname, bam$rname, function(x) length(unique(x)))
   res[is.na(res)] <- 0

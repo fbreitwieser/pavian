@@ -89,12 +89,13 @@ sampleModuleUI <- function(id) {
 
 #' Server part for sample module
 #'
-#' @param input Shiny input object
-#' @param output Shiny output object
-#' @param session Shiny session object
-#' @param sample_data Samples \code{data.frame}
-#' @param reports List of reports
-#' @param datatable_opts Additional datatable opts (mostly $class)
+#' @param input Shiny input object.
+#' @param output Shiny output object.
+#' @param session Shiny session object.
+#' @param sample_data Samples \code{data.frame}.
+#' @param reports List of reports.
+#' @param selected_sample Pre-selected sample.
+#' @param datatable_opts Additional datatable opts (mostly $class).
 #'
 #' @return Sample module server functionality
 #' @export
@@ -226,7 +227,6 @@ sampleModule <- function(input, output, session, sample_data, reports,
   
   plot_it <- function(normalize = FALSE) {
     requireNamespace("ggplot2")
-    library(ggplot2)
     req(hover_plots$taxon)
     req(sum_cladeReads())
     len <- length(sum_cladeReads())
@@ -405,7 +405,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
                          curvature = input$curvature,
                          colourScale = colourScale(),
                          LinkGroup = ifelse(input$color_links, "source_name", NA)
-    )
+    ) %>% shinyTryCatch(message="building Sankey network")
   })
   
   output$text <- renderUI({
@@ -416,7 +416,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     }
     
     #    HTML(
-    quant1 <- quantile(my_report$cladeReads[my_report$taxonReads > 0], probs=1-input$quantile/100)
+    quant1 <- stats::quantile(my_report$cladeReads[my_report$taxonReads > 0], probs=1-input$quantile/100)
     div(style="line-height: 1;",
         text_representation(my_report,
                             name_format = name_format,
@@ -477,7 +477,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   output$downloadData <- downloadHandler(
     filename = function() { sprintf("%s-report-%s.tsv", input$sample_selector, format(Sys.time(), "%y%m%d")) },
     content = function(file) {
-      write.table(beautify_colnames(sample_view_report()), file, row.names = FALSE, sep = "\t")
+      utils::write.table(beautify_colnames(sample_view_report()), file, row.names = FALSE, sep = "\t")
     }
   )
   

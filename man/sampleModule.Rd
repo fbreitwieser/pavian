@@ -8,17 +8,19 @@ sampleModule(input, output, session, sample_data, reports,
   selected_sample = NULL, datatable_opts = NULL)
 }
 \arguments{
-\item{input}{Shiny input object}
+\item{input}{Shiny input object.}
 
-\item{output}{Shiny output object}
+\item{output}{Shiny output object.}
 
-\item{session}{Shiny session object}
+\item{session}{Shiny session object.}
 
-\item{sample_data}{Samples \code{data.frame}}
+\item{sample_data}{Samples \code{data.frame}.}
 
-\item{reports}{List of reports}
+\item{reports}{List of reports.}
 
-\item{datatable_opts}{Additional datatable opts (mostly $class)}
+\item{selected_sample}{Pre-selected sample.}
+
+\item{datatable_opts}{Additional datatable opts (mostly $class).}
 }
 \value{
 Sample module server functionality

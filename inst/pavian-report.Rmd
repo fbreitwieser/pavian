@@ -12,7 +12,7 @@ output:
 #    vertical_layout: scroll
 params:
   doc_title: "Example report on metagenomics classification results"
-  doc_author: !r paste("generated with Pavian v",packageVersion("pavian"))
+  doc_author: !r paste("generated with Pavian v",utils::packageVersion("pavian"))
   doc_date: !r date()
   set_name: "example_data"
   all_data_loaded: FALSE
@@ -65,7 +65,7 @@ samples_summary <- pavian::summarize_reports(reports)
 samples_summary$Name <- rownames(samples_summary)
 extra_cols <- c("Name")
 samples_summary <- samples_summary[,c(extra_cols, setdiff(colnames(samples_summary),extra_cols))]
-colnames(samples_summary) <- beautify_string(colnames(samples_summary))
+colnames(samples_summary) <- pavian:::beautify_string(colnames(samples_summary))
 
 start_color_bar_at <- 3
 samples_summary_percent <- samples_summary
@@ -217,4 +217,4 @@ htmltools::tagList(lapply(names(reports), function(n) {
 
 About
 =====
-This file was generated with the Pavian R package version `r packageVersion('pavian')` on `r date()`. 
+This file was generated with the Pavian R package version `r utils::packageVersion('pavian')` on `r date()`. 

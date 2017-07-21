@@ -61,7 +61,7 @@ robust_zscore <- function(m, min_scale = 1) {
   m1 <- m
   m1[is.na(m1)] <- 0
   t(scale(t(m),
-          center = apply(m1,1,median),
+          center = apply(m1,1,stats::median),
           scale  = pmax(apply(m1,1,stats::mad), min_scale)))
 }
 
@@ -72,7 +72,7 @@ calc_robust_zscore <- function(merged_reports, min_scale = 1) {
   dp2 <- merged_reports[, data_columns, drop=F]
   dp2[is.na(dp2)] <- 0
   merged_reports[, data_columns] <- t(scale(t(merged_reports[, data_columns, drop=F]),
-                                            center = apply(dp2,1,median),
+                                            center = apply(dp2,1,stats::median),
                                             scale  = pmax(apply(dp2,1,stats::mad), min_scale)))
   
   merged_reports
@@ -412,7 +412,7 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
         min_scale <- ifelse(is_percent, min_scale_percent, min_scale_reads)
         m1 <- mydata
         m1[is.na(m1)] <- 0
-        med1 <- apply(m1,1,median)
+        med1 <- apply(m1,1,stats::median)
         mad1 <- pmax(apply(m1,1,stats::mad), min_scale)
         mydata <- data.frame(signif(t(scale(t(mydata),
                                  center = med1,

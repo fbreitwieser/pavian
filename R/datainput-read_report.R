@@ -385,7 +385,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     cont <- cont[!grepl("^-", cont)]
     cont <- sub(".*\t  *","", cont)
     cont <- sub("; ?$","", cont)
-    report <- read.delim(textConnection(cont), stringsAsFactors = FALSE)
+    report <- utils::read.delim(textConnection(cont), stringsAsFactors = FALSE)
     colnames(report) <- c("taxonReads", "taxLineage")
     report$cladeReads <- report$taxonReads
 
@@ -475,6 +475,10 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   if (all(c("name","taxRank") %in% colnames(report)) && !"taxLineage" %in% colnames(report)) {
     ## Kraken report
     report$depth <- nchar(gsub("\\S.*","",report$name))/2
+    if (!all(report$depth == floor(report$depth))) {
+      warning("Depth doesn't work out!")
+      return(NULL)
+    }
     report$name <- gsub("^ *","",report$name)
 
     ## 'fix' taxRank
@@ -509,6 +513,10 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
       while (depths[current_row] != depths[prev_row] + 1) {
         # find previous row with correct depth
         prev_row <- prev_row - 1
+        if (prev_row < 1) {
+          warning("Kraken depths do not work out!")
+          return(NULL)
+        }
       }
       taxLineages[current_row] <- paste0(taxLineages[prev_row], "|", taxLineages[current_row])
 
@@ -537,7 +545,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
       report[1,"name"] != "u_unclassified" ||
       report[2,"name"] != "-_root") {
     warning(paste("File",myfile,"does not have the required format"))
-    print(head(report))
+    print(utils::head(report))
     return(NULL)
   }
 

@@ -3,7 +3,6 @@
 export(alignmentModule)
 export(alignmentModuleUI)
 export(beautify_colnames)
-export(beautify_string)
 export(comparisonModule)
 export(comparisonModuleUI)
 export(dashboardUI)

@@ -5,7 +5,7 @@
 \title{Run Pavian web interface}
 \usage{
 runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
-  server_access = FALSE, load_example_data = FALSE,
+  server_access = TRUE, load_example_data = FALSE,
   load_server_directory = FALSE, ...)
 }
 \arguments{
@@ -14,6 +14,10 @@ runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
 \item{server_dir}{Directory for sample files.}
 
 \item{server_access}{Allow users to change server directory}
+
+\item{load_example_data}{Load example data.}
+
+\item{load_server_directory}{Load server directory.}
 
 \item{...}{Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.}
 }

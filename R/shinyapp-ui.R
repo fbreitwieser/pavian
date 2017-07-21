@@ -1,5 +1,10 @@
 
 
+#' Function building dashboard UI, used in Shiny app
+#'
+#' @param request request object
+#'
+#' @return Dashboard page
 #' @export
 dashboardUI <- function(request) {
   dashboardPage(skin="black", title = "Pavian",
