@@ -42,7 +42,15 @@ get_sample_name <- function(file_names, regex_pattern) {
   sapply(file_names, function(file_name) sub(regex_pattern,"\\1",file_name))
 }
 
-## Helper function to upper-case column names
+#' Upper-case first letter of string and use white-space for dot and underscore
+#'
+#' @param x string
+#'
+#' @return beautified string
+#' @export
+#'
+#' @examples
+#' beatuify_string(c("this.is.not.beautiful"))
 beautify_string <- function(x) {
   x <- gsub("[\\._]"," ",x)
   x <- sub("^([[:alpha:]])", "\\U\\1", x, perl=TRUE)
