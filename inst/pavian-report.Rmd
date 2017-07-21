@@ -77,14 +77,14 @@ tabsetPanel(
                          rownames = FALSE,
               class = "stripe hover row-border compact",
               extensions = 'Buttons', 
-              options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))) %>% formatSummaryDT(display_percent = TRUE)
+              options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))) %>% pavian:::formatSummaryDT(display_percent = TRUE)
   ), 
   tabPanel("Raw read numbers",
     DT::datatable(samples_summary,  
                   rownames = FALSE,
                 class = "stripe hover row-border compact",
                 extensions = 'Buttons', 
-                options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))) %>% formatSummaryDT(display_percent = FALSE)
+                options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name))) %>% pavian:::formatSummaryDT(display_percent = FALSE)
   ),
   tabPanel("Sample information",
            DT::datatable(sample_data,   
