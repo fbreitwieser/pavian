@@ -122,11 +122,11 @@ na0 <- function(x) {
 stat_name_to_f <- list(
   "Mean"=function(x) stats::sum(x,na.rm=T)/length(x),
   "Median"=function(x) stats::median(na0(x)),
-  "Max"=function(x) stats::max(x, na.rm=T),
-  "Min"=function(x) stats::min(x, na.rm=T),
+  "Max"=function(x) max(x, na.rm=T),
+  "Min"=function(x) min(x, na.rm=T),
   "Sd"=sd,
   "MAD"=function(x) { x[is.na(x)] <- 0; x(x - stats::median(x)) },
-  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (stats::max(x) - stats::median(x))/stats::max(1,stats::mad(x)) }
+  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (max(x) - stats::median(x))/max(1,stats::mad(x)) }
 )
 
 #' Server part of comparison module
