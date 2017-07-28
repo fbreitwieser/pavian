@@ -15,8 +15,8 @@ stat_name_to_f <- list(
   "Max"=function(x) max(x, na.rm=T),
   "Min"=function(x) min(x, na.rm=T),
   "Sd"=sd,
-  "MAD"=function(x) { x[is.na(x)] <- 0; x(x - stats::median(x)) },
-  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (max(x) - stats::median(x))/max(1,stats::mad(x)) }
+  "MAD"=function(x) { x[is.na(x)] <- 0; stats::mad(x) },
+  "Max Z-score"=function(x) { x[is.na(x)] <- 0; max( (x - stats::median(x))/max(1,stats::mad(x)) ) }
 )
 
 show_rownames <- FALSE
