@@ -120,7 +120,7 @@ na0 <- function(x) {
 }
 
 stat_name_to_f <- list(
-  "Mean"=function(x) stats::sum(x,na.rm=T)/length(x),
+  "Mean"=function(x) sum(x,na.rm=T)/length(x),
   "Median"=function(x) stats::median(na0(x)),
   "Max"=function(x) max(x, na.rm=T),
   "Min"=function(x) min(x, na.rm=T),
