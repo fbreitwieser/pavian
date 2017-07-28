@@ -9,6 +9,16 @@ taxRanks1 <- c(
   "Species" = "S"
 )
 
+stat_name_to_f <- list(
+  "Mean"=function(x) sum(x,na.rm=T)/length(x),
+  "Median"=function(x) stats::median(na0(x)),
+  "Max"=function(x) max(x, na.rm=T),
+  "Min"=function(x) min(x, na.rm=T),
+  "Sd"=sd,
+  "MAD"=function(x) { x[is.na(x)] <- 0; x(x - stats::median(x)) },
+  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (max(x) - stats::median(x))/max(1,stats::mad(x)) }
+)
+
 show_rownames <- FALSE
 
 ## define a callback that
@@ -66,8 +76,7 @@ dropdown_options <- function(ns) {
     ),
     selectizeInput(ns("opt_statsColumns"), label = " Row summary", multiple = TRUE,
                    options = list(placeholder = "Add column(s) with summary statistics of taxa's data"),
-                   choices = c("Mean", "Median", "Max", "Min", "Sd",
-                               "Maximum absolute deviation", "Max Z-score"),
+                   choices = names(stat_name_to_f),
                    selected = c("Max")), 
     numericInput(ns("opt_min_scale_reads"), "Minimum scale for reads z-score", value = 1, min = 0),
     numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
@@ -118,16 +127,6 @@ na0 <- function(x) {
   x[is.na(x)] <- 0
   x
 }
-
-stat_name_to_f <- list(
-  "Mean"=function(x) sum(x,na.rm=T)/length(x),
-  "Median"=function(x) stats::median(na0(x)),
-  "Max"=function(x) max(x, na.rm=T),
-  "Min"=function(x) min(x, na.rm=T),
-  "Sd"=sd,
-  "MAD"=function(x) { x[is.na(x)] <- 0; x(x - stats::median(x)) },
-  "Max Z-score"=function(x) { x[is.na(x)] <- 0; (max(x) - stats::median(x))/max(1,stats::mad(x)) }
-)
 
 #' Server part of comparison module
 #'
