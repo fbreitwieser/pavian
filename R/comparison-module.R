@@ -169,7 +169,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   output$downloadData <- downloadHandler(
     filename = function() { sprintf("%s-matrix-all-%s.tsv", base_set_name(), format(Sys.time(), "%y%m%d")) },
     content = function(file) {
-      utils::write.table(r_summarized_report(), file, row.names = FALSE, sep = "\t")
+      utils::write.table(summarized_report_for_download(), file, row.names = FALSE, sep = "\t")
     }
   )
   
@@ -260,6 +260,12 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
            groupSampleColumns = input$opt_groupSamples, specific_tax_rank = input$opt_taxRank != "-",
            min_scale_reads = get_input("opt_min_scale_reads"), min_scale_percent = get_input("opt_min_scale_percent"),
            min_clade_reads = get_input("opt_min_clade_reads"))
+  })
+  
+  summarized_report_for_download <- reactive({
+    summarized_report <- summarized_report_df()
+    req(summarized_report)
+    summarized_report[[1]]
   })
   
   ## Different DT version handle namespaces differently. Make sure it works in all of them.
