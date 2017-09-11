@@ -322,8 +322,9 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
               alert("You clicked on "+data[4]+"\'s row");}
               )
               ')
-    ) %>% formatDT(nSamples = nrow(sample_data())+length(input$opt_statsColumns),
+    ) %>% formatDT(nSamples = nrow(sample_data()),
                    numericColumns = numericColumns(),
+                   statsColumns = input$opt_statsColumns,
                    nColumnsBefore = ncol(tax_data()) - 1,
                    groupSampleColumns = input$opt_groupSamples)
   })
@@ -346,16 +347,18 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   }
   
   
-  formatDT <- function(dt, nSamples, numericColumns, nColumnsBefore, groupSampleColumns = TRUE) {
+  formatDT <- function(dt, nSamples, numericColumns, statsColumns, nColumnsBefore, groupSampleColumns = TRUE) {
     ## Give the correct format to the columns: thousands separators for numbers, and percent sign for percents
     ## numericColumns ending with "Reads" are Integer
-    
+    nSSamples = nSamples + length(statsColumns)
     by_seq <- ifelse(isTRUE(groupSampleColumns), length(numericColumns), 1)
     col_seq <- function(i) {
       if (isTRUE(groupSampleColumns))
-        seq(i, by=length(numericColumns), length.out=nSamples) + nColumnsBefore
+        #seq(i, by=length(numericColumns), length.out=nSamples) + nColumnsBefore + length(numericColumns)*length(statsColumns)
+        # show colors when grouping samples
+	seq(i, by=length(numericColumns), length.out=nSamples) + nColumnsBefore + length(numericColumns)*length(statsColumns)
       else
-        seq((i-1)*nSamples+1, by=1, length.out=nSamples) + nColumnsBefore
+        seq((i-1)*nSamples+1+length(statsColumns)*i, by=1, length.out=nSamples) + nColumnsBefore
     }
     
     extendColumns <- function(columns) {
