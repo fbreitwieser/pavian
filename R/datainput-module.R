@@ -235,8 +235,9 @@ dataInputModule <- function(input, output, session,
         need(res$sample_sets, message = "No sample sets available. Set a different directory")
       )
       
+      sample_sets_val <- isolate(sample_sets$val)
       sample_sets$val <-
-        c(sample_sets$val, res$sample_sets[!names(res$sample_sets) %in% names(sample_sets$val)])
+        c(sample_sets_val, res$sample_sets[!names(res$sample_sets) %in% names(sample_sets_val)])
       sample_sets_selected <- names(res$sample_sets)[1]
       return(TRUE)
     }
