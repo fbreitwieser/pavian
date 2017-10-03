@@ -462,7 +462,7 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
   
   summarized_report <- cbind(tax_data[, taxColumns], 
                              numeric_data1, 
-                             TaxLineage = get_col(tax_data,"taxLineage"))
+                             lineage =beautify_taxLineage(get_col(tax_data,"taxLineage")))
   
   # filter empty rows
   sel <- apply(numeric_data1, 1, function(x) all(is.na(x) | x==0))
