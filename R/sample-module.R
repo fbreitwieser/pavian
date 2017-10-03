@@ -183,7 +183,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
   
   output$sankey_hover_plots <- renderUI({
-    req(hover_plots$taxon)
+    validate(need(length(reports()) > 1, message="Need more than one sample in sample set.")) 
+    validate(need(hover_plots$taxon, message="Hover or select a taxon to display reads across samples."))
     ns <- session$ns
     my_report <- sample_view_report()
     my_report$name <- sub("^._","",my_report$name)
