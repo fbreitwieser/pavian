@@ -14,6 +14,13 @@ REPORTATTR <- function(name) {
   REPORTATTR_vec[[name, exact=TRUE]]
 }
 
+COLNAMES <- list(
+  name = "Name",
+  taxRank = "Rank",
+  taxID = "TID",
+  taxLineage = "Lineage"
+)
+
 req_attr <- function(mydf, myattr) {
   validate(need(myattr), "Need valid attribute definition!")
   validate(need(attr(mydf,myattr, exact=TRUE)), paste("Attribute", myattr, "is not truthy!"))
@@ -375,12 +382,14 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
                    numericColumns, statsColumns, sum_reads = NULL,
                    groupSampleColumns = FALSE, specific_tax_rank = FALSE,
                    min_scale_reads = 1, min_scale_percent = 0.001, min_clade_reads = 1) {
-  
+ 
+   
   taxColumns <- colnames(tax_data)
   taxColumns <- taxColumns[taxColumns != "taxLineage"]
+  taxColumns1 <- COLNAMES[taxColumns]
   sampleNames <- c(statsColumns, get_col(sample_data, "Name"))
   
-  dt_container <- get_dt_container(numericColumns, taxColumns, sampleNames, groupSampleColumns)
+  dt_container <- get_dt_container(numericColumns, taxColumns1, sampleNames, groupSampleColumns)
   #add_names_to_columns <- length(numericColumns) > 1
   numericColumns2 <- strsplit(numericColumns, " ")
   
