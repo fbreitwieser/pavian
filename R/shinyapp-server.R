@@ -113,7 +113,7 @@ pavianServer <- function(input, output, session) {
       shinydashboard::updateTabItems(session,"tabs","Data Selection")
     } else {
       req(reports())
-      updateTabItems(session,"tabs","Overview")
+      #updateTabItems(session,"tabs","Overview")
       code <- sprintf("$('span.logo').text('%s')",input$sample_set_names)
       shinyjs::runjs(code)
     }
@@ -123,8 +123,11 @@ pavianServer <- function(input, output, session) {
   ## TODO: Change to reactiveValues (or use makeReactiveBinding?) at some point in time,
   ## then I can call it in observeEvent
   sample_data <- reactive({
+    req(sample_sets$val)
     req(input$sample_set_names)
-    res <- isolate(sample_sets$val)[[input$sample_set_names]]
+    message("sample_data ...")
+    res <- sample_sets$val[[input$sample_set_names]]
+    #res <- isolate(sample_sets$val)[[input$sample_set_names]]
     req(res)
     res <- res[res$Include, ]
     attr(res, "set_name") <- input$sample_set_names

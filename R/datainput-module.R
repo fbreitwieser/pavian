@@ -298,7 +298,7 @@ dataInputModule <- function(input, output, session,
       new_df <- rhandsontable::hot_to_r(input$table)
       
       if (!isTRUE(all.equal(old_df, new_df))) {
-        sample_sets$val[[input$sample_set_select]] <<- new_df
+        sample_sets$val[[input$sample_set_select]] <- new_df
       }
     }, error = function(e)
       message("Error calling hot_to_r!"))
