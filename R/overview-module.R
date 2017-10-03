@@ -5,25 +5,29 @@
 #' @return UI elements for report overview module.
 #' @export
 #' @import shiny
-reportOverviewModuleUI <- function(id) {
+ reportOverviewModuleUI<- function(id) {
   ns <- shiny::NS(id)
-  
+  uiOutput(ns("UI"))
+}
+
+reportOverviewModuleUI_function <- function(ns) {
   shiny::tagList(
     HTML("This page shows the summary of the classifications in the selected sample set.
          The cells have a barchart that shows the relation of the cell value to other cell values in the same category, 
          with the microbiota columns being a separate category from the rest."),
     #checkboxInput(ns("opt_samples_overview_percent"), label = "Show percentages instead of number of reads", value = FALSE),
-    tabsetPanel(
-      tabPanel("Classification summary", 
-               div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_percent'))),
-               br(),
-               uiOutput(ns("btn_sample_percent_ui"))
-      ),
-      tabPanel("Raw read numbers", 
-               div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt'))))
+    tabsetPanel(id = ns("tabsetpanel"),
+                tabPanel("Classification summary", 
+                         div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_percent'))),
+                         br(),
+                         uiOutput(ns("btn_sample_percent_ui"))
+                ),
+                tabPanel("Raw read numbers", 
+                         div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt'))))
     ),
     actionLink(ns("btn_go_to_sample_comp"), label="Explore identifications across all samples in the Sample Comparison View.", icon=icon("line-chart"))
-  )
+    )
+  
 }
 
 ## TODO: use replacedata to replace the data https://github.com/rstudio/DT/issues/168
@@ -43,6 +47,11 @@ reportOverviewModuleUI <- function(id) {
 #' @import shiny
 reportOverviewModule <- function(input, output, session, sample_data, reports, datatable_opts = NULL) {
   #r_state <- list()
+  
+  output$UI <- renderUI({
+    req(reports())
+    reportOverviewModuleUI_function(session$ns)
+  })
   
   get_samples_summary <- reactive( {
     validate(need(reports(), message = "No data available."))

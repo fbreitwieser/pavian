@@ -123,8 +123,8 @@ pavianServer <- function(input, output, session) {
   ## TODO: Change to reactiveValues (or use makeReactiveBinding?) at some point in time,
   ## then I can call it in observeEvent
   sample_data <- reactive({
-    req(sample_sets$val)
-    req(input$sample_set_names)
+    validate(need(sample_sets$val, message="Upload samples or select sample set."))
+    validate(need(input$sample_set_names, message="Upload samples or select sample set."))
     message("sample_data ...")
     res <- sample_sets$val[[input$sample_set_names]]
     #res <- isolate(sample_sets$val)[[input$sample_set_names]]
@@ -136,7 +136,7 @@ pavianServer <- function(input, output, session) {
   
   ## contains the classification results ('reports') of the selected sample set
   reports <- reactive({
-    req(sample_data())
+    validate(need(sample_data(), message="Upload samples or select sample set."))
     validate(
       need("ReportFilePath" %in% colnames(sample_data()), "ReportFilePath not available!"),
       need("Name" %in% colnames(sample_data()), "Name not available!")

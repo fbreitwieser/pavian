@@ -100,7 +100,10 @@ dropdown_options <- function(ns) {
 #' @import shiny
 comparisonModuleUI <- function(id) {
   ns <- NS(id)
-  
+  uiOutput(ns("UI"))
+}
+
+comparisonModuleUI_function <- function(ns) {
   shiny::tagList(
     box(width=12,
         div(style="display:inline-block",
@@ -146,6 +149,11 @@ na0 <- function(x) {
 #' @export
 comparisonModule <- function(input, output, session, sample_data, tax_data, clade_reads, taxon_reads,
                              datatable_opts = NULL, filter_func = NULL, tax_data_add = NULL, search = NULL) {
+  
+  output$UI <- renderUI({
+    req(sample_data())
+    comparisonModuleUI_function(session$ns)
+  })
   
   dt_options <- reactiveValues(search = "", order = NULL, colnames = NULL)
   

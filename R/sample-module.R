@@ -30,7 +30,11 @@ figure_options <- function(ns) {
 #' @export
 #' @import shiny
 sampleModuleUI <- function(id) {
-  ns <- NS(id)
+  ns <- shiny::NS(id)
+  uiOutput(ns("UI"))  
+}
+
+sampleModuleUI_function <- function(ns) {
   shiny::tagList(
     fluidRow(
       div(class="col-lg-5 col-md-6 col-sm-6 col-xs-12",
@@ -101,6 +105,11 @@ sampleModuleUI <- function(id) {
 #' @export
 sampleModule <- function(input, output, session, sample_data, reports,
                          selected_sample = NULL, datatable_opts = NULL) {
+  
+  output$UI <- renderUI({
+    req(reports())
+    sampleModuleUI_function(session$ns)
+  })
   
   sankey_opts_state <- reactiveValues(visible = TRUE)
   
