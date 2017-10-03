@@ -59,7 +59,7 @@ dropdown_options <- function(ns) {
     #div(class="col-lg-6 col-md-6 lessPadding",
     selectizeInput(
       ns('contaminant_selector'),
-      allcontaminants, selected = c("unclassified", "Homo sapiens", "root"),
+      allcontaminants, selected = c("unclassified", "Chordata", "root"),
       label = "Filter taxon", multiple = TRUE,
       options = list(maxItems = 25, create = TRUE, placeholder = 'Filter taxa'),
       width = "100%"

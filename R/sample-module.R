@@ -46,7 +46,7 @@ sampleModuleUI <- function(id) {
           div(class="col-lg-10 col-md-8 col-sm-12 lessPadding",
               selectizeInput(
                 ns('contaminant_selector'), label = NULL,
-                allcontaminants, selected = c("artificial sequences", "Homo sapiens", "unclassified"),
+                allcontaminants, selected = c("artificial sequences", "Chordata", "unclassified"),
                 multiple = TRUE, options = list(maxItems = 25, create = TRUE, placeholder = 'Filter clade'),
                 width = "100%"
               )
