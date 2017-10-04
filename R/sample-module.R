@@ -34,7 +34,12 @@ sampleModuleUI <- function(id) {
   uiOutput(ns("UI"))  
 }
 
-sampleModuleUI_function <- function(ns) {
+sampleModuleUI_function <- function(ns, samples, selected_sample = NULL) {
+  if (!is.null(selected_sample) && is.null(selected_sample)) {
+    selected_sample = selected_sample()
+  } else {
+    selected_sample = samples[1]
+  }
   shiny::tagList(
     fluidRow(
       div(class="col-lg-5 col-md-6 col-sm-6 col-xs-12",
@@ -42,7 +47,8 @@ sampleModuleUI_function <- function(ns) {
           div(class="col-lg-8 col-md-7 col-sm-12 lessPadding", style="font-size: 18px;",
               selectInput(
                 ns('sample_selector'), label = NULL,
-                choices = NULL, multiple = FALSE,
+                choices = samples, selected = selected_sample,
+                multiple = FALSE,
                 width = '100%'
               ))),
       div(class="col-lg-7 col-md-6 col-sm-6 col-xs-12",
@@ -108,7 +114,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   
   output$UI <- renderUI({
     req(reports())
-    sampleModuleUI_function(session$ns)
+    sampleModuleUI_function(session$ns, names(reports()), selected_sample)
   })
   
   sankey_opts_state <- reactiveValues(visible = TRUE)
@@ -128,16 +134,23 @@ sampleModule <- function(input, output, session, sample_data, reports,
     }
   })
   
-  observe({
+  #observe({
     #shinyjs::show("iterations")
-    ss <- 1 
-    if (!is.null(selected_sample) && !is.null(selected_sample())){
-      ss <- selected_sample() 
-    }
-    updateSelectInput(session, 'sample_selector',
-                      choices = names(reports()),
-                      selected = names(reports())[ss])
-  })
+  #  ss <- 1 
+  #  if (!is.null(selected_sample) && !is.null(selected_sample())){
+  #    ss <- selected_sample() 
+  #  }
+  #  updateSelectInput(session, 'sample_selector',
+  #                    choices = names(reports()),
+  #                    selected = names(reports())[ss])
+  #})
+  
+  
+  #observeEvent(reports(), {
+  #  updateSelectInput(session, 'sample_selector',
+  #                    choices = names(reports()),
+  #                    selected = names(reports())[1])
+  #})
   
   #observeEvent(selected_sample, {
   #  validate(need(selected_sample <= length(reports()), message = "Selected sample number too high."))
@@ -147,11 +160,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   #})
   
   sample_view_report <- reactive({
-    
-    validate(need(reports(),
-                  "No reports"))
-    
-    req(input$sample_selector)
+    validate(need(input$sample_selector,message="Select sample sets with reports"))
     
     my_report <- reports()[[input$sample_selector]]
     validate(need(my_report, "No sample with that name"))
