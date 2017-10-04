@@ -72,10 +72,14 @@ pavianServer <- function(input, output, session) {
       sample_set_names <- names(sample_sets$val)
       #sample_set_names["Upload data ..."] <- "upload_files"
       #shinyjs::enable("btn_remove_cache_files")
-      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_set_names[1])
       shinyjs::show("sample_set_names")
+      code <- sprintf("$('#sample_set_names').attr('size', %s)", min(length(sample_set_names), 5))
+      shinyjs::runjs(code)
+      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_set_names[1])
     } else {
-      updateSelectInput(session, "sample_set_names", choices = NULL, selected= NULL)
+      updateSelectInput(session, "sample_set_names", choices = character(0), selected= character(0))
+      code <- sprintf("$('span.logo').text('')")
+      shinyjs::runjs(code)
       shinyjs::hide("sample_set_names")
       #shinyjs::disable("btn_remove_cache_files")
     }
@@ -146,6 +150,7 @@ pavianServer <- function(input, output, session) {
   ## contains the classification results ('reports') of the selected sample set
   reports <- reactive({
     validate(need(sample_data(), message="Upload samples or select sample set."))
+    validate(need(length(sample_data()) > 0, message="Upload samples or select sample set."))
     validate(
       need("ReportFilePath" %in% colnames(sample_data()), "ReportFilePath not available!"),
       need("Name" %in% colnames(sample_data()), "Name not available!")
@@ -179,7 +184,8 @@ pavianServer <- function(input, output, session) {
   ##################
   ## Sample module
   selected_sample <- reactive({overview_res$selected_sample})
-  callModule(sampleModule, "sample", sample_data, reports, selected_sample = selected_sample, datatable_opts=datatable_opts)
+  callModule(sampleModule, "sample", sample_data, reports, selected_sample = selected_sample, 
+             datatable_opts=datatable_opts)
   
   
   ######################

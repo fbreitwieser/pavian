@@ -33,6 +33,14 @@ th.numeric_header2 {
     border: 1px solid #ccc;
 }
 
+select {
+    overflow-y: auto;
+}
+
+select[id=sample_set_names] {
+  border: 0px;
+}
+
 body {
   font-family: 'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
   overflow-x: hidden;
