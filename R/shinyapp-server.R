@@ -134,6 +134,15 @@ pavianServer <- function(input, output, session) {
     res
   })
   
+  output$bookmarkBtnUI <- renderUI ({
+    req(input$sample_set_names)
+    shiny::tagList(
+      bookmarkButton(id="bookmark_btn",label = "Bookmark state ...", title = "Bookmark this Pavian's state and get a URL for sharing."),
+      actionLink("link_generate_report", "Generate HTML report ..."),
+      shinyjs::hidden(checkboxInput("compact_format", "Compact tables", value = T))
+    )
+  })
+  
   ## contains the classification results ('reports') of the selected sample set
   reports <- reactive({
     validate(need(sample_data(), message="Upload samples or select sample set."))

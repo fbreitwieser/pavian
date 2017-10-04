@@ -55,9 +55,7 @@ dashboardUI <- function(request) {
                     ),
                     div(class="hide_when_sidebar_collapsed", #style = "color:lightblue",
                         br(),
-                          bookmarkButton(id="bookmark_btn",label = "Bookmark state ...", title = "Bookmark this Pavian's state and get a URL for sharing."),
-                      actionLink("link_generate_report", "Generate HTML report ..."),
-                      shinyjs::hidden(checkboxInput("compact_format", "Compact tables", value = T))
+                        uiOutput("bookmarkBtnUI")
                     )
                   ),
                   conditionalPanel(
