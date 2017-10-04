@@ -59,11 +59,6 @@ if (isTRUE(params$all_data_loaded)) {
   sample_directory <- system.file("shinyapp","example-data","brain-biopsies",package="pavian")
   sample_data <- pavian::read_sample_data(sample_directory)
   reports <- pavian::read_reports(sample_data$ReportFilePath, sample_data$Name)
-  sample_directory1 <- system.file("shinyapp","example-data","hmp",package="pavian")
-  sample_data1 <- pavian::read_sample_data(sample_directory1)
-  reports1 <- pavian::read_reports(sample_data1$ReportFilePath, sample_data1$Name)
-  sample_data <- rbind_w_common_columns(sample_data, sample_data1)
-  reports <- c(reports, reports1)
 }
 
 samples_summary <- pavian::summarize_reports(reports)

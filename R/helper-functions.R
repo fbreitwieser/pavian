@@ -17,7 +17,6 @@ get_col <- function(df, col) {
   df[[col]]
 }
 
-#' @export
 rbind_w_common_columns <- function(...) {
   dat <- list(...)
   common_colnames <- Reduce(intersect, sapply(dat, colnames))
