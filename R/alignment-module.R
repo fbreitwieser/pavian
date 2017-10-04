@@ -47,6 +47,7 @@ To generate a BAM file, download a genome of interest, and align to it with an a
       tabPanel(
         title = "View alignment",
         uiOutput(ns("warn_Rsamtools"), width = 12),
+        shinyjs::hidden(div(id=ns("align_view_rsamtools"),
         fluidRow(
           column(5,shiny::fileInput(ns("bam_file_upload"),"Upload BAM and BAI file", accept=c(".bam",".bai"), multiple=TRUE)),
           column(3,shiny::actionButton(ns("btn_load_example_data"), "Load example data")),
@@ -61,7 +62,7 @@ To generate a BAM file, download a genome of interest, and align to it with an a
         shiny::plotOutput(ns("sample_align"), brush = brushOpts(id=ns("align_brush"), direction = "x", resetOnNew = TRUE), height = "200px"),
         shiny::plotOutput(ns("plot_brush"), height = "200px"),
         downloadLink(ns("pdf"), "PDF"),
-        downloadLink(ns("pdf_brush"), "PDF")
+        downloadLink(ns("pdf_brush"), "PDF")))
       ),
       tabPanel(
         title = "Download genomes for alignment",
@@ -132,17 +133,35 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
 
   output$warn_Rsamtools <- renderUI({
     if (!requireNamespace("Rsamtools")) {
-      shinyjs::disable("bam_file_upload")
-      shinyjs::disable("btn_load_example_data")
-      shinyjs::disable("align_loess")
-      shinyjs::disable("align_moving_avg")
+      shinyjs::hide("align_view_rsamtools")
 
+      div(id=session$ns("warn_div"),
       infoBox(
         "Functionality requires package Rsamtools",
         "See https://bioconductor.org/packages/release/bioc/html/Rsamtools.html for installation instructions.",
         icon = icon("exclamation-triangle"),
         color = "red", width = 12
+      ),
+      actionButton(session$ns("btn_install_rsamtools"),"Install Rsamtools")
       )
+    } else {
+      shinyjs::show("align_view_rsamtools")
+    }
+  })
+  
+  observeEvent(input$btn_install_rsamtools, {
+    shiny::withProgress({
+      tryCatch({
+        source("https://bioconductor.org/biocLite.R")
+        biocLite("Rsamtools")
+      }, error=function(e) {})
+    }, message = "Installing Rsamtools ... (will take a while)")
+    if (require("Rsamtools")) {
+      shinyjs::hide("warn_Rsamtools")
+      shinyjs::show("align_view_rsamtools")
+      shinyjs::alert("Successfully installed Rsamtools!")
+    } else {
+      shinyjs::alert("Rsamtools installation unsuccessful.")
     }
   })
 
