@@ -97,8 +97,6 @@ tabsetPanel(
 Classification results
 =====================================  
 
-Only species with at least 10 reads in at least one sample are displayed.
-
 ```{r, message = FALSE, warning=FALSE, eval=TRUE}
 ## Classificationas across samples
 merged_reports <- pavian::merge_reports2(reports, col_names = sample_data$Name)
@@ -111,10 +109,15 @@ stat_columns <- c("Mean", "Median", "Max", "Min", "Sd", "Maximum absolute deviat
 stat_columns <- c("Mean")
 shown_rows <- seq_len(nrow(tax_data))
 
-sel <- apply(cladeReads, 1, function(x) any(x >= 10, na.rm = T))
-tax_data <- tax_data[sel,]
-taxonReads <- taxonReads[sel,]
-cladeReads <- cladeReads[sel,]
+if (nrow(cladeReads) > 1000) {
+  max_order <- order(apply(cladeReads, 1, max, na.rm=T), decreasing = TRUE)
+  #sel <- apply(cladeReads, 1, function(x) any(x >= 10, na.rm = T))
+  sel <- max_order[1:1000]
+  cat("Showing top 1000 species of ",length(max_order))
+  tax_data <- tax_data[sel, ,drop=F]
+  taxonReads <- taxonReads[sel, ,drop=F]
+  cladeReads <- cladeReads[sel, ,drop=F]
+}
 
 taxonReads[taxonReads == 0] <- NA
 cladeReads[cladeReads == 0] <- NA
@@ -125,7 +128,7 @@ sel_fungi = grepl("k_Fungi",tax_data[,4])  & tax_data[,2] == 'S'
 sel_protists = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
 sel_euk = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
 
-my_df <- data.frame(tax_data[,1:3],cladeReads[,],tax_data[,4])
+my_df <- data.frame(tax_data[,1:3, drop=F],cladeReads,tax_data[,4, drop=F])
 my_dt <- function(sel)
   DT::datatable(my_df[sel,,drop=F],height = "600px",
               class = "stripe hover row-border compact nowrap", extensions = 'Buttons',  options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name), scrollX = TRUE))
