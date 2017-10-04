@@ -57,30 +57,24 @@ taxRanks <- c(
 dropdown_options <- function(ns) {
   shiny::tagList(
     #div(class="col-lg-6 col-md-6 lessPadding",
+    shinyjs::hidden(
     selectizeInput(
       ns('contaminant_selector'),
-      allcontaminants, selected = c("unclassified", "Chordata", "root"),
+      allcontaminants,
       label = "Filter taxon", multiple = TRUE,
       options = list(maxItems = 25, create = TRUE, placeholder = 'Filter taxa'),
       width = "100%"
       #)
-    ),
+    )),
     #div(class="col-lg-6 col-md-6 lessPadding",
-    selectizeInput(
-      ns('contaminant_selector_clade'),
-      allcontaminants, selected = c("artificial sequences"),
-      label = "Filter taxon and its children", multiple = TRUE,
-      options = list( maxItems = 25, create = TRUE, placeholder = 'Filter taxa with children' ),
-      width = "100%"
-      #   )
-    ),
-    selectizeInput(ns("opt_statsColumns"), label = " Row summary", multiple = TRUE,
-                   options = list(placeholder = "Add column(s) with summary statistics of taxa's data"),
+    checkboxGroupInput(ns("opt_statsColumns"), label = " Row summary", #multiple = TRUE,
+                   #options = list(placeholder = "Add column(s) with summary statistics of taxa's data"),
                    choices = names(stat_name_to_f),
-                   selected = c("Max")), 
+                   selected = c("Max"),inline=TRUE), 
     numericInput(ns("opt_min_scale_reads"), "Minimum scale for reads z-score", value = 1, min = 0),
     numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
     numericInput(ns("opt_min_clade_reads"), "Minimum number of reads to display", value = 1, min = 1, step = 1),
+    numericInput(ns("opt_min_taxon_reads"), "Minimum number of reads specific to taxon", value = 1, min = 0, step = 1),
     checkboxInput(ns("opt_groupSamples"),"Group samples", value = TRUE)
     )
 }
@@ -115,6 +109,15 @@ comparisonModuleUI_function <- function(ns) {
 					       "Rank"="cladeReads rank","Z-score (reads)"="cladeReads z-score","Z-score (%)"="cladeReads % z-score"), justified = FALSE, 
                                                status = "primary",
                                                checkIcon = list(yes = icon("ok", lib = "glyphicon")), selected = "cladeReads")),
+        
+        div(style="display:inline-block",selectizeInput(
+      ns('contaminant_selector_clade'),
+      allcontaminants, #selected = c("artificial sequences"),
+      label = NULL, multiple = TRUE,
+      options = list( maxItems = 25, create = TRUE, placeholder = 'Filter taxa' ),
+      width = "100%"
+      #   )
+    )),
         div(style="display:inline-block", shinyWidgets::dropdownButton(dropdown_options(ns),#icon=icon("gear"),
                                                                        circle = FALSE, label = "more options ..."
                                                                        #,tooltip = shinyWidgets::tooltipOptions(title = "Click to see more options."
@@ -216,13 +219,20 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   }
   
   shown_rows <- reactive({
-    fmax <- !apply(is.na(filtered_clade_reads()),1,all) & apply(filtered_clade_reads(),1,max,na.rm=T) >= get_input("opt_min_clade_reads")
-    res <- filter_taxa(tax_data(),
+    res <- !apply(is.na(filtered_clade_reads()),1,all) &
+           filter_taxa(tax_data(),
                 rm_clades = input$contaminant_selector_clade,
                 rm_taxa = input$contaminant_selector,
-                taxRank = input$opt_taxRank) & fmax %>% na_false
-    stopifnot(all(!is.na(res)))
-    print(summary(res))
+                taxRank = input$opt_taxRank) 
+    if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
+      res <- res & apply(taxon_reads(),1,max,na.rm=T) >= get_input("opt_min_taxon_reads")
+    }
+    if (input$opt_min_clade_reads > 0) {
+      res <- res & apply(filtered_clade_reads(),1,max,na.rm=T) >= get_input("opt_min_clade_reads")
+      
+    }
+    res <- res %>% na_false
+    stopifnot(!any(is.na(res)))
     res
   })
   
@@ -266,8 +276,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
            sample_data(),
            numericColumns = numericColumns(), statsColumns = input$opt_statsColumns, sum_reads = NULL,
            groupSampleColumns = input$opt_groupSamples, specific_tax_rank = input$opt_taxRank != "-",
-           min_scale_reads = get_input("opt_min_scale_reads"), min_scale_percent = get_input("opt_min_scale_percent"),
-           min_clade_reads = get_input("opt_min_clade_reads"))
+           min_scale_reads = get_input("opt_min_scale_reads"), min_scale_percent = get_input("opt_min_scale_percent"))
   })
   
   summarized_report_for_download <- reactive({

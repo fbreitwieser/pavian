@@ -381,7 +381,7 @@ get_dt_container <- function(numericColumns, taxColumns, sampleNames, groupSampl
 one_df <- function(cladeReads, taxonReads, tax_data, sample_data, 
                    numericColumns, statsColumns, sum_reads = NULL,
                    groupSampleColumns = FALSE, specific_tax_rank = FALSE,
-                   min_scale_reads = 1, min_scale_percent = 0.001, min_clade_reads = 1) {
+                   min_scale_reads = 1, min_scale_percent = 0.001) {
  
    
   taxColumns <- colnames(tax_data)
