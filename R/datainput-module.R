@@ -162,7 +162,7 @@ dataInputModule <- function(input, output, session,
   output$uploaded_sample_sets <- renderUI({
     req(sample_sets$val)
     req(names(sample_sets$val))
-    
+    sample_set_names <- sort(names(sample_sets$val))
     box(
       width = 12,
       collapsible = TRUE,
@@ -175,8 +175,8 @@ dataInputModule <- function(input, output, session,
         radioButtons(
           ns("sample_set_select"),
           label = NULL,
-          choices = names(sample_sets$val),
-          selected = names(sample_sets$val)[1]
+          choices = sample_set_names,
+          selected = sample_set_names[1]
         )
         )
       ),

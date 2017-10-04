@@ -69,7 +69,7 @@ pavianServer <- function(input, output, session) {
   sample_sets <- callModule(dataInputModule, "datafile")
   observeEvent(sample_sets$val,{
     if (length(sample_sets$val) > 0) {
-      sample_set_names <- names(sample_sets$val)
+      sample_set_names <- sort(names(sample_sets$val))
       #sample_set_names["Upload data ..."] <- "upload_files"
       #shinyjs::enable("btn_remove_cache_files")
       shinyjs::show("sample_set_names")
