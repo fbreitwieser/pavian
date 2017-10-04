@@ -83,7 +83,7 @@ dashboardUI <- function(request) {
                     )),
                   div(class="hide_when_sidebar_collapsed", 
                   br(),
-                  tags$p(class="sidebartext", style="padding-left: 10px;color: #b8c7ce; ","@fbreitw, 2016")
+                  tags$p(class="sidebartext", style="padding-left: 10px;color: #b8c7ce; ",format(Sys.Date(), "@fbreitw, %Y"))
                   )
                 ),
                 dashboardBody(
