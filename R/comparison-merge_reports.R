@@ -200,17 +200,18 @@ assayData.merged_reports <- function(x)
 merge_reports2 <- function(my_reports, col_names = NULL) {
   id_cols <- c("name", "taxRank", "taxID", "taxLineage")
   numeric_cols <- c("cladeReads","taxonReads")
+  common_colnames <- Reduce(intersect, lapply(my_reports, colnames))
   
   if (is.null(my_reports) || length(my_reports) == 0)
     return(NULL)
   
-  if (!"taxID" %in% colnames(my_reports[[1]]))
+  if (!"taxID" %in% common_colnames)
     id_cols <- c("name", "taxRank", "taxLineage")
   
-  if (!all(c(id_cols,numeric_cols) %in% colnames(my_reports[[1]]))) {
+  if (!all(c(id_cols,numeric_cols) %in% common_colnames)) {
     stop("Not all required columns are colnames. Required: ",
          paste0(c(id_cols,numeric_cols), collapse=", "),". Present: ",
-         paste0(colnames(my_reports[[1]]), collapse=", "))
+         paste0(common_colnames, collapse=", "))
   }
   
   

@@ -112,13 +112,17 @@ pavianServer <- function(input, output, session) {
     )
   })
   
+  sample_set_names_combined <- reactive({
+    paste(input$sample_set_names, collapse=" & ")
+  })
+  
   observeEvent(input$sample_set_names,{
-    if (isTRUE(input$sample_set_names == "upload_files")) {
+    if (isTRUE(input$sample_set_names[1] == "upload_files")) {
       shinydashboard::updateTabItems(session,"tabs","Data Selection")
     } else {
       req(reports())
       #updateTabItems(session,"tabs","Overview")
-      code <- sprintf("$('span.logo').text('%s')",input$sample_set_names)
+      code <- sprintf("$('span.logo').text('%s')",sample_set_names_combined())
       shinyjs::runjs(code)
     }
   })
@@ -129,12 +133,19 @@ pavianServer <- function(input, output, session) {
   sample_data <- reactive({
     validate(need(sample_sets$val, message="Upload samples or select sample set."))
     validate(need(input$sample_set_names, message="Upload samples or select sample set."))
-    message("sample_data ...")
-    res <- sample_sets$val[[input$sample_set_names]]
+    res <- sample_sets$val[[input$sample_set_names[1]]]
+    if (length(input$sample_set_names) > 1) {
+      for (set_name in input$sample_set_names[2:length(input$sample_set_names)]) {
+        cols <- intersect(colnames(res), colnames(sample_sets$val[[set_name]]))
+        res <- rbind(res[,cols], sample_sets$val[[set_name]][, cols])
+      }
+    }
     #res <- isolate(sample_sets$val)[[input$sample_set_names]]
-    req(res)
-    res <- res[res$Include, ]
-    attr(res, "set_name") <- input$sample_set_names
+    if ("Include" %in% colnames(res)) {
+      res <- res[res$Include, ]
+    }
+    str(res)
+    attr(res, "set_name") <- sample_set_names_combined()
     res
   })
   
@@ -210,7 +221,7 @@ pavianServer <- function(input, output, session) {
     ns <- session$ns
     modalDialog(
       title="Generate sample report",
-      textInput(ns("report_title"), "Title", sprintf("Classification report for %s",input$sample_set_names), width="100%"),
+      textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined()), width="100%"),
       textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
       textInput(ns("report_date"), "Date", date(), width="100%"),
       #checkboxInput(ns("opt_include_sankey"),"Include sample Sankeys"),
@@ -226,7 +237,7 @@ pavianServer <- function(input, output, session) {
     showModal(generate_report_modal())
   })
   output$dl_report <- downloadHandler(
-    filename = function() { sprintf("%s-report.html", input$sample_set_names) },
+    filename = function() { sprintf("%s-report.html", sample_set_names_combined()) },
     content = function(file) {
       req(input$sample_set_names)
       rmd_file <- system.file("pavian-report.Rmd",package="pavian")
@@ -237,14 +248,14 @@ pavianServer <- function(input, output, session) {
       # Copy the report file to a temporary directory before processing it, in
       # case we don't have write permissions to the current working dir (which
       # can happen when deployed).
-      tempReport <- file.path(tempdir(), paste0(basename(input$sample_set_names),"-report.Rmd"))
+      tempReport <- file.path(tempdir(), paste0(basename(input$sample_set_names[0]),"-report.Rmd"))
       file.copy(rmd_file, tempReport, overwrite = TRUE)
       
       # Set up parameters to pass to Rmd document
       params <- list(doc_title=input$report_title,
                      doc_author=input$report_author,
                      doc_date=input$report_date,
-                     set_name=input$sample_set_names,
+                     set_name=sample_set_names_combined(),
                      all_data_loaded=TRUE,
                      sample_data=sample_data(),
                      reports=reports())

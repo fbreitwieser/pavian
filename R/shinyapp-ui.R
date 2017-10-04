@@ -38,7 +38,7 @@ dashboardUI <- function(request) {
                       id = "tabs",
                       menuItem("Data Selection", tabName="Home", icon = icon("cloud-upload"), selected = TRUE),
                       div(class="set_selector hide_when_sidebar_collapsed no_padding", 
-                          shinyjs::hidden(selectInput("sample_set_names", choices=NULL, label=NULL
+                          shinyjs::hidden(selectInput("sample_set_names", choices=NULL, label=NULL, multiple=TRUE,
                                                             , selectize = FALSE, size = 5))),
                       # The following menus are just displayed when a sample set has been loaded
                       shinydashboard::menuItem("Results Overview", tabName="Overview", icon = icon("table")),
