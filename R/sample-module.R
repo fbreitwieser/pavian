@@ -264,8 +264,8 @@ sampleModule <- function(input, output, session, sample_data, reports,
                     levels = c("taxonReads","cladeReads"),
                     labels = c("at taxon","in total"), ordered=T)
     
-    mydf$sample <- factor(mydf$sample, names(sum_cladeReads()) ,my_names)
-    
+    mydf$sample <- factor(mydf$sample, names(sum_cladeReads()) ,substr(my_names,1,12))
+   
     mydf <- mydf[order(mydf$sample, type1),]
     if (normalize)
       mydf$reads <- 100*mydf$reads / rep(sum_cladeReads(), each = 2)
