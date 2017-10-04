@@ -17,6 +17,13 @@ get_col <- function(df, col) {
   df[[col]]
 }
 
+#' @export
+rbind_w_common_columns <- function(...) {
+  dat <- list(...)
+  common_colnames <- Reduce(intersect, sapply(dat, colnames))
+  Reduce(function(x,y) rbind(x[,common_colnames],y[,common_colnames]), dat)
+}
+
 common_buttons <- function(...) {
   opts <- list(...)
   dl_fname <- paste(unlist(c(opts, format(Sys.time(), "%y%m%d"))), collapse="-")

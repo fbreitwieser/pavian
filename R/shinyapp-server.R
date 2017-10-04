@@ -112,8 +112,20 @@ pavianServer <- function(input, output, session) {
     )
   })
   
-  sample_set_names_combined <- reactive({
+  sample_set_names_combined_str <- reactive({
     paste(input$sample_set_names, collapse=" & ")
+  })
+  
+  sample_set_names_combined <- reactive({
+    res <- sapply(input$sample_set_names, basename)
+    res <- paste(res, collapse="_")
+    res <- gsub("[^A-Za-z\\-_]","_", res)
+    str(res)
+    if (nchar(res) == 0){
+      return("Set1")
+    } else {
+      return(res)
+    }
   })
   
   observeEvent(input$sample_set_names,{
@@ -122,7 +134,7 @@ pavianServer <- function(input, output, session) {
     } else {
       req(reports())
       #updateTabItems(session,"tabs","Overview")
-      code <- sprintf("$('span.logo').text('%s')",sample_set_names_combined())
+      code <- sprintf("$('span.logo').text('%s')",sample_set_names_combined_str())
       shinyjs::runjs(code)
     }
   })
@@ -221,7 +233,7 @@ pavianServer <- function(input, output, session) {
     ns <- session$ns
     modalDialog(
       title="Generate sample report",
-      textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined()), width="100%"),
+      textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined_str()), width="100%"),
       textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
       textInput(ns("report_date"), "Date", date(), width="100%"),
       #checkboxInput(ns("opt_include_sankey"),"Include sample Sankeys"),
@@ -230,7 +242,6 @@ pavianServer <- function(input, output, session) {
         downloadButton("dl_report", "Generate HTML report")
       )
     )
-    
   }
   
   observeEvent(input$link_generate_report, {
@@ -248,7 +259,7 @@ pavianServer <- function(input, output, session) {
       # Copy the report file to a temporary directory before processing it, in
       # case we don't have write permissions to the current working dir (which
       # can happen when deployed).
-      tempReport <- file.path(tempdir(), paste0(basename(input$sample_set_names[0]),"-report.Rmd"))
+      tempReport <- file.path(tempdir(), sprintf("%s-report.Rmd", sample_set_names_combined()))
       file.copy(rmd_file, tempReport, overwrite = TRUE)
       
       # Set up parameters to pass to Rmd document
@@ -265,10 +276,12 @@ pavianServer <- function(input, output, session) {
       # from the code in this app).
       withProgress({
 	tryCatch(rmarkdown::render(tempReport, output_file = file,
-                        params = params,
+                        params = params, output_format = "html_document",
                         envir = new.env(parent = globalenv())),
                  error = function(e) writeLines(paste("Error in generating the report:",conditionMessage(e)), con=file))
 	}, message="Rendering report ...")
+      removeModal()
+      shinyjs::alert("Report generated!")
       
     }
   )

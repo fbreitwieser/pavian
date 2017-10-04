@@ -21,9 +21,9 @@ params:
 ---
 
 ---
-title: `r params$doc_title`
-author: `r params$doc_author`
-date: `r params$doc_date`
+title: "`r params$doc_title`"
+author: "`r params$doc_author`"
+date: "`r params$doc_date`"
 ---
 
 ```{r setup, include=FALSE}
@@ -59,6 +59,11 @@ if (isTRUE(params$all_data_loaded)) {
   sample_directory <- system.file("shinyapp","example-data","brain-biopsies",package="pavian")
   sample_data <- pavian::read_sample_data(sample_directory)
   reports <- pavian::read_reports(sample_data$ReportFilePath, sample_data$Name)
+  sample_directory1 <- system.file("shinyapp","example-data","hmp",package="pavian")
+  sample_data1 <- pavian::read_sample_data(sample_directory1)
+  reports1 <- pavian::read_reports(sample_data1$ReportFilePath, sample_data1$Name)
+  sample_data <- rbind_w_common_columns(sample_data, sample_data1)
+  reports <- c(reports, reports1)
 }
 
 samples_summary <- pavian::summarize_reports(reports)
@@ -122,13 +127,13 @@ if (nrow(cladeReads) > 1000) {
 taxonReads[taxonReads == 0] <- NA
 cladeReads[cladeReads == 0] <- NA
 
-sel_bacteria = grepl("d_Bacteria",tax_data[,4]) & tax_data[,2] == 'S'
-sel_viruses = grepl("d_Viruses",tax_data[,4])  & tax_data[,2] == 'S'
-sel_fungi = grepl("k_Fungi",tax_data[,4])  & tax_data[,2] == 'S'
-sel_protists = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
-sel_euk = grepl("d_Eukaryota",tax_data[,4])  & tax_data[,2] == 'S'
+sel_bacteria = grepl("d_Bacteria",tax_data[,"taxLineage"]) & tax_data[,"taxRank"] == 'S'
+sel_viruses = grepl("d_Viruses",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
+sel_fungi = grepl("k_Fungi",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
+sel_protists = grepl("d_Eukaryota",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
+sel_euk = grepl("d_Eukaryota",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
 
-my_df <- data.frame(tax_data[,1:3, drop=F],cladeReads,tax_data[,4, drop=F])
+my_df <- data.frame(tax_data[,c("name","taxRank"), drop=F],cladeReads,tax_data[,"taxLineage", drop=F])
 my_dt <- function(sel)
   DT::datatable(my_df[sel,,drop=F],height = "600px",
               class = "stripe hover row-border compact nowrap", extensions = 'Buttons',  options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name), scrollX = TRUE))
