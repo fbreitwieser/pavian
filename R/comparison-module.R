@@ -171,11 +171,47 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     basename(attr(sample_data(), "set_name"))
   })
   
+  taxLineage <- reactiveValues(val=NULL)
+
   output$messages <- renderUI({
+    req(taxLineage$val)
+
+    res <- paste(actionLink(session$ns("btn_x_lin"),"[x]"), " ")
+    if (length(taxLineage$val) > 1) {
+      vali <- taxLineage$val[1:(length(taxLineage$val)-1)]
+      valii <- lapply(seq_along(vali), function(i) paste0(actionLink(session$ns(paste0("btn_lin_",i)), vali[i]), "><wbr>"))
+      res <- do.call(paste0,c(res,valii))
+    }
+    return (HTML(paste0(res, taxLineage$val[length(taxLineage$val)])))
+
     if (!any(grepl("clade", input$opt_numericColumns)) && input$opt_taxRank != "-") {
       return(tags$p("Warning: A specific taxonomic rank is selected, but data is not on the clade level. Thus any data from the taxa's children are not visible. Consider adding clade-level data."))
     }
   })
+
+  observeEvent(input$btn_x_lin, { taxLineage$val <- NULL } )
+
+  observeEvent(input$btn_lin_1, { taxLineage$val <- taxLineage$val[1] })
+  observeEvent(input$btn_lin_2, { taxLineage$val <- taxLineage$val[1:2] })
+  observeEvent(input$btn_lin_3, { taxLineage$val <- taxLineage$val[1:3] })
+  observeEvent(input$btn_lin_4, { taxLineage$val <- taxLineage$val[1:4] })
+  observeEvent(input$btn_lin_5, { taxLineage$val <- taxLineage$val[1:5] })
+  observeEvent(input$btn_lin_6, { taxLineage$val <- taxLineage$val[1:6] })
+  observeEvent(input$btn_lin_7, { taxLineage$val <- taxLineage$val[1:7] })
+  observeEvent(input$btn_lin_8, { taxLineage$val <- taxLineage$val[1:8] })
+  observeEvent(input$btn_lin_9, { taxLineage$val <- taxLineage$val[1:9] })
+  observeEvent(input$btn_lin_10, { taxLineage$val <- taxLineage$val[1:10] })
+  observeEvent(input$btn_lin_11, { taxLineage$val <- taxLineage$val[1:11] })
+  observeEvent(input$btn_lin_12, { taxLineage$val <- taxLineage$val[1:12] })
+  observeEvent(input$btn_lin_13, { taxLineage$val <- taxLineage$val[1:13] })
+  observeEvent(input$btn_lin_14, { taxLineage$val <- taxLineage$val[1:14] })
+  observeEvent(input$btn_lin_15, { taxLineage$val <- taxLineage$val[1:15] })
+  observeEvent(input$btn_lin_16, { taxLineage$val <- taxLineage$val[1:16] })
+  observeEvent(input$btn_lin_17, { taxLineage$val <- taxLineage$val[1:17] })
+  observeEvent(input$btn_lin_18, { taxLineage$val <- taxLineage$val[1:18] })
+  observeEvent(input$btn_lin_19, { taxLineage$val <- taxLineage$val[1:19] })
+  observeEvent(input$btn_lin_20, { taxLineage$val <- taxLineage$val[1:20] })
+  observeEvent(input$btn_lin_21, { taxLineage$val <- taxLineage$val[1:21] })
   
   output$downloadData <- downloadHandler(
     filename = function() { sprintf("%s-matrix-all-%s.tsv", base_set_name(), format(Sys.time(), "%y%m%d")) },
@@ -249,6 +285,13 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
                 rm_clades = input$contaminant_selector_clade,
                 rm_taxa = input$contaminant_selector,
                 taxRank = input$opt_taxRank) 
+    if (!is.null(taxLineage$val)) {
+      sel_tl = tax_data()[tax_data()[["name"]] == taxLineage$val[length(taxLineage$val)], "taxLineage"]
+      dmessage("Selected lineage ", sel_tl)
+      if (isTRUE(!is.null(sel_tl) && nchar(sel_tl) > 0))
+        res <- res & substr(tax_data()$taxLineage, 0, nchar(sel_tl)) == sel_tl
+
+    }
     if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
       res <- res & apply(taxon_reads(),1,max,na.rm=T) >= get_input("opt_min_taxon_reads")
     }
@@ -367,7 +410,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
                   callback = htmlwidgets::JS('
               table.on("dblclick.dt","tr", function() {
               var data=table.row(this).data();
-              Shiny.onInputChange("comparison-double_clicked_row", data[0])
+              var data1=data[0].replace(/.*>/,"")
+              Shiny.onInputChange("comparison-double_clicked_row", data[data.length - 1] + ">" +data1)
               //alert("You clicked on "+data[0]+"\'s row");
               }
               )
@@ -398,12 +442,16 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   }
 
   observeEvent(input$double_clicked_row, {
-    dmessage("double-clicked a row!")
-    dmessage(input$double_clicked_row)
+    #dmessage("double-clicked a row!")
+    #dmessage(input$double_clicked_row)
     shinyWidgets::updateRadioGroupButtons(session, "opt_taxRank", selected = "-")
-    search = sub(".*<wbr>","", input$double_clicked_row)
-    DT::updateSearch(dt_proxy, keywords = list(global=search))
-    DT::updateSearch(dt_proxy1, keywords = list(global=search))
+    #search = sub(".*<wbr>","", input$double_clicked_row)
+    search = gsub("&nbsp;"," ", input$double_clicked_row)
+    dmessage("Search is now: ",search)
+    #search = gsub(">","><wbr>", search)
+    taxLineage$val <- strsplit(search, ">")[[1]]
+    #DT::updateSearch(dt_proxy, keywords = list(global=search))
+    #DT::updateSearch(dt_proxy1, keywords = list(global=search))
   })
   
   formatDT <- function(dt, nSamples, numericColumns, statsColumns, nColumnsBefore, groupSampleColumns = TRUE) {

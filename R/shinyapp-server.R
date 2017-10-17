@@ -1,4 +1,8 @@
 
+ID=0
+
+runningSessions <- c()
+
 #' Pavian server function
 #'
 #' @param input Input object
@@ -10,6 +14,15 @@ pavianServer <- function(input, output, session) {
   # The cache directory stores Rds files for read reports
   #cache_dir <- tempdir()
   cache_dir <- NULL
+
+  ID <<- ID + 1
+  runningSessions <<- c(runningSessions, ID)
+  dmessage("Started new shiny session with ID ",ID, " (",length(runningSessions), " session(s) running)")
+  onSessionEnded(function(...) {
+    dmessage("Exiting session ", ID)
+    runningSessions <<- setdiff(runningSessions, ID)
+  }, session = getDefaultReactiveDomain())
+
   
   ## Observe URL parameters and set pavian options accordingly
   observeEvent(session$clientData$url_search, {
@@ -121,7 +134,6 @@ pavianServer <- function(input, output, session) {
     res <- sapply(input$sample_set_names, basename)
     res <- paste(res, collapse="_")
     res <- gsub("[^A-Za-z\\-_]","_", res)
-    str(res)
     if (nchar(res) == 0){
       return("Set1")
     } else {
@@ -157,7 +169,6 @@ pavianServer <- function(input, output, session) {
     if ("Include" %in% colnames(res)) {
       res <- res[res$Include, ]
     }
-    str(res)
     attr(res, "set_name") <- sample_set_names_combined()
     res
   })

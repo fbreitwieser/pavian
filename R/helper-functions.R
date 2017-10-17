@@ -234,7 +234,12 @@ shinyTryCatch <- function(..., message = expression) {
 }
 
 dmessage <- function(...) {
-  message(format(Sys.time(), "%D %H:%M"),": ",...)
+  tryCatch({
+    ID <- get("ID")
+    message("[",ID," ", format(Sys.time(), "%b%d %H:%M"),"] ",...)
+  }, error = function(e) {
+    message(format(Sys.time(), "[%b%d %H:%M]")," ",...)
+  })
 }
 
 withProgress1 <- function(expr, ..., quoted=F, message=NULL) {

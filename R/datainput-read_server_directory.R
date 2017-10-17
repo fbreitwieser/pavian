@@ -17,7 +17,7 @@ read_server_directory1 <- function(data_dir, sample_set_name = NULL,
       read_error_msg$neg <- msg
     if (isTRUE(display_messages)) {
       if (!is.null(read_error_msg$neg)) { warning(read_error_msg$neg) }
-      if (!is.null(read_error_msg$pos)) { message(read_error_msg$pos) }
+      if (!is.null(read_error_msg$pos)) { dmessage(read_error_msg$pos) }
       return(new_sample_sets)
     } else {
       return(list(
@@ -27,7 +27,7 @@ read_server_directory1 <- function(data_dir, sample_set_name = NULL,
     }
   }
 
-  message("Reading files in ", data_dir)
+  dmessage("Reading files in ", data_dir)
   if (!dir.exists(data_dir)) {
     return1(paste("Directory ", data_dir, "does not exist."))
   }
