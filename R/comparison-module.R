@@ -117,12 +117,16 @@ comparisonModuleUI_function <- function(ns) {
       options = list( maxItems = 25, create = TRUE, placeholder = 'Filter taxa' ),
       width = "100%"
       #   )
-    )),
+        )), 
+        div(style="display:inline-block",title="Filter clade of selected taxon (click on a table row, first)",
+            actionButton(ns("btn_filter_row"), label=NULL, icon=icon("filter"))
+        ),
         div(style="display:inline-block", shinyWidgets::dropdownButton(dropdown_options(ns),#icon=icon("gear"),
                                                                        circle = FALSE, label = "more options ..."
                                                                        #,tooltip = shinyWidgets::tooltipOptions(title = "Click to see more options."
                                                                        )),
         htmlOutput(ns("messages")),
+        htmlOutput(ns("taxLineage")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')
         #uiOutput(ns("filter_buttons"))
@@ -173,7 +177,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   
   taxLineage <- reactiveValues(val=NULL)
 
-  output$messages <- renderUI({
+  output$taxLineage <- renderUI({
     req(taxLineage$val)
 
     res <- paste(actionLink(session$ns("btn_x_lin"),"[x]"), " ")
@@ -183,7 +187,9 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
       res <- do.call(paste0,c(res,valii))
     }
     return (HTML(paste0(res, taxLineage$val[length(taxLineage$val)])))
+  })
 
+  output$messages <- renderUI({
     if (!any(grepl("clade", input$opt_numericColumns)) && input$opt_taxRank != "-") {
       return(tags$p("Warning: A specific taxonomic rank is selected, but data is not on the clade level. Thus any data from the taxa's children are not visible. Consider adding clade-level data."))
     }
@@ -336,7 +342,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     #paste0("clade",input$opt_numericColumns)
     input$opt_numericColumns
   })
-  
+
   summarized_report_df <- reactive({
     req(input$opt_numericColumns)
     
@@ -372,7 +378,22 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     DT::reloadData(dt_proxy, resetPaging=TRUE, clearSelection = "row")
     DT::reloadData(dt_proxy1, resetPaging=TRUE, clearSelection = "row")
   })
-  
+
+  observeEvent(input$btn_filter_row,  {
+    current_selected <- input$contaminant_selector_clade
+    sel_row <- input$dt_samples_comparison_rows_selected
+    req(sel_row)
+    sel_rows <- shown_rows()
+    sel_name <- tax_data()[which(sel_rows)[sel_row],"name"]
+    dmessage("Filtering ",sel_name)
+    req(sel_name)
+
+    if (!sel_name %in% current_selected)
+      updateSelectizeInput(session, "contaminant_selector_clade", selected = c(current_selected, sel_name), choices = c(current_selected, sel_name))
+  })
+
+  observeEvent(input$contaminant_selector_clade, {
+  })
   
   output$dt_samples_comparison <- DT::renderDataTable({
     ## require columns that update the number of columns in the table
