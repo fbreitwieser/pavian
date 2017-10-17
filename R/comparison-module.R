@@ -208,7 +208,32 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     
     return (and(x[-1]))
   }
-  
+
+  my_tax_data <- reactive({
+    td <- tax_data()
+    cur_names = list()
+    taxReads0 = apply(is.na(taxon_reads()) | taxon_reads() == 0, 1, all)
+    for (i in seq_len(nrow(td))) {
+      tl = td[i, "taxLineage"]
+      tparent = sub("\\|[^\\|]*$", "", tl)
+      cur_name <- cur_names[[tparent]]
+      if (taxReads0[i]) {
+        if (!is.null(cur_name))
+          cur_names[[tl]] = c(cur_name, td[i, "name"])
+        else
+          cur_names[[tl]] = td[i, "name"]
+      } else {
+        if (length(cur_name) > 0) {
+          if (length(cur_name) > 2) 
+            td[i,"name"] <- paste(cur_name[1], "...", td[i,"name"], sep="><wbr>")
+          else
+            td[i,"name"] <- paste(c(cur_name,td[i,"name"]), collapse="><wbr>")
+        }
+      }
+    }
+    td
+  })
+
   rm_taxons <- reactive({
     tax_data()$name %in% input$contaminant_selector_clade | tax_data()$name %in% input$contaminant_selector
   })
@@ -244,7 +269,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   })
   
   get_tax_columns <- reactive({
-    tax_columns <- data.frame(Name=get_col(tax_data(),"name"), stringsAsFactors = FALSE)
+    tax_columns <- data.frame(Name=get_col(my_tax_data(),"name"), stringsAsFactors = FALSE)
     if ("taxID" %in% colnames(tax_data())) {
       tax_columns$TaxID=tax_data()[,"taxID"]
     }
@@ -274,7 +299,11 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     
     sel_rows <- shown_rows()
     req(sum(sel_rows,na.rm=T))
-    one_df(filtered_clade_reads()[sel_rows,,drop=F], taxon_reads()[sel_rows,,drop=F], tax_data()[sel_rows,,drop=F], 
+    td <- tax_data()[sel_rows,,drop=F]
+    if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
+      td <- my_tax_data()[sel_rows,,drop=F]
+    }
+    one_df(filtered_clade_reads()[sel_rows,,drop=F], taxon_reads()[sel_rows,,drop=F], td, 
            sample_data(),
            numericColumns = numericColumns(), statsColumns = input$opt_statsColumns, sum_reads = NULL,
            groupSampleColumns = input$opt_groupSamples, specific_tax_rank = input$opt_taxRank != "-",
@@ -328,7 +357,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
                     #order = my_order,
                     rowCallback = htmlwidgets::JS(
                       "function(row, data, index) {",
-                      "var full_text = 'Full path: ' + data[data.length - 1]",
+                      "var full_text = 'Lineage: ' + data[data.length - 1].replace(/&nbsp;/g,' ')",
                       "$('td:eq(0)', row).attr('title', full_text);",
                       "}"),
                     search = list(
@@ -338,7 +367,9 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
                   callback = htmlwidgets::JS('
               table.on("dblclick.dt","tr", function() {
               var data=table.row(this).data();
-              alert("You clicked on "+data[4]+"\'s row");}
+              Shiny.onInputChange("comparison-double_clicked_row", data[0])
+              //alert("You clicked on "+data[0]+"\'s row");
+              }
               )
               ')
     ) %>% formatDT(nSamples = nrow(sample_data()),
@@ -347,6 +378,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
                    nColumnsBefore = ncol(tax_data()) - 1,
                    groupSampleColumns = input$opt_groupSamples)
   })
+
   
   get_columnDefs <- function(myDf, nColumnsBefore, nColumnsAfter) {
     zero_col <- ifelse(show_rownames, 0, 1)
@@ -364,7 +396,15 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     
     columnDefs
   }
-  
+
+  observeEvent(input$double_clicked_row, {
+    dmessage("double-clicked a row!")
+    dmessage(input$double_clicked_row)
+    shinyWidgets::updateRadioGroupButtons(session, "opt_taxRank", selected = "-")
+    search = sub(".*<wbr>","", input$double_clicked_row)
+    DT::updateSearch(dt_proxy, keywords = list(global=search))
+    DT::updateSearch(dt_proxy1, keywords = list(global=search))
+  })
   
   formatDT <- function(dt, nSamples, numericColumns, statsColumns, nColumnsBefore, groupSampleColumns = TRUE) {
     ## Give the correct format to the columns: thousands separators for numbers, and percent sign for percents

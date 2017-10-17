@@ -266,7 +266,7 @@ filter_taxa <- function(tax_data, rm_clades = NULL, rm_taxa = NULL, taxRank = "-
   }
   
   my_shown_rows <- !sel_rm_taxa
-  if (!is.null(taxRank) && taxRank != "-") {
+  if (!is.null(taxRank) && isTRUE(taxRank != "-")) {
     if (!taxRank %in% tax_data[["taxRank"]]) {
       dmessage("taxRank ", taxRank, " not in tax_data")
     }
