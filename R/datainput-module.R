@@ -301,7 +301,7 @@ dataInputModule <- function(input, output, session,
         sample_sets$val[[input$sample_set_select]] <- new_df
       }
     }, error = function(e)
-      message("Error calling hot_to_r!"))
+      dmessage("Error calling hot_to_r!"))
   })
   
   
@@ -415,7 +415,7 @@ dataInputModule <- function(input, output, session,
   load_example_data_rv <- reactiveValues(val = load_example_data)
   observeEvent(load_example_data_rv$val, {
     req(load_example_data_rv$val)
-    message("Loading example data ...")
+    dmessage("Loading example data ...")
     read_server_directory(
       system.file("shinyapp", "example-data", package = "pavian"),
       include_base_dir = FALSE

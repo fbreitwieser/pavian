@@ -223,13 +223,18 @@ f2si2<-function (number)
   return(sistring)
 }
 
-shinyTryCatch <- function(..., message = NULL) {
+shinyTryCatch <- function(..., message = expression) {
   tryCatch(...,
            error=function(e) {
-             full_message = sprintf("Error in %s:\n%s",message,e)
-             warning(full_message)
+             full_message = sprintf("%s ERROR: %s (%s)",
+                                    format(Sys.time(), "%D %H:%M"), message, e$message)
+             stop(safeError(full_message))
              validate(need(FALSE, message=message))
            })
+}
+
+dmessage <- function(...) {
+  message(format(Sys.time(), "%D %H:%M"),": ",...)
 }
 
 withProgress1 <- function(expr, ..., quoted=F, message=NULL) {
@@ -237,4 +242,13 @@ withProgress1 <- function(expr, ..., quoted=F, message=NULL) {
     expr <- substitute(expr)
   
   withProgress(shinyTryCatch(expr, message=message), ..., quoted=F, message=message)
+}
+
+assert <- function(..., message = NULL) {
+  tryCatch({
+    stopifnot(...)
+  }, error = function(e) {
+    message <- paste0(format(Sys.time(), "%D %H:%M"),": ",message)
+    stop(paste0(message,"\n",e$message))
+  })
 }

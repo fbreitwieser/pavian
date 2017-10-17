@@ -8,7 +8,8 @@
 pavianServer <- function(input, output, session) {
   
   # The cache directory stores Rds files for read reports
-  cache_dir <- tempdir()
+  #cache_dir <- tempdir()
+  cache_dir <- NULL
   
   ## Observe URL parameters and set pavian options accordingly
   observeEvent(session$clientData$url_search, {
@@ -18,19 +19,19 @@ pavianServer <- function(input, output, session) {
     req(nchar(session$clientData$url_search) > 1)
     query <- parseQueryString(session$clientData$url_search)
     if (!is.null(query[['server.dir']])) {
-      message("Setting server directory to ",query[['server.dir']]," (specified in URL).")
+      dmessage("Setting server directory to ",query[['server.dir']]," (specified in URL).")
       options(pavian.server_dir = query[['server.dir']])
     }
     if (!is.null(query[['load.dir']])) {
-      message("Loading server directory (specified in URL).")
+      dmessage("Loading server directory (specified in URL).")
       options(pavian.load_server_dir = TRUE)
     }
     if (!is.null(query[['page']])) {
-      message("Setting page to ",query[['page']]," (specified in URL).")
+      dmessage("Setting page to ",query[['page']]," (specified in URL).")
       updateTabItems(session, "tabs", selected = query[['page']])
     }
     if (!is.null(query[['load_example_data']])) {
-      message("Loading example data (specified in URL).")
+      dmessage("Loading example data (specified in URL).")
       options(pavian.load_example_data = TRUE)
     }
   })
@@ -180,7 +181,7 @@ pavianServer <- function(input, output, session) {
     )
     res <- read_reports(sample_data()$ReportFilePath, sample_data()$Name, cache_dir = cache_dir)
     if ("LibrarySize" %in% colnames(sample_data())) {
-      message("Getting lib size from sample data")
+      dmessage("Getting lib size from sample data")
       attr(res,"library_size") <- sample_data()$LibrarySize
     } else {
       attr(res,"library_size") <- sapply(res, function(x) sum(x$taxonReads))

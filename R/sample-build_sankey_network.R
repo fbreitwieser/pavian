@@ -2,6 +2,7 @@ build_sankey_network <- function(my_report, taxRanks =  c("D","K","P","C","O","F
 				 zoom = T,
 				 ...) {
     stopifnot("taxRank" %in% colnames(my_report))
+    stopifnot(any(taxRanks %in% my_report$taxRank))
     my_report <- subset(my_report, taxRank %in% taxRanks)
     my_report <- plyr::ddply(my_report, "taxRank", function(x) x[utils::tail(order(x$cladeReads,-x$depth), n=maxn), , drop = FALSE])
 

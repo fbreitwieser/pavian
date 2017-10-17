@@ -17,7 +17,7 @@ read_reports <- function(report_files, report_names = basename(report_files), ca
     setProgress <- function(...) {}
   }
 
-  message("Reading reports ...")
+  dmessage("Reading ",length(report_files)," reports ...")
   n_reports <- length(report_files)
 
   f <- quote({

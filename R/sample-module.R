@@ -411,6 +411,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     #my_report <- my_report[, c("depth", "cladeReads", "name")]
     #my_report$name <- sub("^._","",my_report$name)
     #eng <- get_nodes_and_links(my_report, 10)
+    validate(need(any(input$taxRanks %in% my_report$taxRank), message = "Report does not have required taxonomy ranks"))
     build_sankey_network(my_report, taxRanks=input$taxRanks, maxn=input$sankey_maxn,
                          # Sankey options
                          xScalingFactor = input$scalingFactor,

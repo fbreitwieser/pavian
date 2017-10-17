@@ -73,7 +73,7 @@ collapse.taxRanks <- function(krakenlist,keep_taxRanks=LETTERS,filter_taxon=NULL
     delete.taxon <- child_rows[1,'name'] %in% filter_taxon
     if (delete.taxon) {
       rm.cladeReads <- rm.cladeReads + child_rows[1,'cladeReads']
-      message(sprintf("removed %7s cladeReads, including %s childs, for %s",child_rows[1,'"cladeReads"'],nrow(child_rows)-1,child_rows[1,'name']))
+      dmessage(sprintf("removed %7s cladeReads, including %s childs, for %s",child_rows[1,'"cladeReads"'],nrow(child_rows)-1,child_rows[1,'name']))
 
       ## remove all children
       child_rows <- NULL
@@ -165,7 +165,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_taxRanks=c("D","K","P","C","O
   first.line <- readLines(myfile,n=1)
   isASCII <-  function(txt) all(charToRaw(txt) <= as.raw(127))
   if (!isASCII(first.line)) {
-    message(myfile," is no valid report")
+    dmessage(myfile," is no valid report")
     return(NULL)
   }
   if (is.null(has_header)) {
@@ -320,7 +320,7 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
           if (report[i,"cladeReads"] == taxonReads) {
             rows_to_delete[i] <- TRUE
             if (do_message)
-              message("Deleting ",report[i,"name"])
+              dmessage("Deleting ",report[i,"name"])
           } else {
             any_stays <- TRUE
           }
@@ -328,7 +328,7 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
         if (!rows_to_delete[i]) {
           rows_to_update <- c(rows_to_update, i)
           if (do_message)
-            message("Updating ",report[i,"name"])
+            dmessage("Updating ",report[i,"name"])
         }
         prev_taxon_depth <- curr_taxon_depth
       } else {
@@ -370,7 +370,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     all(raw <= as.raw(127) && (raw >= as.raw(32) | raw == as.raw(9)))
   }
   if (!isTRUE(isASCII(first.line))) {
-    message(myfile," is not a ASCII file")
+    dmessage(myfile," is not a ASCII file")
     return(NULL)
   }
 

@@ -232,7 +232,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
       
     }
     res <- res %>% na_false
-    stopifnot(!any(is.na(res)))
+    validate(need(any(!is.na(res)), message = "Filtered all rows to NA!"),
+             need(sum(res,na.rm=T)>0, message = "Filtered all data."))
     res
   })
   
@@ -272,6 +273,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     req(input$opt_numericColumns)
     
     sel_rows <- shown_rows()
+    req(sum(sel_rows,na.rm=T))
     one_df(filtered_clade_reads()[sel_rows,,drop=F], taxon_reads()[sel_rows,,drop=F], tax_data()[sel_rows,,drop=F], 
            sample_data(),
            numericColumns = numericColumns(), statsColumns = input$opt_statsColumns, sum_reads = NULL,
