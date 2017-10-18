@@ -1,8 +1,4 @@
 
-ID=0
-
-runningSessions <- c()
-
 #' Pavian server function
 #'
 #' @param input Input object
@@ -15,12 +11,15 @@ pavianServer <- function(input, output, session) {
   #cache_dir <- tempdir()
   cache_dir <- NULL
 
-  ID <<- ID + 1
-  runningSessions <<- c(runningSessions, ID)
-  dmessage("Started new shiny session with ID ",ID, " (",length(runningSessions), " session(s) running)")
+  pID <- session$token
+  ID <- getOption("pavian.session_count",0) +1
+  options(pavian.session_count=ID)
+  options(pavian.running_sessions=getOption("pavian.running_sessions")+1)
+  dmessage("Started new shiny session #",ID, " (",getOption("pavian.running_sessions",0), " session(s) running)")
+  
   onSessionEnded(function(...) {
-    dmessage("Exiting session ", ID)
-    runningSessions <<- setdiff(runningSessions, ID)
+    dmessage("Exiting session #", ID)
+    options(pavian.running_sessions=getOption("pavian.running_sessions")-1)
   }, session = getDefaultReactiveDomain())
 
   

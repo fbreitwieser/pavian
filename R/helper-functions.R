@@ -233,13 +233,13 @@ shinyTryCatch <- function(..., message = expression) {
            })
 }
 
-dmessage <- function(...) {
-  tryCatch({
-    ID <- get("ID")
-    message("[",ID," ", format(Sys.time(), "%b%d %H:%M"),"] ",...)
-  }, error = function(e) {
+dmessage <- function(..., ID=NULL) {
+  if (!is.null(ID)){
+    ID <- get("pID")
+    message("[",ID$val," ", format(Sys.time(), "%b%d %H:%M"),"] ",...)
+  } else {
     message(format(Sys.time(), "[%b%d %H:%M]")," ",...)
-  })
+  }
 }
 
 withProgress1 <- function(expr, ..., quoted=F, message=NULL) {

@@ -21,7 +21,11 @@ runApp <- function(cache_dir = "cache",
   if (appDir == "") {
     stop("Could not find example directory. Try re-installing `pavian`.", call. = FALSE)
   }
+  
+  pID = 0
 
+  options(pavian.session_count = 0)
+  options(pavian.running_sessions = 0)
   options(pavian.cache_dir = cache_dir)
   options(pavian.server_dir = server_dir)
   options(pavian.server_access = server_access)
