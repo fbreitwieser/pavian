@@ -432,8 +432,8 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
     colnames(report)[colnames(report) %in% c("#%","%","clade_perc","perc","percReadsClade")] <- "percentage"
-    colnames(report)[colnames(report) %in% c("reads","numReadsClade","n_reads_clade","n.clade")] <- "cladeReads"
-    colnames(report)[colnames(report) %in% c("taxReads","numReadsTaxon","n_reads_taxo","n.stay")] <- "taxonReads"
+    colnames(report)[colnames(report) %in% c("reads","numReadsClade","n_reads_clade","n.clade","n-clade")] <- "cladeReads"
+    colnames(report)[colnames(report) %in% c("taxReads","numReadsTaxon","n_reads_taxo","n.stay","n-stay")] <- "taxonReads"
     colnames(report)[colnames(report) %in% c("rank","tax_taxRank","level")] <- "taxRank"
     colnames(report)[colnames(report) %in% c("tax","taxonid")] <- "taxID"
     colnames(report)[colnames(report) %in% c("indentedName","taxName")] <- "name"
@@ -541,10 +541,10 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
 
   if (!"taxonReads" %in% colnames(report)) {
+    parent <- sub("^\\(.*\\)\\|.*$", "\\1", report$taxLineage)
     taxLineages <- strsplit(report$taxLineage, "|", fixed=TRUE)
     ## fix taxonReads
-    report$parent <- sapply(taxLineages, function(x) x[length(x) - 1])
-    report$taxonReads <- report$cladeReads - sapply(report$name, function(x) sum(report$cladeReads[report$parent == x]))
+    report$taxonReads <- report$cladeReads - sapply(report$name, function(x) sum(report$cladeReads[parent == x]))
     #report$taxonReads[sapply(report$taxonReads, function(x) isTRUE(all.equal(x, 0)))] <- 0
     report$taxonReads[report$taxonReads <= 0.00001] <- 0  # fix for rounding in percentages by MetaPhlAn
   }
