@@ -73,8 +73,8 @@ dropdown_options <- function(ns) {
                    selected = c("Max"),inline=TRUE), 
     numericInput(ns("opt_min_scale_reads"), "Minimum scale for reads z-score", value = 1, min = 0),
     numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
-    numericInput(ns("opt_min_clade_reads"), "Minimum number of reads to display", value = 1, min = 1, step = 1),
-    numericInput(ns("opt_min_taxon_reads"), "Minimum number of reads specific to taxon", value = 1, min = 0, step = 1),
+    numericInput(ns("opt_min_clade_reads"), "Hide clades with less than X reads to taxon or children", value = 1, min = 1, step = 1),
+    #numericInput(ns("opt_min_taxon_reads"), "Hide taxa with less than X reads", value = 1, min = 0, step = 1),
     checkboxInput(ns("opt_groupSamples"),"Group samples", value = TRUE)
     )
 }
@@ -125,6 +125,8 @@ comparisonModuleUI_function <- function(ns) {
                                                                        circle = FALSE, label = "more options ..."
                                                                        #,tooltip = shinyWidgets::tooltipOptions(title = "Click to see more options."
                                                                        )),
+        div(style="display:inline-block", checkboxInput(ns("opt_hide_zero_taxa"),"Collapse taxa with no reads")),
+
         htmlOutput(ns("messages")),
         htmlOutput(ns("taxLineage")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
@@ -298,8 +300,11 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
         res <- res & substr(tax_data()$taxLineage, 0, nchar(sel_tl)) == sel_tl
 
     }
-    if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
-      res <- res & apply(taxon_reads(),1,max,na.rm=T) >= get_input("opt_min_taxon_reads")
+    #if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
+    #  res <- res & apply(taxon_reads(),1,max,na.rm=T) >= get_input("opt_min_taxon_reads")
+    #}
+    if (input$opt_taxRank == "-" && input$opt_hide_zero_taxa) {
+      res <- res & apply(taxon_reads(),1,max,na.rm=T) >= 1
     }
     if (input$opt_min_clade_reads > 0) {
       res <- res & apply(filtered_clade_reads(),1,max,na.rm=T) >= get_input("opt_min_clade_reads")
@@ -349,7 +354,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     sel_rows <- shown_rows()
     req(sum(sel_rows,na.rm=T))
     td <- tax_data()[sel_rows,,drop=F]
-    if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
+    #if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
+    if (input$opt_taxRank == "-" && input$opt_hide_zero_taxa) {
       td <- my_tax_data()[sel_rows,,drop=F]
     }
     one_df(filtered_clade_reads()[sel_rows,,drop=F], taxon_reads()[sel_rows,,drop=F], td, 
@@ -382,14 +388,17 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   observeEvent(input$btn_filter_row,  {
     current_selected <- input$contaminant_selector_clade
     sel_row <- input$dt_samples_comparison_rows_selected
-    req(sel_row)
-    sel_rows <- shown_rows()
-    sel_name <- tax_data()[which(sel_rows)[sel_row],"name"]
-    dmessage("Filtering ",sel_name)
-    req(sel_name)
+    if (is.null(sel_row) || length(sel_row) == 0) {
+      shinyjs::info("Either write a taxon name directly in the box to the left to filter its clade, or select a row in the table and press this button again.")
+    } else {
+      sel_rows <- shown_rows()
+      sel_name <- tax_data()[which(sel_rows)[sel_row],"name"]
+      dmessage("Filtering ",sel_name)
+      req(sel_name)
 
-    if (!sel_name %in% current_selected)
-      updateSelectizeInput(session, "contaminant_selector_clade", selected = c(current_selected, sel_name), choices = c(current_selected, sel_name))
+      if (!sel_name %in% current_selected)
+        updateSelectizeInput(session, "contaminant_selector_clade", selected = c(current_selected, sel_name), choices = c(current_selected, sel_name))
+    }
   })
 
   observeEvent(input$contaminant_selector_clade, {
@@ -454,13 +463,34 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     if ('taxID' %in% colnames(myDf)) {
       columnDefs[length(columnDefs) + 1] <-
         list(list(targets = which(colnames(myDf) == "taxID") - zero_col,
-                  render = htmlwidgets::JS("function(data, type, full) {
-                return '<a href=\"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id='+data+'\" target=\"_blank\">' + data + '</a>'; }")
+                  render = htmlwidgets::JS("function(data, type, row) {
+                if (data < 1000000000) {
+                  return '<a href=\"https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id='+data+'\" target=\"_blank\">' + data + '</a>'; 
+                } else {
+                  name = row[0]
+                  name = name.replace(/.*>/,'')
+                  name = name.replace(/ .*/,'')
+                  if (name.startsWith('GCA_') || name.startsWith('GCF_')) {
+                    return '<a href=\"https://www.ncbi.nlm.nih.gov/assembly/'+name+'\" target=\"_blank\">asm</a>'; 
+                  } else if (name.startsWith('NC') || name.match(/^[A-Z]{1,2}[0-9]{5,6}/)) {
+                    return '<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/'+name+'\" target=\"_blank\">nuc</a>'; 
+                  }
+                  return '';
+                }
+              }")
         ))
     }
     
     columnDefs
   }
+
+  observeEvent(input$opt_taxRank, {
+    if (input$opt_taxRank == "-") {
+      shinyjs::show("opt_hide_zero_taxa")
+    } else {
+      shinyjs::hide("opt_hide_zero_taxa")
+    }
+  })
 
   observeEvent(input$double_clicked_row, {
     #dmessage("double-clicked a row!")
