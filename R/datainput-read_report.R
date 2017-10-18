@@ -375,12 +375,13 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   }
 
   if (is.null(has_header)) {
-    has_header <- grepl("^[a-zA-Z#\"]",first.line)
+    has_header <- grepl("^[a-zA-Z#%\"]",first.line)
   }
 
+  is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
   nrows <- ifelse(check_file, 5, -1)
-  if (is_kaiju_fmt) {
+  if (!is_krakenu_fmt && is_kaiju_fmt) {
     cont <- readLines(myfile)
     cont <- cont[!grepl("^-", cont)]
     cont <- sub(".*\t  *","", cont)
@@ -423,32 +424,21 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = T,
                         quote = "",stringsAsFactors=FALSE,
-                        comment.char = "", nrows = nrows)
+                        comment.char = "", nrows = nrows, 
+                        check.names=FALSE)
     }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
     #colnames(report) <- c("percentage","cladeReads","taxonReads","taxRank","taxID","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
-    colnames(report)[colnames(report)=="clade_perc"] <- "percentage"
-    colnames(report)[colnames(report)=="perc"] <- "percentage"
-    colnames(report)[colnames(report)=="percReadsClade"] <- "percentage"
-
-    colnames(report)[colnames(report)=="numReadsClade"] <- "cladeReads"
-    colnames(report)[colnames(report)=="n_reads_clade"] <- "cladeReads"
-    colnames(report)[colnames(report)=="n.clade"] <- "cladeReads"
-
-    colnames(report)[colnames(report)=="numReadsTaxon"] <- "taxonReads"
-    colnames(report)[colnames(report)=="n_reads_taxo"] <- "taxonReads"
-    colnames(report)[colnames(report)=="n.stay"] <- "taxonReads"
-
-    colnames(report)[colnames(report)=="rank"] <- "taxRank"
-    colnames(report)[colnames(report)=="tax_taxRank"] <- "taxRank"
-    colnames(report)[colnames(report)=="level"] <- "taxRank"
-
-    colnames(report)[colnames(report)=="tax"] <- "taxID"
-    colnames(report)[colnames(report)=="taxonid"] <- "taxID"
-
-    colnames(report)[colnames(report)=="indentedName"] <- "name"
+    colnames(report)[colnames(report) %in% c("#%","%","clade_perc","perc","percReadsClade")] <- "percentage"
+    colnames(report)[colnames(report) %in% c("reads","numReadsClade","n_reads_clade","n.clade")] <- "cladeReads"
+    colnames(report)[colnames(report) %in% c("taxReads","numReadsTaxon","n_reads_taxo","n.stay")] <- "taxonReads"
+    colnames(report)[colnames(report) %in% c("rank","tax_taxRank","level")] <- "taxRank"
+    colnames(report)[colnames(report) %in% c("tax","taxonid")] <- "taxID"
+    colnames(report)[colnames(report) %in% c("indentedName","taxName")] <- "name"
+    colnames(report)[colnames(report) %in% c("dup")] <- "kmerDuplicity"
+    colnames(report)[colnames(report) %in% c("cov")] <- "kmerCoverage"
   } else {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = F,
