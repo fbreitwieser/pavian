@@ -292,7 +292,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
            filter_taxa(tax_data(),
                 rm_clades = input$contaminant_selector_clade,
                 rm_taxa = input$contaminant_selector,
-                taxRank = input$opt_taxRank) 
+                taxRank = "-") 
+                #taxRank = input$opt_taxRank) 
     if (!is.null(taxLineage$val)) {
       sel_tl = tax_data()[tax_data()[["name"]] == taxLineage$val[length(taxLineage$val)], "taxLineage"]
       dmessage("Selected lineage ", sel_tl)
@@ -327,7 +328,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     if ("taxID" %in% colnames(tax_data())) {
       tax_columns$TaxID=tax_data()[,"taxID"]
     }
-    
+         
     ## Add columns from tax_data_add
     if (!is.null(tax_data_add)) {
       validate(
@@ -357,6 +358,15 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     #if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
     if (input$opt_taxRank == "-" && input$opt_hide_zero_taxa) {
       td <- my_tax_data()[sel_rows,,drop=F]
+    }
+
+    if (input$opt_taxRank != "-") {
+      if (!taxRank %in% tax_data()[["taxRank"]]) {
+        dmessage("taxRank ", taxRank, " not in tax_data")
+      }
+      exclude <-  !tax_data[["taxRank"]] %in% taxRank
+    } else {
+      exlude = FALSE
     }
     one_df(filtered_clade_reads()[sel_rows,,drop=F], taxon_reads()[sel_rows,,drop=F], td, 
            sample_data(),
@@ -388,11 +398,12 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   observeEvent(input$btn_filter_row,  {
     current_selected <- input$contaminant_selector_clade
     sel_row <- input$dt_samples_comparison_rows_selected
+    str(dt_proxy)
     if (is.null(sel_row) || length(sel_row) == 0) {
       shinyjs::info("Either write a taxon name directly in the box to the left to filter its clade, or select a row in the table and press this button again.")
     } else {
-      sel_rows <- shown_rows()
-      sel_name <- tax_data()[which(sel_rows)[sel_row],"name"]
+      sel_name <- summarized_report_df()[[1]][sel_row,1]
+      sel_name <- sub(".*>", "", sel_name)
       dmessage("Filtering ",sel_name)
       req(sel_name)
 

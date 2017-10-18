@@ -383,13 +383,28 @@ get_dt_container <- function(numericColumns, taxColumns, sampleNames, groupSampl
 one_df <- function(cladeReads, taxonReads, tax_data, sample_data, 
                    numericColumns, statsColumns, sum_reads = NULL,
                    groupSampleColumns = FALSE, specific_tax_rank = FALSE,
-                   min_scale_reads = 1, min_scale_percent = 0.001) {
+                   min_scale_reads = 1, min_scale_percent = 0.001, exclude=FALSE) {
  
    
   taxColumns <- colnames(tax_data)
   taxColumns <- taxColumns[taxColumns != "taxLineage"]
   taxColumns1 <- COLNAMES[taxColumns]
   sampleNames <- c(statsColumns, get_col(sample_data, "Name"))
+
+  exclude <- which(exclude)
+  if (length(exclude) > 0) {
+    cladeReads[exclude[1],] <- apply(cladeReads[exclude,,drop=F],2,sum)
+    taxonReads[exclude[1],] <- apply(taxonReads[exclude,,drop=F],2,sum)
+    tax_data[exclude[1],] <- c(name="At higher ranks", taxID=0, taxRank="-", taxLineage="")[colnames(tax_data)]
+  }
+  if (length(exclude) > 1) {
+    cladeReads <- cladeReads[-exclude[-1], ]
+    taxonReads <- taxonReads[-exclude[-1], ]
+    tax_data <- tax_data[-exclude[-1], ]
+  }
+
+  stopifnot(is.null(rownames(cladeReads)))
+  stopifnot(is.null(rownames(taxonReads)))
   
   dt_container <- get_dt_container(numericColumns, taxColumns1, sampleNames, groupSampleColumns)
   #add_names_to_columns <- length(numericColumns) > 1
