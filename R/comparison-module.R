@@ -294,7 +294,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
                 rm_taxa = input$contaminant_selector,
                 taxRank = input$opt_taxRank) 
     if (!is.null(taxLineage$val)) {
-      sel_tl = tax_data()[tax_data()[["name"]] == taxLineage$val[length(taxLineage$val)], "taxLineage"]
+      sel_tl = tax_data()[tax_data()[["name"]] == taxLineage$val[length(taxLineage$val)], "taxLineage"][1]
       dmessage("Selected lineage ", sel_tl)
       if (isTRUE(!is.null(sel_tl) && nchar(sel_tl) > 0))
         res <- res & substr(tax_data()$taxLineage, 0, nchar(sel_tl)) == sel_tl

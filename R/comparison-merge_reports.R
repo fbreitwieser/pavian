@@ -197,7 +197,7 @@ assayData.merged_reports <- function(x)
 #'
 #' @return Combined data.frame
 #' @export
-merge_reports2 <- function(my_reports, col_names = NULL) {
+merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE) {
   id_cols <- c("name", "taxRank", "taxID", "taxLineage")
   numeric_cols <- c("cladeReads","taxonReads")
   common_colnames <- Reduce(intersect, lapply(my_reports, colnames))
@@ -209,11 +209,30 @@ merge_reports2 <- function(my_reports, col_names = NULL) {
     id_cols <- c("name", "taxRank", "taxLineage")
   
   if (!all(c(id_cols,numeric_cols) %in% common_colnames)) {
-    stop("Not all required columns are colnames. Required: ",
-         paste0(c(id_cols,numeric_cols), collapse=", "),". Present: ",
-         paste0(common_colnames, collapse=", "))
+    stop("Not all required columns are present Required: ",
+         paste0(sort(c(id_cols,numeric_cols)), collapse=", "),". Present: ",
+         paste0(sort(common_colnames), collapse=", "))
   }
-  
+
+  if (fix_taxnames && length(my_reports) > 1) {
+    if (!"taxID" %in% common_colnames) {
+      dmessage("Can't fix taxnames without taxID!")
+    } else {
+      id_to_name <- lapply(my_reports, function(r) {
+        r[,c("taxID","name")]
+      })
+      c_id_to_name1 <- do.call(rbind,id_to_name)
+      rownames(c_id_to_name1) <- NULL
+      c_id_to_name <- unique(c_id_to_name1[order(c_id_to_name1$taxID),])
+      rownames(c_id_to_name) <- NULL
+      if (max(table(c_id_to_name$name)) > 1) {
+        dmessage("The following tax names have differing taxIDs:")
+        print(c_id_to_name[c_id_to_name$name %in% c_id_to_name$name[duplicated(c_id_to_name$name)],])
+        dmessage("The following taxons have the same taxIDs but differing names:")
+        print(c_id_to_name[c_id_to_name$taxID %in% c_id_to_name$taxID[duplicated(c_id_to_name$taxID)],])
+      }
+    }
+  }
   
   my_reports <- lapply(seq_along(my_reports), function(i) {
     mm <- my_reports[[i]][,c(id_cols, numeric_cols)]
