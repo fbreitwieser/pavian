@@ -140,6 +140,15 @@ pavianServer <- function(input, output, session) {
     }
   })
   
+  output$session_info <- renderPrint({
+    sessionInfo()
+  })
+  
+  output$session_info1 <- renderPrint({
+    #str(session$clientData)
+  })
+  
+  
   observeEvent(input$sample_set_names,{
     if (isTRUE(input$sample_set_names[1] == "upload_files")) {
       shinydashboard::updateTabItems(session,"tabs","Data Selection")
