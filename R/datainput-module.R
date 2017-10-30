@@ -131,7 +131,7 @@ dataInputModule <- function(input, output, session,
                             load_server_directory = getOption("pavian.load_server_directory", default = FALSE),
                             load_example_data = getOption("pavian.load_example_data", default = FALSE)) {
   
-  sample_sets <- reactiveValues(val=NULL) # val is the list of all sample sets
+  sample_sets <- reactiveValues(val=NULL, selected=NULL) # val is the list of all sample sets
   sample_sets_selected <- NULL # selected is just used to initialize the radioButtons in the module
   
   ns <- session$ns
@@ -178,7 +178,7 @@ dataInputModule <- function(input, output, session,
           ns("sample_set_select"),
           label = NULL,
           choices = sample_set_names,
-          selected = sample_set_names[1]
+          selected = ifelse(is.null(sample_sets$selected), sample_set_names[1], sample_sets$selected)
         )
         )
       ),
@@ -225,7 +225,7 @@ dataInputModule <- function(input, output, session,
       
       sample_sets$val <-
         c(sample_sets_val, res$sample_sets[!names(res$sample_sets) %in% names(sample_sets_val)])
-      sample_sets_selected <- names(res$sample_sets)[1]
+      sample_sets$selected <- names(res$sample_sets)[1]
       return(TRUE)
     }
   
@@ -364,14 +364,14 @@ dataInputModule <- function(input, output, session,
     
     if (currently_renaming_sample_set) {
       selected_item <- names(sample_sets$val) == input$sample_set_select
-      names(sample_sets$val)[selected_item] <<-
-        input$txt_rename_sample_set
-      updateRadioButtons(
-        session,
-        "sample_set_select",
-        choices = names(sample_sets$val),
-        selected = names(sample_sets$val)[selected_item]
-      )
+      names(sample_sets$val)[selected_item] <<-  input$txt_rename_sample_set
+      sample_sets$selected <- input$txt_rename_sample_set
+      #updateRadioButtons(
+      #  session,
+      #  "sample_set_select",
+      #  choices = names(sample_sets$val),
+      #  selected = names(sample_sets$val)[selected_item]
+      #)
     } else {
       updateTextInput(session,
                       "txt_rename_sample_set",
@@ -387,10 +387,10 @@ dataInputModule <- function(input, output, session,
     read_error_msg$val_neg <- NULL
     if (length(sample_sets$val) == 1) {
       sample_sets$val <- list()
-      sample_sets_selected <- NULL
+      sample_sets$selected <- NULL
     } else {
       sample_sets$val <- sample_sets$val[!selected_item]
-      sample_sets_selected <- names(sample_sets$val)[1]
+      sample_sets$selected <- names(sample_sets$val)[1]
     }
   })
   
