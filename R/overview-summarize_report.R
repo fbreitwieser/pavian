@@ -40,6 +40,7 @@ summarize_report <- function(my_report) {
   artificial_reads <- zero_if_na1(my_report["s_synthetic construct","cladeReads"])
   human_reads <- zero_if_na1(my_report["s_Homo sapiens","cladeReads"])
   chordate_reads <- zero_if_na1(my_report["p_Chordata","cladeReads"])
+  root_reads <- zero_if_na1(my_report["-_root","taxonReads"])
 
   #fungal_s_reads <- sum(extract_from_report(my_report,"k_Fungi","S")[,"cladeReads"])
   #eukaryota_s_reads <- sum(extract_from_report(my_report,"d_Eukaryota","S")[,"cladeReads"])
@@ -51,7 +52,7 @@ summarize_report <- function(my_report) {
     chordate_reads=chordate_reads,
     artificial_reads=artificial_reads,
     unclassified_reads=unidentified_reads,
-    microbial_reads=identified_reads-chordate_reads-artificial_reads,
+    microbial_reads=identified_reads-chordate_reads-artificial_reads-root_reads,
     bacterial_reads=zero_if_na1(my_report["d_Bacteria","cladeReads"]) + zero_if_na1(my_report["k_Bacteria","cladeReads"]), ## MetaPhLan reports bacteria as kingdom; Kraken as domain. Sum them
     viral_reads=zero_if_na1(my_report["d_Viruses","cladeReads"]) + zero_if_na1(my_report["k_Viruses","cladeReads"]), ## same as for Bacteria
     fungal_reads=zero_if_na1(my_report["k_Fungi","cladeReads"]),
