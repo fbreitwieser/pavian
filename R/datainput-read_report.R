@@ -449,6 +449,9 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     if (is.null(report)) { return(NULL); }
   }
 
+  if (ncol(report) < 2) {
+    return(NULL) 
+  }
   if (colnames(report)[2] == "Metaphlan2_Analysis") {
     ## Metaphlan report
     colnames(report) <- c("taxLineage", "cladeReads")
@@ -504,7 +507,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
         # find previous row with correct depth
         prev_row <- prev_row - 1
         if (prev_row < 1) {
-          warning("Kraken depths do not work out!")
+          warning("Kraken depths do not work out - ",current_row," goes back to 0!")
           return(NULL)
         }
       }
