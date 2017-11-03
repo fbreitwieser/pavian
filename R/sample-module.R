@@ -264,7 +264,14 @@ sampleModule <- function(input, output, session, sample_data, reports,
                     levels = c("taxonReads","cladeReads"),
                     labels = c("at taxon","in total"), ordered=T)
     
-    mydf$sample <- factor(mydf$sample, names(sum_cladeReads()) ,substr(my_names,1,12))
+    ii <- 10
+    short_names <-substr(my_names,1,ii)
+    while (anyDuplicated(short_names)) {
+      ii <- ii + 1
+      short_names <-substr(my_names,1,ii)
+    }
+
+    mydf$sample <- factor(mydf$sample, names(sum_cladeReads()) , short_names)
    
     mydf <- mydf[order(mydf$sample, type1),]
     if (normalize)
