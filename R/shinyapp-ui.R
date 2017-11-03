@@ -123,7 +123,8 @@ dashboardUI <- function(request) {
                           title="Session Information",
                           collapsible=TRUE,
                           collapsed=FALSE,
-                          verbatimTextOutput("session_info")
+                          verbatimTextOutput("session_info"),
+                          verbatimTextOutput("session_info1")
                       )
                     )
                   )

@@ -88,7 +88,7 @@ pavianServer <- function(input, output, session) {
       shinyjs::show("sample_set_names")
       code <- sprintf("$('#sample_set_names').attr('size', %s)", min(length(sample_set_names), 5))
       shinyjs::runjs(code)
-      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_set_names[1])
+      updateSelectInput(session, "sample_set_names", choices = sample_set_names, selected = sample_sets$selected)
     } else {
       updateSelectInput(session, "sample_set_names", choices = character(0), selected= character(0))
       code <- sprintf("$('span.logo').text('')")
@@ -139,6 +139,15 @@ pavianServer <- function(input, output, session) {
       return(res)
     }
   })
+  
+  output$session_info <- renderPrint({
+    sessionInfo()
+  })
+  
+  output$session_info1 <- renderPrint({
+    #str(session$clientData)
+  })
+  
   
   observeEvent(input$sample_set_names,{
     if (isTRUE(input$sample_set_names[1] == "upload_files")) {

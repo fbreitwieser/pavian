@@ -42,10 +42,14 @@ exampleDataPanel <- function(ns) {
 
 uploadFilePanel <- function(ns) {
   tabPanel("Upload files",
+           "Upload metagenomics report files from the local computer. If selecting multiple files does not work, please
+            try with a different browser. With each sample set, you may also include meta-data with a colon-separated sample_data.csv file 
+            that has at least the columns 'Name' and 'ReportFile'.",
            fileInput(
              ns("file_upload"),
+             label="",
+             placehold = "Upload report files",
              width = "600px",
-             "",
              multiple = TRUE
            ))
 }
@@ -73,11 +77,9 @@ dataInputModuleUI <- function(id,
     HTML(
       "
       <p>
-      Pavian is a tool for interactive analysis of metagenomics classification results. You can read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script centrifuge-kreport that is distributed with Centrifuge. Further note that you can compare Kraken and Centrifuge results, but not Kraken or Centrifuge with MetaPhlAn results, as the naming and taxonomy is different.
+      Pavian is a tool for interactive analysis of metagenomics classification results. 
+    Read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script centrifuge-kreport that is distributed with Centrifuge. 
       </p>
-
-      You can upload multiple files into a sample set. With each sample set, you may also include a sample_data.csv file which is colon-separated and has at least the columns 'Name' and 'ReportFile'.
-      
       <p>
       For help, and to report an issue with the tool, please go to <a target='blank' href='https://github.com/fbreitwieser/pavian'>https://github.com/fbreitwieser/pavian</a>.
       </p>"
@@ -129,7 +131,7 @@ dataInputModule <- function(input, output, session,
                             load_server_directory = getOption("pavian.load_server_directory", default = FALSE),
                             load_example_data = getOption("pavian.load_example_data", default = FALSE)) {
   
-  sample_sets <- reactiveValues(val=NULL) # val is the list of all sample sets
+  sample_sets <- reactiveValues(val=NULL, selected=NULL) # val is the list of all sample sets
   sample_sets_selected <- NULL # selected is just used to initialize the radioButtons in the module
   
   ns <- session$ns
@@ -176,7 +178,7 @@ dataInputModule <- function(input, output, session,
           ns("sample_set_select"),
           label = NULL,
           choices = sample_set_names,
-          selected = sample_set_names[1]
+          selected = ifelse(is.null(sample_sets$selected), sample_set_names[1], sample_sets$selected)
         )
         )
       ),
@@ -205,9 +207,11 @@ dataInputModule <- function(input, output, session,
   
   read_server_directory2 <-
     function(data_dir, sample_set_name = NULL, ...) {
+      sample_sets_val <- isolate(sample_sets$val)
       res <-
         read_server_directory1(data_dir,
                                sample_set_name = sample_set_name,
+                               existing_sample_set_names = names(sample_sets_val),
                                ...,
                                display_messages = FALSE)
       read_error_msg$val_pos <- res$error_msg$val_pos
@@ -215,30 +219,13 @@ dataInputModule <- function(input, output, session,
       if (is.null(read_error_msg$val_pos))
         return(FALSE)
       
-      my_sample_sets <- list()
-      if (!is.null(sample_set_name)) {
-        for (i in seq_along(res$sample_sets)) {
-          sample_set_name <- names(res$sample_sets)[i]
-          
-          ## Set a unique name for the uploaded samples 
-          old_names <- names(isolate(sample_sets))
-          counter <- 1
-          
-          while (paste(sample_set_name, counter) %in% old_names) {
-            counter <- counter + 1
-          }
-          names(res$sample_sets)[i] <- paste(sample_set_name, counter)
-        }
-      }
-      
       validate(
         need(res$sample_sets, message = "No sample sets available. Set a different directory")
       )
       
-      sample_sets_val <- isolate(sample_sets$val)
       sample_sets$val <-
         c(sample_sets_val, res$sample_sets[!names(res$sample_sets) %in% names(sample_sets_val)])
-      sample_sets_selected <- names(res$sample_sets)[1]
+      sample_sets$selected <- names(res$sample_sets)[1]
       return(TRUE)
     }
   
@@ -377,14 +364,14 @@ dataInputModule <- function(input, output, session,
     
     if (currently_renaming_sample_set) {
       selected_item <- names(sample_sets$val) == input$sample_set_select
-      names(sample_sets$val)[selected_item] <<-
-        input$txt_rename_sample_set
-      updateRadioButtons(
-        session,
-        "sample_set_select",
-        choices = names(sample_sets$val),
-        selected = names(sample_sets$val)[selected_item]
-      )
+      names(sample_sets$val)[selected_item] <<-  input$txt_rename_sample_set
+      sample_sets$selected <- input$txt_rename_sample_set
+      #updateRadioButtons(
+      #  session,
+      #  "sample_set_select",
+      #  choices = names(sample_sets$val),
+      #  selected = names(sample_sets$val)[selected_item]
+      #)
     } else {
       updateTextInput(session,
                       "txt_rename_sample_set",
@@ -400,10 +387,10 @@ dataInputModule <- function(input, output, session,
     read_error_msg$val_neg <- NULL
     if (length(sample_sets$val) == 1) {
       sample_sets$val <- list()
-      sample_sets_selected <- NULL
+      sample_sets$selected <- NULL
     } else {
       sample_sets$val <- sample_sets$val[!selected_item]
-      sample_sets_selected <- names(sample_sets$val)[1]
+      sample_sets$selected <- names(sample_sets$val)[1]
     }
   })
   
