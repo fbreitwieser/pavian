@@ -386,7 +386,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   })
   
   all_names <- reactive ({
-    sub("^._","", sort(unique(unlist(sapply(reports(), function(x) x$name)))))
+    sub("^._","", sort(unique(unlist(sapply(reports(), function(x) x$name[x$taxRank != "-"])))))
   })
   
   colourScale <- reactive({

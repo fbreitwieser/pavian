@@ -225,11 +225,15 @@ merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE) {
       rownames(c_id_to_name1) <- NULL
       c_id_to_name <- unique(c_id_to_name1[order(c_id_to_name1$taxID),])
       rownames(c_id_to_name) <- NULL
-      if (max(table(c_id_to_name$name)) > 1) {
-        dmessage("The following tax names have differing taxIDs:")
-        print(c_id_to_name[c_id_to_name$name %in% c_id_to_name$name[duplicated(c_id_to_name$name)],])
+      sel_diff_taxid <- c_id_to_name$name %in% c_id_to_name$name[duplicated(c_id_to_name$name)]
+      #if (any(sel_diff_taxid)) {
+      #  dmessage("The following tax names have differing taxIDs:")
+      #  print(c_id_to_name[sel_diff_taxid,])
+      #}
+      sel_diff_name <- c_id_to_name$taxID %in% c_id_to_name$taxID[duplicated(c_id_to_name$taxID)]
+      if (any(sel_diff_name)) {
         dmessage("The following taxons have the same taxIDs but differing names:")
-        print(c_id_to_name[c_id_to_name$taxID %in% c_id_to_name$taxID[duplicated(c_id_to_name$taxID)],])
+        print(c_id_to_name[sel_diff_name,])
       }
     }
   }

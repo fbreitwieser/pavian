@@ -18,6 +18,8 @@ params:
   all_data_loaded: FALSE
   sample_data: NA
   reports: NA
+  include_sankey: TRUE
+  filter_taxa: NA
 ---
 
 ---
@@ -28,6 +30,7 @@ date: "`r params$doc_date`"
 
 ```{r setup, include=FALSE}
 library(pavian)
+library(shiny)
 library(DT)
 knitr::opts_chunk$set(echo = FALSE)
 options(DT.options = list(pageLength = 15,
@@ -51,7 +54,7 @@ set_name <- params$set_name
 Sample set summary
 =====================================  
 
-```{r, message=FALSE}
+```{r sample_summary, message=FALSE}
 if (isTRUE(params$all_data_loaded)) {
   sample_data <- params$sample_data
   reports <- params$reports
@@ -97,7 +100,7 @@ tabsetPanel(
 Classification results
 =====================================  
 
-```{r, message = FALSE, warning=FALSE, eval=TRUE}
+```{r classifications, message = TRUE, warning=TRUE, eval=TRUE}
 ## Classificationas across samples
 merged_reports <- pavian::merge_reports2(reports, col_names = sample_data$Name)
 taxonReads <- merged_reports$taxonReads
@@ -109,29 +112,29 @@ stat_columns <- c("Mean", "Median", "Max", "Min", "Sd", "Maximum absolute deviat
 stat_columns <- c("Mean")
 shown_rows <- seq_len(nrow(tax_data))
 
-if (nrow(cladeReads) > 1000) {
-  max_order <- order(apply(cladeReads, 1, max, na.rm=T), decreasing = TRUE)
-  #sel <- apply(cladeReads, 1, function(x) any(x >= 10, na.rm = T))
-  sel <- max_order[1:1000]
-  cat("Showing top 1000 species of ",length(max_order))
-  tax_data <- tax_data[sel, ,drop=F]
-  taxonReads <- taxonReads[sel, ,drop=F]
-  cladeReads <- cladeReads[sel, ,drop=F]
-}
-
-taxonReads[taxonReads == 0] <- NA
-cladeReads[cladeReads == 0] <- NA
-
 sel_bacteria = grepl("d_Bacteria",tax_data[,"taxLineage"]) & tax_data[,"taxRank"] == 'S'
 sel_viruses = grepl("d_Viruses",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
 sel_fungi = grepl("k_Fungi",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
-sel_protists = grepl("d_Eukaryota",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
-sel_euk = grepl("d_Eukaryota",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
+sel_euk = grepl("d_Eukaryota",tax_data[,"taxLineage"]) & tax_data[,"taxRank"] == 'S'
+sel_protists = grepl("d_Eukaryota",tax_data[,"taxLineage"]) & !sel_fungi &!grepl("p_Chordata",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
 
-my_df <- data.frame(tax_data[,c("name","taxRank"), drop=F],cladeReads,tax_data[,"taxLineage", drop=F])
-my_dt <- function(sel)
-  DT::datatable(my_df[sel,,drop=F],height = "600px",
+my_df <- data.frame(Name=tax_data$name,Max=apply(cladeReads,1,max,na.rm=TRUE),cladeReads,Lineage=pavian::beautify_taxLineage(tax_data$taxLineage), stringsAsFactors = FALSE)
+my_dt <- function(sel) {
+  selw <- which(sel)
+  max_order <- order(my_df$Max, decreasing = TRUE)
+  if (sum(sel) > 100) {
+    selw <- selw[max_order[1:100]]
+    h = sprintf("Showing %s of %s species.", 100, sum(sel))
+  } else {
+    selw <- selw[max_order]
+    h = ""
+  }
+  shiny::tagList(
+    shiny::HTML(h),
+    DT::datatable(my_df[selw,,drop=F],height = "600px", rownames = FALSE,
               class = "stripe hover row-border compact nowrap", extensions = 'Buttons',  options = list( dom = 'Bfrtip', buttons = pavian:::common_buttons(set_name), scrollX = TRUE))
+  )
+}
 tabsetPanel(
   tabPanel("Bacteria", my_dt(sel_bacteria)),
   tabPanel("Viruses", my_dt(sel_viruses)),
@@ -163,13 +166,13 @@ do.call(tabsetPanel,lapply(names(reports), function(n) {
 }))
 ```
 
-Sankey visualization {data-height=500}
-=====================================  
 
-```{r}
+```{r sankey_vis}
+###############SANKEYS
+if (isTRUE(params$include_sankey)) {
 tax_taxRanks <- c("D","K","P","C","O","F","G","S")
 
-all_names <- sub("^._","",sort(unique(unlist(sapply(reports,"[","name")))))
+all_names <- sub("^._","",sort(unique(unlist(sapply(reports,function(x) x$name[x$taxRank != "-"])))))
 colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20b).domain([%s])",
                                      paste0('"',c(all_names,"other"),'"',collapse=",")))
 
@@ -186,12 +189,23 @@ colourScale <- sankeyD3::JS(sprintf("d3.scaleOrdinal().range(d3.schemeCategory20
 # 
 
 #library(D3partitionR)
-htmltools::tagList(lapply(names(reports), function(n) {
+
+if (length(params$filter_tax) != 0 && isTRUE(is.na(params$filter_tax))) {
+  filt <- c("Chordata", "other sequences")
+} else {
+  filt <- params$filter_taxa
+}
+
+
+htmltools::tagList(
+  h1("Sankey visualization"),
+  HTML(sprintf("<script>sankey_colorscale = %s</script>", colourScale)),
+  lapply(names(reports), function(n) {
 #  n="PT1"
   my_report <- reports[[n]]
 
-  my_report2 <- filter_taxon(my_report, "Chordata")
-  my_report2 <- filter_taxon(my_report2, "other sequences")
+  for (f in filt)
+    my_report <- filter_taxon(my_report, f)
   
   # for D3partitionR
   # my_report2 <- my_report2[my_report2$cladeReads > 0 & my_report2$taxonReads > 0 & grepl("^._root",my_report2$taxLineage), ]
@@ -205,7 +219,7 @@ htmltools::tagList(lapply(names(reports), function(n) {
   #  tabsetPanel(
   #    tabPanel("Sankey visualization",
                
-        pavian:::build_sankey_network(my_report2, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = colourScale)
+        pavian:::build_sankey_network(my_report, nodePadding=13, xScalingFactor=.9, nodeStrokeWidth=0, zoom = FALSE, colourScale = "sankey_colorscale", LinkGroup = "source_name")
         
   #    )#,
       #tabPanel("All data",
@@ -216,8 +230,9 @@ htmltools::tagList(lapply(names(reports), function(n) {
   #  )
   )
 }))
+}
 ```
 
 About
 =====
-This file was generated with the Pavian R package version `r utils::packageVersion('pavian')` on `r date()`. 
+This file was generated with the Pavian R package version `r utils::packageVersion('pavian')` on `r date()`. Please cite Pavian if you use it in your research.

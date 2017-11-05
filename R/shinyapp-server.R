@@ -256,7 +256,8 @@ pavianServer <- function(input, output, session) {
       textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined_str()), width="100%"),
       textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
       textInput(ns("report_date"), "Date", date(), width="100%"),
-      #checkboxInput(ns("opt_include_sankey"),"Include sample Sankeys"),
+      checkboxInput(ns("report_include_sankey"),"Include sankey flow charts for each sample", value = TRUE),
+      selectizeInput(ns("report_filter_taxa"), "Filter taxa in sankey", selected=c("Chordata","artificial sequences"), choices=allcontaminants,multiple=TRUE, options(create=TRUE)),
       footer = tagList(
         modalButton("Cancel"),
         downloadButton("dl_report", "Generate HTML report")
@@ -281,6 +282,7 @@ pavianServer <- function(input, output, session) {
       # can happen when deployed).
       tempReport <- file.path(tempdir(), sprintf("%s-report.Rmd", sample_set_names_combined()))
       file.copy(rmd_file, tempReport, overwrite = TRUE)
+      dmessage("Writing RMD to ",tempReport)
       
       # Set up parameters to pass to Rmd document
       params <- list(doc_title=input$report_title,
@@ -289,7 +291,9 @@ pavianServer <- function(input, output, session) {
                      set_name=sample_set_names_combined(),
                      all_data_loaded=TRUE,
                      sample_data=sample_data(),
-                     reports=reports())
+                     reports=reports(),
+                     include_sankey=input$report_include_sankey,
+                     filter_taxa=input$report_filter_taxa)
       
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
@@ -297,11 +301,12 @@ pavianServer <- function(input, output, session) {
       withProgress({
 	tryCatch(rmarkdown::render(tempReport, output_file = file,
                         params = params, output_format = "html_document",
-                        envir = new.env(parent = globalenv())),
+                        envir = new.env()),
+                        #envir = new.env(parent = globalenv())),
                  error = function(e) writeLines(paste("Error in generating the report:",conditionMessage(e)), con=file))
 	}, message="Rendering report ...")
       removeModal()
-      shinyjs::alert("Report generated!")
+      #shinyjs::alert("Report generated!")
       
     }
   )
