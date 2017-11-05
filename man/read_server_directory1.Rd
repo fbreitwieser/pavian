@@ -5,12 +5,15 @@
 \title{Search for classification results in a directory and its children}
 \usage{
 read_server_directory1(data_dir, sample_set_name = NULL,
-  include_base_dir = T, display_messages = TRUE)
+  existing_sample_set_names = NULL, include_base_dir = T,
+  display_messages = TRUE)
 }
 \arguments{
 \item{data_dir}{data directory}
 
 \item{sample_set_name}{name of sample set}
+
+\item{existing_sample_set_names}{names of current sample sets that may be updated}
 
 \item{include_base_dir}{include base directory}
 

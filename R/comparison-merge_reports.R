@@ -194,6 +194,7 @@ assayData.merged_reports <- function(x)
 #'
 #' @param my_reports Report data.frames.
 #' @param col_names Column names.
+#' @param fix_taxnames Check if there are differences in the taxonomies of the reports.
 #'
 #' @return Combined data.frame
 #' @export

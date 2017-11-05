@@ -2,6 +2,7 @@
 #'
 #' @param data_dir data directory
 #' @param sample_set_name name of sample set
+#' @param existing_sample_set_names names of current sample sets that may be updated
 #' @param include_base_dir include base directory
 #' @param display_messages display messages?
 #'

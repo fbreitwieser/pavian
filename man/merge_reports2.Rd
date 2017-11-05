@@ -5,12 +5,14 @@
 \title{Merge report files into a wide format, with column(s) for each
 report.}
 \usage{
-merge_reports2(my_reports, col_names = NULL)
+merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE)
 }
 \arguments{
 \item{my_reports}{Report data.frames.}
 
 \item{col_names}{Column names.}
+
+\item{fix_taxnames}{Check if there are differences in the taxonomies of the reports.}
 }
 \value{
 Combined data.frame
