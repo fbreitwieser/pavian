@@ -118,7 +118,7 @@ sel_fungi = grepl("k_Fungi",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 
 sel_euk = grepl("d_Eukaryota",tax_data[,"taxLineage"]) & tax_data[,"taxRank"] == 'S'
 sel_protists = grepl("d_Eukaryota",tax_data[,"taxLineage"]) & !sel_fungi &!grepl("p_Chordata",tax_data[,"taxLineage"])  & tax_data[,"taxRank"] == 'S'
 
-my_df <- data.frame(Name=tax_data$name,Max=apply(cladeReads,1,max,na.rm=TRUE),cladeReads,Lineage=pavian::beautify_taxLineage(tax_data$taxLineage), stringsAsFactors = FALSE)
+my_df <- data.frame(Name=tax_data$name,Max=apply(cladeReads,1,max,na.rm=TRUE),cladeReads,Lineage=pavian:::beautify_taxLineage(tax_data$taxLineage), stringsAsFactors = FALSE)
 my_dt <- function(sel) {
   selw <- which(sel)
   max_order <- order(my_df$Max, decreasing = TRUE)
