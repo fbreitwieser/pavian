@@ -16,7 +16,7 @@ figure_options <- function(ns) {
                  sliderInput(ns("linkOpacity"),"Opacity of links", value = .6, min = .1, max = 1, step=.1),
                  sliderInput(ns("textXPos"),"Node label margins", value = 1, min = 0, max = 5, step=.5),
                  checkboxInput(ns("show_numbers"),"Show numbers above nodes", value = TRUE),
-                 checkboxInput(ns("color_links"),"Color the flow", value = FALSE),
+                 checkboxInput(ns("color_links"),"Color the flow", value = TRUE),
                  shinyjs::hidden(sliderInput(ns("curvature"),"Curvature", value = .5, min = 0, max = 1, step=.01)),
                  shinyjs::hidden(radioButtons(ns("linkType"), "linkType", selected = "path2", choices = c("bezier", "l-bezier", "trapez", "path1","path2"), inline = TRUE)))
 }
