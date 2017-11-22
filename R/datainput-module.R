@@ -127,7 +127,7 @@ dataInputModule <- function(input, output, session,
                             #server_dirs = c(pavian_lib_dir=system.file("shinyapp", "example-data", package = "pavian"),
                             #                root = "/home/fbreitwieser"),
                             config_dir = NULL,
-                            server_access = getOption("pavian.server_access", default = TRUE),
+                            server_access = getOption("pavian.server_access", default = FALSE),
                             load_server_directory = getOption("pavian.load_server_directory", default = FALSE),
                             load_example_data = getOption("pavian.load_example_data", default = FALSE)) {
   
