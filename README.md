@@ -3,6 +3,8 @@ Kraken, Centrifuge and MetaPhlAn. Pavian also provides an alignment viewer for v
 
 For more information look at the preprint at http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html . Please cite the preprint if you use Pavian in your research.
 
+You can try out Pavian at https://fbreitwieser.shinyapps.io/pavian/.
+
 **Installation and deployment**
 
 Pavian is a R package, and thus requires R to run. Look [here](http://a-little-book-of-r-for-bioinformatics.readthedocs.io/en/latest/src/installr.html) for how to install R. On Windows, you probably need to install [Rtools](cran.r-project.org/bin/windows/Rtools/). On Ubuntu, install `r-base-dev`. Once you started R, the following commands will install the package:
