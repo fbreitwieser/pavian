@@ -24,13 +24,18 @@ runApp <- function(cache_dir = "cache",
   
   pID = 0
 
-  options(pavian.session_count = 0)
-  options(pavian.running_sessions = 0)
-  options(pavian.cache_dir = cache_dir)
-  options(pavian.server_dir = server_dir)
-  options(pavian.server_access = server_access)
-  options(pavian.load_server_directory = load_server_directory)
-  options(pavian.load_example_data = load_example_data)
+  new_options <- list(
+    pavian.session_count = 0,
+    pavian.running_sessions = 0,
+    pavian.cache_dir = cache_dir,
+    pavian.server_dir = server_dir,
+    pavian.server_access = server_access,
+    pavian.load_server_directory = load_server_directory,
+    pavian.load_example_data = load_example_data)
 
+  old_options <- options(new_options)
   shiny::runApp(appDir, display.mode="normal", ...)
+  
+  ## TODO: Restoring options like this does not work - we never get here after shiny::runApp as the server keeps running
+  options(old_options)
 }

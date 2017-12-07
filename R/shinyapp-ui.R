@@ -92,7 +92,7 @@ dashboardUI <- function(request) {
                   tags$script(HTML("$('body').addClass('sidebar-mini');")),
                   tabItems(
                     tabItem("Home",
-                            dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", TRUE))
+                            dataInputModuleUI("datafile")
                     ),
                     tabItem("Overview",
                             reportOverviewModuleUI("overview"),
@@ -135,7 +135,7 @@ dashboardUI <- function(request) {
 navbarpageUI <- function(request) {
   navbarPage("Pavian", id="nav",
              tabPanel("Data Input",
-                      dataInputModuleUI("datafile", server_access = getOption("pavian.server_access", TRUE))
+                      dataInputModuleUI("datafile")
              ),
              tabPanel("Results Overview",
                       #reportOverviewModuleUI("overview"),
