@@ -1,9 +1,13 @@
 library(shiny)
-library(shinyjs)
-library(shinycssloaders)
-library(shinydashboard)
 
-libraries_needed_for_shinyapp <- c("rappdirs")
+if(!require(pavian)){
+  options(repos = c(CRAN = "http://cran.rstudio.com"))
+  if (!require(remotes)) { install.packages("remotes") }
+  remotes::install_github("fbreitwieser/pavian")
+  library(pavian)
+}
+
+
 if (!dir.exists(rappdirs::user_config_dir("pavian", expand = FALSE))) {
   dir.create(rappdirs::user_config_dir("pavian", expand = FALSE),
              recursive = TRUE)
@@ -37,8 +41,4 @@ options(
   )
 )
 
-## The navbarpage UI does not work well, currently
-
-
-## alternative UI: navbarpageUI
 shiny::shinyApp(pavian::dashboardUI, pavian::pavianServer, enableBookmarking="server")
