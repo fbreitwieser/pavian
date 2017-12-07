@@ -7,6 +7,11 @@ if(!require(pavian)){
   library(pavian)
 }
 
+if (!require(Rsamtools)) {
+  source("https://bioconductor.org/biocLite.R")
+  biocLite("Rsamtools")
+  library(Rsamtools)
+}
 
 if (!dir.exists(rappdirs::user_config_dir("pavian", expand = FALSE))) {
   dir.create(rappdirs::user_config_dir("pavian", expand = FALSE),
