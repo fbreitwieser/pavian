@@ -41,4 +41,4 @@ options(
 
 
 ## alternative UI: navbarpageUI
-shinyApp(pavian::dashboardUI, pavian::pavianServer, enableBookmarking="server")
+shiny::shinyApp(pavian::dashboardUI, pavian::pavianServer, enableBookmarking="server")
