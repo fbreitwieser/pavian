@@ -6,7 +6,7 @@ refseq_assemblies <-
     "fungi"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/fungi/assembly_summary.txt",
     "invertebrate"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/invertebrate/assembly_summary.txt",
     "plant"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/plant/assembly_summary.txt",
-    "protzoa"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/protzoa/assembly_summary.txt",
+    "protozoa"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/protozoa/assembly_summary.txt",
     "vertebrate_mammalian"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/assembly_summary.txt",
     "vertebrate_other"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_other/assembly_summary.txt",
     "viral"="ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/assembly_summary.txt")
@@ -17,14 +17,14 @@ genbank_assemblies <-
     "fungi"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/fungi/assembly_summary.txt",
     "invertebrate"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/invertebrate/assembly_summary.txt",
     "plant"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/plant/assembly_summary.txt",
-    "protzoa"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/protzoa/assembly_summary.txt",
+    "protozoa"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/protozoa/assembly_summary.txt",
     "vertebrate_mammalian"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/vertebrate_mammalian/assembly_summary.txt",
     "vertebrate_other"="ftp://ftp.ncbi.nlm.nih.gov/genomes/genbank/vertebrate_other/assembly_summary.txt")
 
 ncbi_viral <- c("NCBI Viral Genomes"="http://www.ncbi.nlm.nih.gov/genomes/GenomesGroup.cgi?taxid=10239&cmd=download2")
 
 #assembly_resources = c(refseq_assemblies, genbank_assemblies, ncbi_viral)
-assembly_resources = c(refseq_assemblies)
+assembly_resources = names(refseq_assemblies)
 
 #' UI part of alignment module
 #'
@@ -75,7 +75,7 @@ To generate a BAM file, download a genome of interest, and align to it with an a
             div(class="col-sm-6 col-xs-12",
                 shiny::selectizeInput(ns("cbo_assemblies"), choices = assembly_resources, selected = "RefSeq bacteria", label = NULL, width="100%")),
             div(class="col-sm-6 col-xs-12",
-                shiny::actionButton(ns("btn_load_assembly_info"), "Get assembly information",width="100%"))),
+                shiny::actionButton(ns("btn_load_assembly_info"), "Update assembly information",width="100%"))),
         br(),
         br(),
         DT::dataTableOutput(ns("dt_assembly_info")),
@@ -377,9 +377,21 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
                                                                             text_size = 4), "pdf",
                                                                 height = 2.5, units = "in") } )
 
-  assembly_info <- eventReactive(input$btn_load_assembly_info, {
-    url <- input$cbo_assemblies
-
+  
+  stored_assembly_info <- reactiveValues()
+  
+  assembly_info <- reactive({
+    if (!input$cbo_assemblies %in% names(stored_assembly_info)) {
+      stored_assembly_info[[input$cbo_assemblies]] <- 
+        withProgress({
+          download_assembly_info(refseq_assemblies[[input$cbo_assemblies]])
+        }, message = "Downloading and parsing assembly info ... ")
+    }
+    return(stored_assembly_info[[input$cbo_assemblies]])
+  })
+  
+  download_assembly_info <- function(url) {
+    
     # Check that the first two lines are headers, and make them nice
     colClasses = c(
       AC = "character",
@@ -406,7 +418,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
       relation_to_type_material = "NULL"
     )
 
-    ai <- withProgress({
+    ai <- 
       # assembly_accession    bioproject  biosample   wgs_master  refseq_category
       # taxid   species_taxid   organism_name   infraspecific_name  isolate
       # version_status  assembly_taxRank  release_type    genome_rep  seq_rel_date    asm_name    submitter   gbrs_paired_asm paired_asm_comp ftp_path    excluded_from_refseq
@@ -416,7 +428,6 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
                         fill = TRUE,
                         header = FALSE
       )
-    }, message = "Downloading and parsing assembly info ... ")
 
     ai <- ai[ai$Version == "latest", setdiff(colnames(ai), "Version")]
 
@@ -430,7 +441,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
     #  paste(ai$Name, ai$Strain)[!ends_with_infraspecific_name]
 
     beautify_colnames(ai)
-  })
+  }
 
 
   output$dt_assembly_info <- DT::renderDataTable({
