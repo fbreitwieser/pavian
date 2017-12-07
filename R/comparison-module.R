@@ -75,7 +75,7 @@ dropdown_options <- function(ns) {
     numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
     numericInput(ns("opt_min_clade_reads"), "Hide clades with less than X reads to taxon or children", value = 1, min = 1, step = 1),
     #numericInput(ns("opt_min_taxon_reads"), "Hide taxa with less than X reads", value = 1, min = 0, step = 1),
-    checkboxInput(ns("opt_groupSamples"),"Group samples", value = TRUE)
+    checkboxInput(ns("opt_groupSamples"),"Group samples", value = FALSE)
     )
 }
 
