@@ -251,7 +251,7 @@ pavianServer <- function(input, output, session) {
   ## Generate report
   generate_report_modal <- function() {
     ns <- session$ns
-    if (rmarkdown::pandoc_available()) {
+    if (rmarkdown::pandoc_available("1.12.3")) {
       modalDialog(
         title="Generate sample report",
         textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined_str()), width="100%"),
