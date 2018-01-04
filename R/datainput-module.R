@@ -323,33 +323,33 @@ dataInputModule <- function(input, output, session,
     rh <-
       rhandsontable(sample_data,
                     readOnly = TRUE,
-                    manualRowMove = TRUE) %>%
+                    manualRowMove = FALSE) %>%
       hot_col(
-        "Include",
-        renderer = "
-        function(instance, td, row, col, prop, value, cellProperties) {
-        cellProperties.readOnly = !value;
-        Handsontable.renderers.CheckboxRenderer.apply(this, arguments);
-        return td;
-        }"
+        "Include", readOnly = FALSE#,
+        #renderer = "
+        #function(instance, td, row, col, prop, value, cellProperties) {
+        #cellProperties.readOnly = !value;
+        #Handsontable.renderers.CheckboxRenderer.apply(this, arguments);
+        #return td;
+        #}"
       ) %>%
       hot_col(
-        "FormatOK",
-        renderer = "
-        function(instance, td, row, col, prop, value, cellProperties) {
-          Handsontable.renderers.TextRenderer.apply(this, arguments);
-          if (value ) { value = '&#x2713'; td.style.color = 'green';
-          } else      { value = '&#x2717'; td.style.color = 'red';
-            cellProperties.comment = 'The file format does not validate. Pavian supports the outputs from kraken-report, centrifuge-kreport (but not the centrifuge --report-file!), and metaphlan2.py. You can create a valid centrifuge report with centrifuge-kreport -x IDX OUT_FILE.';
-          }
-          return td;
-        }"
+        "FormatOK"#,
+        #renderer = "
+        #function(instance, td, row, col, prop, value, cellProperties) {
+        #  Handsontable.renderers.TextRenderer.apply(this, arguments);
+        #  if (value ) { value = '&#x2713'; td.style.color = 'green';
+        #  } else      { value = '&#x2717'; td.style.color = 'red';
+        #    cellProperties.comment = 'The file format does not validate. Pavian supports the outputs from kraken-report, centrifuge-kreport (but not the centrifuge --report-file!), and metaphlan2.py. You can create a valid centrifuge report with centrifuge-kreport -x IDX OUT_FILE.';
+        #  }
+        #  return td;
+        #}"
       ) %>%
       hot_col("Name", readOnly = FALSE)
     if ("Class" %in% colnames(sample_data))
       rh <- rh %>% hot_col("Class", readOnly = FALSE)
     
-    rh %>% hot_table(enableComments = TRUE, highlightRow = TRUE)
+    rh %>% hot_table(enableComments = FALSE, highlightRow = TRUE, overflow="hidden", contextMenu=FALSE)
   })
   
   observeEvent(input$btn_save_table, {
