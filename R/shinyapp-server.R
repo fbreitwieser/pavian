@@ -251,19 +251,29 @@ pavianServer <- function(input, output, session) {
   ## Generate report
   generate_report_modal <- function() {
     ns <- session$ns
-    modalDialog(
-      title="Generate sample report",
-      textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined_str()), width="100%"),
-      textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
-      textInput(ns("report_date"), "Date", date(), width="100%"),
-      checkboxInput(ns("report_include_sankey"),"Include sankey flow charts for each sample", value = TRUE),
-      selectizeInput(ns("report_filter_taxa"), "Filter taxa in sankey", selected=c("Chordata","artificial sequences"), choices=allcontaminants,multiple=TRUE, options(create=TRUE)),
-      footer = tagList(
-        modalButton("Cancel"),
-        downloadButton("dl_report", "Generate HTML report")
+    if (rmarkdown::pandoc_available()) {
+      modalDialog(
+        title="Generate sample report",
+        textInput(ns("report_title"), "Title", sprintf("Classification report for %s",sample_set_names_combined_str()), width="100%"),
+        textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
+        textInput(ns("report_date"), "Date", date(), width="100%"),
+        checkboxInput(ns("report_include_sankey"),"Include sankey flow charts for each sample", value = TRUE),
+        selectizeInput(ns("report_filter_taxa"), "Filter taxa in sankey", selected=c("Chordata","artificial sequences"), choices=allcontaminants,multiple=TRUE, options(create=TRUE)),
+        footer = tagList(
+          modalButton("Cancel"),
+          downloadButton("dl_report", "Generate HTML report")
+        )
       )
-    )
+    } else {
+      modalDialog(titel="Pandoc was not found",
+                  "A recent version of pandoc (>= 1.12.3) is required for generating HTML reports. See the ",
+                  a(href="https://github.com/rstudio/rmarkdown/blob/master/PANDOC.md","pandoc installation instructions", target="_blank"), 
+                  " for details on installing pandoc on your platform"
+                  )
+    }
   }
+  
+  
   
   observeEvent(input$link_generate_report, {
     showModal(generate_report_modal())
