@@ -46,7 +46,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
 
     sample_data <- data.frame(Name,
                               ReportFile = ReportFiles, 
-                              ReportFilePaths = ReportFilePaths,
+                              ReportFilePath = ReportFilePaths,
                               stringsAsFactors = FALSE)
   }
 
