@@ -4,13 +4,14 @@
 #' @param my_dir directory
 #' @param def_filename filename
 #' @param ext extension of report files
+#' @param glob_files glob files?
 #'
 #' @return sample_data data.frame
 #' @export
 read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
-                             ext = c("report","profile")) {
+                             ext = c("report","profile"), glob_files = FALSE) {
   gd_sample_data <- FALSE
-
+    
   if (file.exists(file.path(my_dir,def_filename))) {
     sample_data <- utils::read.delim(file.path(my_dir,def_filename), header = TRUE, sep = ";", stringsAsFactors = FALSE)
 
@@ -22,12 +23,20 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
       gd_sample_data <- TRUE
     }
   }
-  if (!gd_sample_data) {
-    ReportFiles <- setdiff(list.files(path = my_dir),list.dirs(path = my_dir, recursive = FALSE, full.names = FALSE))
-    ReportFiles <- ReportFiles[ReportFiles != def_filename]
-    if (!is.null(ext))
-      ReportFiles <- ReportFiles[sub(".*\\.","",ReportFiles) %in% ext]
-
+  
+  if (gd_sample_data) {
+    if (!"ReportFilePath" %in% colnames(sample_data))
+      sample_data$ReportFilePath <- file.path(my_dir, sample_data$ReportFile)
+  } else {
+    if (isTRUE(glob_files)) {
+      ReportFilePaths <- Sys.glob(my_dir)
+    } else {
+      ReportFilePaths <- setdiff(list.files(path = my_dir),list.dirs(path = my_dir, recursive = FALSE, full.names = TRUE))
+      #ReportFiles <- ReportFiles[ReportFiles != def_filename]
+      if (!is.null(ext))
+        ReportFilePaths <- ReportFilePaths[sub(".*\\.","",ReportFilePaths) %in% ext]
+    }
+    ReportFiles <- basename(ReportFilePaths)
     Name = basename(ReportFiles)
     if (length(Name) > 1) {
       while(length(unique(substr(Name, nchar(Name), nchar(Name)))) == 1) {
@@ -36,7 +45,9 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
     }
 
     sample_data <- data.frame(Name,
-                              ReportFile = ReportFiles, stringsAsFactors = FALSE)
+                              ReportFile = ReportFiles, 
+                              ReportFilePaths = ReportFilePaths,
+                              stringsAsFactors = FALSE)
   }
 
   if (length(sample_data) == 0 || nrow(sample_data) == 0) {
@@ -45,9 +56,6 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
 
   #if ("Class" %in% colnames(sample_data))
   #  sample_data$Class <- as.factor(sample_data$Class)
-
-  if (!"ReportFilePath" %in% colnames(sample_data))
-    sample_data$ReportFilePath <- file.path(my_dir, sample_data$ReportFile)
 
   if ("CentrifugeOutFile" %in% colnames(sample_data) && !"CentrifugeOutFilePath" %in% colnames(sample_data))
     sample_data$CentrifugeOutFilePath <- file.path(my_dir, sample_data$CentrifugeOutFile)

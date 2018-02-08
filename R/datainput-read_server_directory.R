@@ -5,12 +5,14 @@
 #' @param existing_sample_set_names names of current sample sets that may be updated
 #' @param include_base_dir include base directory
 #' @param display_messages display messages?
+#' @param glob_files glob files?
 #'
 #' @return resulting sample sets
 #' @export
 read_server_directory1 <- function(data_dir, sample_set_name = NULL,
                                    existing_sample_set_names = NULL,
-                                  include_base_dir = T, display_messages = TRUE) {
+                                  include_base_dir = T, display_messages = TRUE,
+                                  glob_files = FALSE) {
   new_sample_sets <- list()
   read_error_msg <- list(val_neg=NULL, val_pos=NULL)
 
@@ -28,25 +30,16 @@ read_server_directory1 <- function(data_dir, sample_set_name = NULL,
       ))
     }
   }
-
-  dmessage("Reading files in ", data_dir)
-  if (!dir.exists(data_dir)) {
-    return1(paste("Directory ", data_dir, "does not exist."))
-  }
-  if (length(list.files(data_dir)) == 0) {
-    return1(paste("No files in directory ", data_dir, "."))
-  }
-  n_files <- length(list.files(data_dir))
-  max_files <- getOption("pavian.maxFiles", 100)
-  if (n_files > max_files) {
-    return1(paste("There are ",n_files," files in the directory, but the highest allowed number is ",max_files," files ", data_dir, " - please subdivide the data into smaller directories, or set the option 'pavian.maxFiles' to a higher number (e.g. 'options(pavian.maxFiles=250)')."))
-  }
-
+  
+  
   if (is.null(sample_set_name)) {
-    base_name <- basename(data_dir)
+    if (isTRUE(glob_files)) {
+      base_name <- "Server files"
+    } else {
+      base_name <- basename(data_dir)
+    }
   } else {
     base_name <- sample_set_name
-    
     counter <- 1
     if (!is.null(existing_sample_set_names)) {
       ## Set a unique name for the uploaded samples 
@@ -56,11 +49,28 @@ read_server_directory1 <- function(data_dir, sample_set_name = NULL,
     }
     base_name <- paste(sample_set_name, counter)
   }
-
-  if (include_base_dir) {
-    new_sample_sets <- list(read_sample_data(data_dir, ext=NULL))
+  
+  if (isTRUE(glob_files)) {
+    new_sample_sets <- list(read_sample_data(data_dir, ext=NULL, glob_files=TRUE))
     names(new_sample_sets) <- base_name
-  }
+  } else {
+    dmessage("Reading files in ", data_dir)
+    if (!dir.exists(data_dir)) {
+      return1(paste("Directory ", data_dir, "does not exist."))
+    }
+    if (length(list.files(data_dir)) == 0) {
+      return1(paste("No files in directory ", data_dir, "."))
+    }
+    n_files <- length(list.files(data_dir))
+    max_files <- getOption("pavian.maxFiles", 100)
+    if (n_files > max_files) {
+      return1(paste("There are ",n_files," files in the directory, but the highest allowed number is ",max_files," files ", data_dir, " - please subdivide the data into smaller directories, or set the option 'pavian.maxFiles' to a higher number (e.g. 'options(pavian.maxFiles=250)')."))
+    }
+  
+    if (include_base_dir) {
+      new_sample_sets <- list(read_sample_data(data_dir, ext=NULL))
+      names(new_sample_sets) <- base_name
+    }
 
   dirs <- grep("^\\.", list.dirs(data_dir, recursive = FALSE), invert = TRUE, value = TRUE)
   n_dirs <- length(dirs)
@@ -72,6 +82,7 @@ read_server_directory1 <- function(data_dir, sample_set_name = NULL,
     sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
     names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
     new_sample_sets <- c(new_sample_sets, sub_dir_sets)
+  }
   }
   
   paste_last <- function(x, ..., collapse_last) {

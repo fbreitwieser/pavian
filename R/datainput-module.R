@@ -10,10 +10,11 @@ serverDataPanel <- function(ns) {
     br(),
     textInput(
       ns("txt_data_dir"),
-      width = "100%",
+      width = "90%",
       label = "Specify directory on machine running Pavian",
       value = getOption("pavian.server_dir", "")
     ),
+    checkboxInput(ns("server_dir_glob"), "glob files"),
     actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px"),
     uiOutput(ns('rud'))
   )
@@ -238,7 +239,7 @@ dataInputModule <- function(input, output, session,
   
   observeEvent(input$read_server_dir, {
     req(input$txt_data_dir)
-    res <- read_server_directory(input$txt_data_dir)
+    res <- read_server_directory(input$txt_data_dir, glob_files=input$server_dir_glob)
     if (res && !input$txt_data_dir %in% recently_used_dirs$val) {
       recently_used_dirs$val <-
         c(input$txt_data_dir, recently_used_dirs$val)
