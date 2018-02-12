@@ -165,7 +165,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_taxRanks=c("D","K","P","C","O
   first.line <- readLines(myfile,n=1)
   isASCII <-  function(txt) all(charToRaw(txt) <= as.raw(127))
   if (!isASCII(first.line)) {
-    dmessage(myfile," is no valid report")
+    dmessage(myfile," is no valid report - not all characters are ASCII")
     return(NULL)
   }
   if (is.null(has_header)) {
@@ -369,6 +369,15 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     raw <- charToRaw(txt)
     all(raw <= as.raw(127) && (raw >= as.raw(32) | raw == as.raw(9)))
   }
+  if (length(first.line) == 0) { 
+    dmessage("Could not read ", myfile, ".")
+    return(NULL)
+  }
+  if (nchar(first.line) == 0) {
+    dmessage("First line of ", myfile, " is empty")
+    return(NULL)
+  }
+  
   if (!isTRUE(isASCII(first.line))) {
     dmessage(myfile," is not a ASCII file")
     return(NULL)

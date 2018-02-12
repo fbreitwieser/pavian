@@ -5,7 +5,7 @@
 \title{Read sample definitions from a directory}
 \usage{
 read_sample_data(my_dir, def_filename = "sample_data.csv", ext = c("report",
-  "profile"))
+  "profile"), glob_files = FALSE)
 }
 \arguments{
 \item{my_dir}{directory}
@@ -13,6 +13,8 @@ read_sample_data(my_dir, def_filename = "sample_data.csv", ext = c("report",
 \item{def_filename}{filename}
 
 \item{ext}{extension of report files}
+
+\item{glob_files}{glob files?}
 }
 \value{
 sample_data data.frame

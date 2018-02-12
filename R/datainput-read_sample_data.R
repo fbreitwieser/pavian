@@ -31,10 +31,10 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
     if (isTRUE(glob_files)) {
       ReportFilePaths <- Sys.glob(my_dir)
     } else {
-      ReportFilePaths <- setdiff(list.files(path = my_dir),list.dirs(path = my_dir, recursive = FALSE, full.names = TRUE))
+      ReportFilePaths <- setdiff(list.files(path = my_dir, full.names = TRUE),list.dirs(path = my_dir, recursive = FALSE, full.names = TRUE))
       #ReportFiles <- ReportFiles[ReportFiles != def_filename]
       if (!is.null(ext))
-        ReportFilePaths <- ReportFilePaths[sub(".*\\.","",ReportFilePaths) %in% ext]
+        ReportFilePaths <- ReportFilePaths[endsWith(ReportFilePaths, ext)]
     }
     ReportFiles <- basename(ReportFilePaths)
     Name = basename(ReportFiles)

@@ -6,7 +6,7 @@
 \usage{
 read_server_directory1(data_dir, sample_set_name = NULL,
   existing_sample_set_names = NULL, include_base_dir = T,
-  display_messages = TRUE)
+  display_messages = TRUE, glob_files = FALSE)
 }
 \arguments{
 \item{data_dir}{data directory}
@@ -18,6 +18,8 @@ read_server_directory1(data_dir, sample_set_name = NULL,
 \item{include_base_dir}{include base directory}
 
 \item{display_messages}{display messages?}
+
+\item{glob_files}{glob files?}
 }
 \value{
 resulting sample sets
