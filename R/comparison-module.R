@@ -295,7 +295,7 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   filter_rows_rv <- reactiveValues(val=NULL)
   
   get_filter_string <- function(filter_string, name) {
-    filter_string <- gsub("\\$([0-9]+)", paste0(name,"[[\\1]]"), filter_string, fixed=F)
+    filter_string <- gsub("\\$([0-9]+)", paste0(name,"[,\\1]"), filter_string, fixed=F)
     message(filter_string)
     filter_string
   }
@@ -343,8 +343,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
       )
     }
     res <- res %>% na_false
-    validate(need(any(!is.na(res)), message = "Filtered all rows to NA!"),
-             need(sum(res,na.rm=T)>0, message = "Filtered all data."))
+    #validate(need(any(!is.na(res)), message = "Filtered all rows to NA!"),
+    #         need(sum(res,na.rm=T)>0, message = "Filtered all data."))
     res
   })
   
