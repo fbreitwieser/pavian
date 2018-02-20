@@ -255,7 +255,7 @@ dataInputModule <- function(input, output, session,
                                       children=shinyFileTree::get_list_from_directory(data_dir,
                                                                                       max_depth=1,
                                                                                       hide_files=TRUE)),
-                                 plugins = c("checkbox", "wholerow"))
+                                 plugins = c("wholerow"))
   })
   
   observeEvent(input$file_tree_selected, {
