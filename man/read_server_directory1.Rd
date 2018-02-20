@@ -4,12 +4,12 @@
 \alias{read_server_directory1}
 \title{Search for classification results in a directory and its children}
 \usage{
-read_server_directory1(data_dir, sample_set_name = NULL,
+read_server_directory1(data_dirs, sample_set_name = NULL,
   existing_sample_set_names = NULL, include_base_dir = T,
   display_messages = TRUE, glob_files = FALSE)
 }
 \arguments{
-\item{data_dir}{data directory}
+\item{data_dirs}{data directory}
 
 \item{sample_set_name}{name of sample set}
 

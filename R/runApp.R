@@ -6,6 +6,7 @@
 #' @param server_access Allow users to change server directory
 #' @param load_server_directory Load server directory.
 #' @param load_example_data Load example data.
+#' @param maxUploadSize Maximum upload size for reports and BAM files.
 #'
 #' @param ... Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.
 #'
@@ -15,11 +16,37 @@ runApp <- function(cache_dir = "cache",
                    server_access = TRUE,
                    load_example_data = FALSE,
                    load_server_directory = FALSE,
+                   maxUploadSize = NULL,
                    ...) {
 
   appDir <- system.file("shinyapp", package = "pavian")
   if (appDir == "") {
     stop("Could not find example directory. Try re-installing `pavian`.", call. = FALSE)
+  }
+  
+  if (!is.null(maxUploadSize) && is.character(maxUploadSize)) {
+    if (is.character(maxUploadSize)) {
+      numMaxUploadSize <- suppressWarnings(as.numeric(maxUploadSize))
+      if (!is.na(numMaxUploadSize)) {
+        maxUploadSize <- numMaxUploadSize
+      } else {
+        unit <- toupper(substring(maxUploadSize, nchar(maxUploadSize)))
+        val <- as.numeric(substring(maxUploadSize, 1, nchar(maxUploadSize)-1))
+        factor <-
+          switch(unit,
+                 B=1,
+                 K=1024,
+                 M=1024^2,
+                 G=1024^3,
+                 -1)
+        if (is.na(val) || factor == -1) {
+          message("Error parsing maxUploadSize! Allowed extensions are B, K, M and G")
+          maxUploadSize <- NULL
+        } else {
+          maxUploadSize <- factor*val   
+        }
+      }
+    }
   }
   
   pID = 0
@@ -31,10 +58,13 @@ runApp <- function(cache_dir = "cache",
     pavian.server_dir = server_dir,
     pavian.server_access = server_access,
     pavian.load_server_directory = load_server_directory,
-    pavian.load_example_data = load_example_data)
+    pavian.load_example_data = load_example_data,
+    #pavian.maxSubDirs = maxSubDirs,
+    shiny.maxRequestSize = maxUploadSize
+  )
 
   old_options <- options(new_options)
-  shiny::runApp(appDir, display.mode="normal", ...)
+  shiny::runApp(appDir,  ...)
   
   ## TODO: Restoring options like this does not work - we never get here after shiny::runApp as the server keeps running
   options(old_options)

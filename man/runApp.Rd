@@ -6,7 +6,7 @@
 \usage{
 runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
   server_access = TRUE, load_example_data = FALSE,
-  load_server_directory = FALSE, ...)
+  load_server_directory = FALSE, maxUploadSize = NULL, ...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files.}
@@ -18,6 +18,8 @@ runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
 \item{load_example_data}{Load example data.}
 
 \item{load_server_directory}{Load server directory.}
+
+\item{maxUploadSize}{Maximum upload size for reports and BAM files.}
 
 \item{...}{Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.}
 }
