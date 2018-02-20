@@ -1,5 +1,6 @@
 library(shiny)
 library(rhandsontable)
+library(shinyFileTree)
 
 serverDataPanel <- function(ns) {
   tabPanel(
@@ -16,6 +17,8 @@ serverDataPanel <- function(ns) {
     ),
     checkboxInput(ns("server_dir_glob"), "glob files"),
     actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px"),
+    shinyFileTree::shinyFileTreeOutput(ns('file_tree')),
+    shinyjs::hidden(actionButton(ns("btn_read_tree_dirs"), "Read selected directories")),
     uiOutput(ns('rud'))
   )
 }
@@ -237,14 +240,65 @@ dataInputModule <- function(input, output, session,
       )
   })
   
+  display_tree <- reactiveValues(val = FALSE)
+  
+  output$file_tree <- shinyFileTree::renderShinyFileTree({
+    #req(input$read_server_dir)
+    req(input$txt_data_dir)
+    req(display_tree$val)
+    data_dir <- isolate(input$txt_data_dir)
+    req(length(data_dir) > 0 && nchar(data_dir) > 0)
+    shinyjs::disable("btn_read_tree_dirs")
+    shinyjs::show("btn_read_tree_dirs")
+    shinyFileTree::shinyFileTree(list(text=data_dir,
+                                      state=list(opened=TRUE),
+                                      children=shinyFileTree::get_list_from_directory(data_dir,
+                                                                                      max_depth=1,
+                                                                                      hide_files=TRUE)),
+                                 plugins = c("checkbox", "wholerow"))
+  })
+  
+  observeEvent(input$file_tree_selected, {
+    if (length(input$file_tree_selected) == 0) {
+      shinyjs::disable("btn_read_tree_dirs")
+    } else {
+      shinyjs::enable("btn_read_tree_dirs")
+    }
+  })
+  
+  observeEvent(input$btn_read_tree_dirs, {
+    fnames <- input$file_tree_selected
+    fnames <- sub(" \\([0-9]+ f[io].*\\)$", "", fnames)
+    if (all(startsWith(fnames, fnames[1]))) {
+      fnames <- fnames[1]
+    }
+    res <- read_server_directory(fnames)
+  })
+  
   observeEvent(input$read_server_dir, {
     req(input$txt_data_dir)
-    res <- read_server_directory(input$txt_data_dir, glob_files=input$server_dir_glob)
-    if (res && !input$txt_data_dir %in% recently_used_dirs$val) {
-      recently_used_dirs$val <-
-        c(input$txt_data_dir, recently_used_dirs$val)
-      if (!is.null(recently_used_dir_user_config))
-        writeLines(recently_used_dirs$val, recently_used_dir_user_config)
+    if (!input$server_dir_glob) {
+      file_list <- list.files(path =  data_dir)
+      if (length(file_list) < 0) {
+        display_tree$val <- FALSE
+      } else {
+        display_tree$val <- TRUE
+        
+      }
+    } else {
+      display_tree$val <- FALSE
+    }
+    
+    if (!isTRUE(display_tree$val)) {
+      shinyjs::hide("btn_read_tree_dirs")
+      display_tree$val <- FALSE
+      res <- read_server_directory(input$txt_data_dir, glob_files=input$server_dir_glob)
+      if (res && !input$txt_data_dir %in% recently_used_dirs$val) {
+        recently_used_dirs$val <-
+          c(input$txt_data_dir, recently_used_dirs$val)
+        if (!is.null(recently_used_dir_user_config))
+          writeLines(recently_used_dirs$val, recently_used_dir_user_config)
+      }
     }
   })
   
