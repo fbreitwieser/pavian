@@ -130,6 +130,7 @@ comparisonModuleUI_function <- function(ns) {
         htmlOutput(ns("messages")),
         htmlOutput(ns("taxLineage")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
+        div(style="display:inline-block", textInput(ns("txt_filter_freetext"), label=NULL), actionButton(ns("btn_filter_freetext"),"Filter data")),
         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')
         #uiOutput(ns("filter_buttons"))
     ))
@@ -221,6 +222,10 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   observeEvent(input$btn_lin_20, { taxLineage$val <- taxLineage$val[1:20] })
   observeEvent(input$btn_lin_21, { taxLineage$val <- taxLineage$val[1:21] })
   
+  observeEvent(input$btn_filter_freetext, {
+    filter_rows_rv$val <- input$txt_filter_freetext
+  })
+  
   output$downloadData <- downloadHandler(
     filename = function() { sprintf("%s-matrix-all-%s.tsv", base_set_name(), format(Sys.time(), "%y%m%d")) },
     content = function(file) {
@@ -287,8 +292,27 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     x
   }
   
+  filter_rows_rv <- reactiveValues(val=NULL)
+  
+  get_filter_string <- function(filter_string, name) {
+    filter_string <- gsub("\\$[0-9]*", sprintf("%s[,%s]", name, col_nr), filter_string, fixed=T)
+    message(filter_string)
+    filter_string
+  }
+  
+  filter_df_with_string <- function(dataframe, filter_string) {
+    filter_string <- get_filter_string(filter_string, "dataframe")
+    message(filter_string)
+    tryCatch(
+      eval(parse(text =  filter_string)),
+      error = function(e) { message(e) }
+    )
+  }
+  
+  
   shown_rows <- reactive({
-    res <- !apply(is.na(filtered_clade_reads()),1,all) &
+    clade_reads <- filtered_clade_reads()
+    res <- !apply(is.na(clade_reads),1,all) &
            filter_taxa(tax_data(),
                 rm_clades = input$contaminant_selector_clade,
                 rm_taxa = input$contaminant_selector,
@@ -307,8 +331,16 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
       res <- res & apply(taxon_reads(),1,max,na.rm=T) >= 1
     }
     if (input$opt_min_clade_reads > 0) {
-      res <- res & apply(filtered_clade_reads(),1,max,na.rm=T) >= get_input("opt_min_clade_reads")
+      res <- res & apply(clade_reads,1,max,na.rm=T) >= get_input("opt_min_clade_reads")
       
+    }
+    if (!is.null(filter_rows_rv$val)) {
+      ## TODO: Try-catch doesn't catch errors - why??
+      tryCatch({
+          res <- res & eval(parse(text=get_filter_string(filter_rows_rv$val, "clade_reads")))
+        },
+        error = function(e) message(e)
+      )
     }
     res <- res %>% na_false
     validate(need(any(!is.na(res)), message = "Filtered all rows to NA!"),
