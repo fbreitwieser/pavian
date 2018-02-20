@@ -29,7 +29,7 @@ Imports:
 Suggests: 
     Rsamtools, knitr
 Remotes:
-    github::fbreitwieser/sankeyD3
+    github::fbreitwieser/sankeyD3,
     github::fbreitwieser/shinyFileTree
 License: GPL-3
 LazyData: TRUE
