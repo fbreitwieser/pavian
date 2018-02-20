@@ -278,13 +278,7 @@ dataInputModule <- function(input, output, session,
   observeEvent(input$read_server_dir, {
     req(input$txt_data_dir)
     if (!input$server_dir_glob) {
-      file_list <- list.files(path =  data_dir)
-      if (length(file_list) < 0) {
-        display_tree$val <- FALSE
-      } else {
-        display_tree$val <- TRUE
-        
-      }
+      display_tree$val <- TRUE
     } else {
       display_tree$val <- FALSE
     }
