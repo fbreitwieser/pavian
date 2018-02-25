@@ -130,7 +130,8 @@ comparisonModuleUI_function <- function(ns) {
         htmlOutput(ns("messages")),
         htmlOutput(ns("taxLineage")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
-        div(style="display:inline-block", textInput(ns("txt_filter_freetext"), label=NULL), actionButton(ns("btn_filter_freetext"),"Filter data")),
+        shinyWidgets::searchInput(ns("search_filter_freetext"), label=NULL, placeholder = "Filter data with formula, e.g $2 > $1",
+                                  btnSearch = icon("filter"), btnReset = icon("remove")),
         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')
         #uiOutput(ns("filter_buttons"))
     ))
@@ -222,10 +223,6 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   observeEvent(input$btn_lin_20, { taxLineage$val <- taxLineage$val[1:20] })
   observeEvent(input$btn_lin_21, { taxLineage$val <- taxLineage$val[1:21] })
   
-  observeEvent(input$btn_filter_freetext, {
-    filter_rows_rv$val <- input$txt_filter_freetext
-  })
-  
   output$downloadData <- downloadHandler(
     filename = function() { sprintf("%s-matrix-all-%s.tsv", base_set_name(), format(Sys.time(), "%y%m%d")) },
     content = function(file) {
@@ -292,10 +289,13 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     x
   }
   
-  filter_rows_rv <- reactiveValues(val=NULL)
-  
-  get_filter_string <- function(filter_string, name) {
-    filter_string <- gsub("\\$([0-9]+)", paste0(name,"[,\\1]"), filter_string, fixed=F)
+  get_filter_string <- function(filter_string, name, max_col = NULL) {
+    if (!is.null(max_col)) {
+      for (i in 1:max_col)
+        filter_string <- gsub(paste0("$",i), sprintf("%s[,%s]", name, i), filter_string, fixed=F)
+    } else {
+      filter_string <- gsub("\\$([0-9]+)", paste0(name,"[,\\1]"), filter_string, fixed=F)
+    }
     message(filter_string)
     filter_string
   }
@@ -334,13 +334,14 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
       res <- res & apply(clade_reads,1,max,na.rm=T) >= get_input("opt_min_clade_reads")
       
     }
-    if (!is.null(filter_rows_rv$val)) {
+    if (!is.null(input$search_filter_freetext) && nchar(input$search_filter_freetext) > 4 && grepl("$", input$search_filter_freetext, fixed=T)) {
       ## TODO: Try-catch doesn't catch errors - why??
       tryCatch({
-          res <- res & eval(parse(text=get_filter_string(filter_rows_rv$val, "clade_reads")))
+          res <- res & eval(parse(text=get_filter_string(input$search_filter_freetext, "clade_reads")))
         },
         error = function(e) message(e)
       )
+      str(res)
     }
     res <- res %>% na_false
     #validate(need(any(!is.na(res)), message = "Filtered all rows to NA!"),
@@ -384,7 +385,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     req(input$opt_numericColumns)
     
     sel_rows <- shown_rows()
-    req(sum(sel_rows,na.rm=T))
+    validate(need(any(sel_rows,na.rm=T), message = "Filtered all data"))
+    message(sum(sel_rows, na.rm=T))
     td <- tax_data()[sel_rows,,drop=F]
     #if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
     if (input$opt_taxRank == "-" && input$opt_hide_zero_taxa) {

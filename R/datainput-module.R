@@ -9,15 +9,19 @@ serverDataPanel <- function(ns) {
     "Be careful which directory you select - if there are too many files, the process might hang.",
     " Pavian will check the specified directory and its direct children for report files.",
     br(),
-    textInput(
-      ns("txt_data_dir"),
-      width = "90%",
-      label = "Specify directory on machine running Pavian",
-      value = getOption("pavian.server_dir", "")
+    div(class="col-xs-3 col-md-2 col-lg-1 vcenter",
+        shinyWidgets::materialSwitch(ns("server_dir_glob"), "Glob?", value = FALSE, right = TRUE, inline = TRUE)
+        ),
+    div(class="col-xs-9 col-md-10 col-lg-11",
+    shinyWidgets::searchInput(ns("search_data_dir"),
+                              label = "Specify directory on machine running Pavian",
+                              value = getOption("pavian.server_dir", ""),
+                              #btnReset = icon("star"),
+                              width = "100%",
+                              btnSearch = icon("server"))),
+    div(style="max-height=400px; overflow-y: scroll",
+      shinyFileTree::shinyFileTreeOutput(ns('file_tree'))
     ),
-    checkboxInput(ns("server_dir_glob"), "glob files"),
-    actionButton(ns("read_server_dir"), label = "Read directory content", width = "250px"),
-    shinyFileTree::shinyFileTreeOutput(ns('file_tree')),
     shinyjs::hidden(actionButton(ns("btn_read_tree_dirs"), "Read selected directories")),
     uiOutput(ns('rud'))
   )
@@ -150,7 +154,7 @@ dataInputModule <- function(input, output, session,
     }
   }
   
-  #shinyFiles::shinyDirChoose(input, ns('txt_data_dir'), roots = server_dirs, filetypes = c(""))
+  #shinyFiles::shinyDirChoose(input, ns('search_data_dir'), roots = server_dirs, filetypes = c(""))
   
   read_error_msg <- reactiveValues(val_pos = NULL, val_neg = NULL)
   
@@ -243,10 +247,9 @@ dataInputModule <- function(input, output, session,
   display_tree <- reactiveValues(val = FALSE)
   
   output$file_tree <- shinyFileTree::renderShinyFileTree({
-    #req(input$read_server_dir)
-    req(input$txt_data_dir)
+    req(input$search_data_dir)
     req(display_tree$val)
-    data_dir <- isolate(input$txt_data_dir)
+    data_dir <- isolate(input$search_data_dir)
     req(length(data_dir) > 0 && nchar(data_dir) > 0)
     shinyjs::disable("btn_read_tree_dirs")
     shinyjs::show("btn_read_tree_dirs")
@@ -275,8 +278,12 @@ dataInputModule <- function(input, output, session,
     res <- read_server_directory(fnames)
   })
   
-  observeEvent(input$read_server_dir, {
-    req(input$txt_data_dir)
+  observeEvent(input$search_data_dir_reset, {
+    message(input$search_data_dir)
+    message("glob!!")
+  })
+  
+  observeEvent(input$search_data_dir, {
     if (!input$server_dir_glob) {
       display_tree$val <- TRUE
     } else {
@@ -286,10 +293,10 @@ dataInputModule <- function(input, output, session,
     if (!isTRUE(display_tree$val)) {
       shinyjs::hide("btn_read_tree_dirs")
       display_tree$val <- FALSE
-      res <- read_server_directory(input$txt_data_dir, glob_files=input$server_dir_glob)
-      if (res && !input$txt_data_dir %in% recently_used_dirs$val) {
+      res <- read_server_directory(input$search_data_dir, glob_files=input$server_dir_glob)
+      if (res && !input$search_data_dir %in% recently_used_dirs$val) {
         recently_used_dirs$val <-
-          c(input$txt_data_dir, recently_used_dirs$val)
+          c(input$search_data_dir, recently_used_dirs$val)
         if (!is.null(recently_used_dir_user_config))
           writeLines(recently_used_dirs$val, recently_used_dir_user_config)
       }
@@ -310,19 +317,19 @@ dataInputModule <- function(input, output, session,
   })
   
   observeEvent(input$rud_1, {
-    updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[1])
+    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[1])
   })
   observeEvent(input$rud_2, {
-    updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[2])
+    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[2])
   })
   observeEvent(input$rud_3, {
-    updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[3])
+    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[3])
   })
   observeEvent(input$rud_4, {
-    updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[4])
+    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[4])
   })
   observeEvent(input$rud_5, {
-    updateTextInput(session, "txt_data_dir", value = recently_used_dirs$val[5])
+    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[5])
   })
   
   update_sample_set_hot <- reactive({
