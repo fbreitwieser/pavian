@@ -1,5 +1,5 @@
 build_sankey_network <- function(my_report, taxRanks =  c("D","K","P","C","O","F","G","S"), maxn=10,
-				 zoom = T,
+				 zoom = F, title = NULL,
 				 ...) {
     stopifnot("taxRank" %in% colnames(my_report))
     if (!any(taxRanks %in% my_report$taxRank)) {
@@ -69,7 +69,7 @@ build_sankey_network <- function(my_report, taxRanks =  c("D","K","P","C","O","F
         dragY = TRUE,
         xAxisDomain = my_taxRanks,
         numberFormat = "pavian",
-        title = NULL, #input$sample_selector,
+        title = title,
         nodeWidth = 15,
         linkGradient = TRUE,
         nodeShadow = TRUE,
