@@ -48,7 +48,7 @@ sampleModuleUI_function <- function(ns, samples, selected_sample = NULL) {
               selectInput(
                 ns('sample_selector'), label = NULL,
                 choices = samples, selected = selected_sample,
-                multiple = FALSE,
+                multiple = FALSE, selectize = TRUE,
                 width = '100%'
               ))),
       div(class="col-lg-7 col-md-6 col-sm-6 col-xs-12",
@@ -120,7 +120,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   
   sankey_opts_state <- reactiveValues(visible = TRUE)
   
-  hover_plots <- reactiveValues(taxon = NULL)
+  hover_plots <- reactiveValues(taxon = NULL, report = 1)
   
   observeEvent(input$sankey_opts, {
     sankey_opts_state$visible <- !sankey_opts_state$visible
@@ -163,7 +163,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   sample_view_report <- reactive({
     validate(need(input$sample_selector,message="Select sample sets with reports"))
     
-    my_report <- reports()[[input$sample_selector]]
+    my_report <- reports()[[input$sample_selector[1]]]
     validate(need(my_report, "No sample with that name"))
     
     ## filter contaminants
@@ -173,12 +173,26 @@ sampleModule <- function(input, output, session, sample_data, reports,
     my_report
   })
   
+  sample_view_reports <- reactive ({
+    validate(need(input$sample_selector,message="Select sample sets with reports"))
+    lapply(input$sample_selector, function(i) {
+      my_report <- reports()[[i]]
+      validate(need(my_report, "No sample with that name"))
+    
+      ## filter contaminants
+      for (c in input$contaminant_selector)
+        my_report <- filter_taxon(my_report, c)
+    
+      my_report
+    })
+  })
+  
   #############################################################################
   ##  Sample viewer outputs
   
   output$selected_lineage <- renderUI({
     req(hover_plots$taxon)
-    my_report <- sample_view_report()
+    my_report <- sample_view_reports()[[hover_plots$report]]
     my_report$name <- sub("^._","",my_report$name)
     sel_row <- my_report[which(my_report$name == hover_plots$taxon)[1], , drop=FALSE]
     shiny::tagList(
@@ -197,8 +211,14 @@ sampleModule <- function(input, output, session, sample_data, reports,
   
   output$dynamic_sankey <- renderUI({
     ns <- session$ns
-    sankeyD3::sankeyNetworkOutput(ns("sankey"), width = "100%",
-                                  height = paste0(ifelse(is.null(input$height), 500, input$height),"px"))
+    #sankeyD3::sankeyNetworkOutput(ns("sankey"), width = "100%",
+    #                                height = paste0(ifelse(is.null(input$height), 500, input$height),"px"))
+    
+    do.call(shiny::tagList,
+            lapply(seq_along(input$sample_selector), function(i) {
+      sankeyD3::sankeyNetworkOutput(ns(paste0("sankey",i)), width = "100%",
+                                    height = paste0(ifelse(is.null(input$height), 500, input$height),"px"))
+      }))
   })
   
   output$sankey_hover_plots <- renderUI({
@@ -228,11 +248,12 @@ sampleModule <- function(input, output, session, sample_data, reports,
     selected_taxon <- hover_plots$taxon
     taxIndex <- which(tax_data()$name == selected_taxon)[1]
     clade_reads_m <- na0(clade_reads()[taxIndex, ]) - na0(taxon_reads()[taxIndex,])
-    mydf <- data.frame(sample=rep((substr(sample_data()$Name, 1, 10)),2), 
+    short_name <- substr(sample_data()$Name, 1, 10)
+    mydf <- data.frame(sample=rep(factor(short_name, levels=short_name),2), 
                        type=factor(rep(c("in total", "at taxon"), each=ncol(clade_reads())), levels = c("in total", "at taxon")), 
                        reads=c(clade_reads_m, taxon_reads()[taxIndex,]),
                        pos=c(clade_reads()[taxIndex,], taxon_reads()[taxIndex,]))
-    colvec <- ifelse(colnames(clade_reads()) == input$sample_selector, "red","black")
+    colvec <- ifelse(colnames(clade_reads()) %in% input$sample_selector, "red","black")
     #if (normalize) {
     #  mydf$reads <- 100*mydf$reads / rep(sum_clade_reads(), each = 2)
     #}
@@ -289,13 +310,29 @@ sampleModule <- function(input, output, session, sample_data, reports,
       updateSelectizeInput(session, "sample_selector", selected = names(reports())[round(input$plot_click$x)])
   })
   
-  output$sankey <- sankeyD3::renderSankeyNetwork({
-    sankey_network()
-  })
+  output$sankey <- sankeyD3::renderSankeyNetwork({ sankey_network() })
+  output$sankey1 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[1]] })
+  output$sankey2 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[2]] })
+  output$sankey3 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[3]] })
+  output$sankey4 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[4]] })
+  output$sankey5 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[5]] })
+  output$sankey6 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[6]] })
+  output$sankey7 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[7]] })
+  output$sankey8 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[8]] })
+  output$sankey9 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[9]] })
+  output$sankey10 <- sankeyD3::renderSankeyNetwork({ sankey_networks()[[10]] })
   
-  observeEvent(input$sankey_hover, {
-    hover_plots$taxon <- input$sankey_hover
-  })
+  observeEvent(input$sankey_hover, { hover_plots$taxon <- input$sankey_hover })
+  observeEvent(input$sankey1_hover, { hover_plots$taxon <- input$sankey1_hover; hover_plots$report <- 1; })
+  observeEvent(input$sankey2_hover, { hover_plots$taxon <- input$sankey2_hover; hover_plots$report <- 2; })
+  observeEvent(input$sankey3_hover, { hover_plots$taxon <- input$sankey3_hover; hover_plots$report <- 3; })
+  observeEvent(input$sankey4_hover, { hover_plots$taxon <- input$sankey4_hover; hover_plots$report <- 4; })
+  observeEvent(input$sankey5_hover, { hover_plots$taxon <- input$sankey5_hover; hover_plots$report <- 5; })
+  observeEvent(input$sankey6_hover, { hover_plots$taxon <- input$sankey6_hover; hover_plots$report <- 6; })
+  observeEvent(input$sankey7_hover, { hover_plots$taxon <- input$sankey7_hover; hover_plots$report <- 7; })
+  observeEvent(input$sankey8_hover, { hover_plots$taxon <- input$sankey8_hover; hover_plots$report <- 8; })
+  observeEvent(input$sankey9_hover, { hover_plots$taxon <- input$sankey9_hover; hover_plots$report <- 9; })
+  observeEvent(input$sankey10_hover, { hover_plots$taxon <- input$sankey10_hover; hover_plots$report <- 10; })
   
   observeEvent(input$dt_sample_view_rows_selected, {
     hover_plots$taxon <- sub("^._", "", sample_view_report()[input$dt_sample_view_rows_selected,"name"])
@@ -312,7 +349,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
     if (!"CentrifugeOutFilePath" %in% colnames(dat))
       return()
     
-    cf_out <- dat[dat$Name == input$sample_selector,"CentrifugeOutFilePath"]
+    cf_out <- dat[dat$Name == input$sample_selector[1],"CentrifugeOutFilePath"]
     if (!file.exists(cf_out) || !file.exists(paste0(cf_out,".tbi")))
       return()
     
@@ -348,17 +385,16 @@ sampleModule <- function(input, output, session, sample_data, reports,
                                         paste0('"',c(all_names(),"other"),'"',collapse=",")))
   })
   
-  output$save_sankey <- downloadHandler(filename = function() { paste0("sankey-",input$sample_selector,".html") },
+  output$save_sankey <- downloadHandler(filename = function() { paste0("sankey-",input$sample_selector[1],".html") },
                                         content = function(con) {
-                                          a <- sankey_network()
+                                          a <- sankey_networks()[[1]]
                                           a$sizingPolicy$defaultHeight <- 1080
                                           a$sizingPolicy$defaultWidth <- 1920
-                                          #print(a$sizingPolizy)
                                           htmlwidgets::saveWidget(a, file=con)
                                         })
   
   
-  sankey_network <- reactive({
+  sankey_network <- reactive( {
     
     my_report <- sample_view_report()
     req(my_report)
@@ -387,6 +423,39 @@ sampleModule <- function(input, output, session, sample_data, reports,
                          colourScale = colourScale(),
                          LinkGroup = ifelse(input$color_links, "source_name", NA)
     ) %>% shinyTryCatch(message="building Sankey network")
+  })
+  
+  sankey_networks <- reactive({
+    lapply(seq_along(input$sample_selector), function(i) {
+    my_report <- sample_view_reports()[[i]]
+    req(my_report)
+    
+    # filter report with rows as selected in the table
+    if (isTRUE(input$synchronize_table) &&
+        length(input$dt_sample_view_rows_all) > 0)
+      my_report <- my_report[sort(input$dt_sample_view_rows_all), ]
+    
+    #my_report$name <- sub("._", "", my_report$name)
+    #my_report <- my_report[, c("depth", "cladeReads", "name")]
+    #my_report$name <- sub("^._","",my_report$name)
+    #eng <- get_nodes_and_links(my_report, 10)
+    validate(need(any(input$taxRanks %in% my_report$taxRank), message = "Report does not have required taxonomy ranks"))
+    build_sankey_network(my_report, taxRanks=input$taxRanks, maxn=input$sankey_maxn,
+                         #title = input$sample_selector[i],
+                         # Sankey options
+                         xScalingFactor = input$scalingFactor,
+                         nodePadding = ifelse(input$show_numbers, 13, 8),
+                         nodeStrokeWidth = input$nodeStrokeWidth,
+                         showNodeValues = input$show_numbers,
+                         linkOpacity = input$linkOpacity,
+                         linkType = input$linkType,
+                         nodeLabelMargin = input$textXPos,
+                         height = input$height,
+                         curvature = input$curvature,
+                         colourScale = colourScale(),
+                         LinkGroup = ifelse(input$color_links, "source_name", NA)
+    ) %>% shinyTryCatch(message="building Sankey network")
+    })
   })
   
   output$text <- renderUI({
@@ -438,7 +507,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
                         class = datatable_opts$class,
                         extensions = datatable_opts$extensions,
                         escape = FALSE, rownames = FALSE,
-                        options = list(buttons = common_buttons(input$sample_selector, "results"),
+                        options = list(buttons = common_buttons(input$sample_selector[1], "results"),
                                        columnDefs=list(list(targets = seq(from=, to=2), visible=TRUE, orderSequence = c('desc','asc'))))
     )
     if (max(my_report$CladeReads) > 1000) {
@@ -456,7 +525,7 @@ sampleModule <- function(input, output, session, sample_data, reports,
   }, server = TRUE)
   
   output$downloadData <- downloadHandler(
-    filename = function() { sprintf("%s-report-%s.tsv", input$sample_selector, format(Sys.time(), "%y%m%d")) },
+    filename = function() { sprintf("%s-report-%s.tsv", input$sample_selector[1], format(Sys.time(), "%y%m%d")) },
     content = function(file) {
       utils::write.table(beautify_colnames(sample_view_report()), file, row.names = FALSE, sep = "\t")
     }
