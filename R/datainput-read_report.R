@@ -506,27 +506,20 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     n <- nrow(report)
     depths <- report$depth
     taxLineages <- report$name
-
-    prev_row <- 2
-
-    if (nrow(report) < 3) {
-      return(report)
-    }
-    for (current_row in seq(from=3, nrow(report))) {
-      while (depths[current_row] != depths[prev_row] + 1) {
-        # find previous row with correct depth
-        prev_row <- prev_row - 1
-        if (prev_row < 1) {
-          warning("Kraken depths do not work out - ",current_row," goes back to 0!")
-          return(NULL)
-        }
+    taxLineages_p <- as.list(seq_along(report$name))
+    
+    depth_row_tmp <- c(1:25)
+    
+    for (current_row in seq(from=1, to=nrow(report))) {
+      dcr <- depths[current_row]
+      depth_row_tmp[dcr+1] <- current_row
+      if (dcr >= 1) {
+        prev_pos <- depth_row_tmp[[dcr]]
+        taxLineages_p[[current_row]] <- c(taxLineages_p[[prev_pos]], current_row)
       }
-      taxLineages[current_row] <- paste0(taxLineages[prev_row], "|", taxLineages[current_row])
-
-      prev_row <- current_row
     }
-
-    report$taxLineage <- taxLineages
+    report$taxLineage <- sapply(taxLineages_p, function(x) paste0(taxLineages[x], collapse="|"))
+    #report$taxLineage <- taxLineages
 
   } else if ("taxLineage" %in% colnames(report)) {
     taxLineages <- strsplit(report$taxLineage, "|", fixed=TRUE)
