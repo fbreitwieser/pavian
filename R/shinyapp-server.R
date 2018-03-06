@@ -11,6 +11,9 @@ pavianServer <- function(input, output, session) {
   #cache_dir <- tempdir()
   cache_dir <- NULL
 
+  ## Global Pavian options
+  pavian_options <- reactiveValues(server_dir = getOption("pavian.server_dir"))
+
   pID <- session$token
   ID <- getOption("pavian.session_count",0) +1
   options(pavian.session_count=ID)
@@ -32,7 +35,7 @@ pavianServer <- function(input, output, session) {
     query <- parseQueryString(session$clientData$url_search)
     if (!is.null(query[['server.dir']])) {
       dmessage("Setting server directory to ",query[['server.dir']]," (specified in URL).")
-      options(pavian.server_dir = query[['server.dir']])
+      pavian_options$server_dir = query[['server.dir']]
     }
     if (!is.null(query[['load.dir']])) {
       dmessage("Loading server directory (specified in URL).")
@@ -79,7 +82,7 @@ pavianServer <- function(input, output, session) {
   
   ######################
   ## Data input module
-  sample_sets <- callModule(dataInputModule, "datafile")
+  sample_sets <- callModule(dataInputModule, "datafile", pavian_options=pavian_options)
   observeEvent(sample_sets$val,{
     if (length(sample_sets$val) > 0) {
       sample_set_names <- sort(names(sample_sets$val))

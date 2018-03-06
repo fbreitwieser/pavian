@@ -1,3 +1,5 @@
+#vim: noai:ts=2:sw=2 
+  
 library(shiny)
 library(rhandsontable)
 library(shinyFileTree)
@@ -9,10 +11,7 @@ serverDataPanel <- function(ns) {
     "Be careful which directory you select - if there are too many files, the process might hang.",
     " Pavian will check the specified directory and its direct children for report files.",
     br(),
-    div(class="col-xs-3 col-md-2 col-lg-1 vcenter",
-        shinyWidgets::materialSwitch(ns("server_dir_glob"), "Glob?", value = FALSE, right = TRUE, inline = TRUE)
-        ),
-    div(class="col-xs-9 col-md-10 col-lg-11",
+    div(id="server_data_dir_div",
     shinyWidgets::searchInput(ns("search_data_dir"),
                               label = "Specify directory on machine running Pavian",
                               value = getOption("pavian.server_dir", ""),
@@ -137,7 +136,8 @@ dataInputModule <- function(input, output, session,
                             config_dir = NULL,
                             server_access = getOption("pavian.server_access", default = FALSE),
                             load_server_directory = getOption("pavian.load_server_directory", default = FALSE),
-                            load_example_data = getOption("pavian.load_example_data", default = FALSE)) {
+                            load_example_data = getOption("pavian.load_example_data", default = FALSE),
+                            pavian_options = NULL) {
   
   sample_sets <- reactiveValues(val=NULL, selected=NULL) # val is the list of all sample sets
   sample_sets_selected <- NULL # selected is just used to initialize the radioButtons in the module
@@ -153,6 +153,11 @@ dataInputModule <- function(input, output, session,
       recently_used_dirs$val <- readLines(recently_used_dir_user_config)
     }
   }
+
+  observeEvent(pavian_options$server_dir, {
+    req(pavian_options$server_dir)
+    shinyWidgets::updateSearchInput(session, "search_data_dir", value=pavian_options$server_dir)
+  })
   
   #shinyFiles::shinyDirChoose(input, ns('search_data_dir'), roots = server_dirs, filetypes = c(""))
   
@@ -222,10 +227,15 @@ dataInputModule <- function(input, output, session,
                                existing_sample_set_names = names(sample_sets_val),
                                ...,
                                display_messages = FALSE)
+      str(res)
       read_error_msg$val_pos <- res$error_msg$val_pos
       read_error_msg$val_neg <- res$error_msg$val_neg
-      if (is.null(read_error_msg$val_pos))
+      if (is.null(read_error_msg$val_pos)) {
+        if (is.null(res$error_msg$val_neg)) {
+          read_error_msg$val_neg <- "Unable to read server directory."
+        }
         return(FALSE)
+      }
       
       validate(
         need(res$sample_sets, message = "No sample sets available. Set a different directory")
@@ -280,20 +290,20 @@ dataInputModule <- function(input, output, session,
   
   observeEvent(input$search_data_dir_reset, {
     message(input$search_data_dir)
-    message("glob!!")
   })
   
   observeEvent(input$search_data_dir, {
-    if (!input$server_dir_glob) {
-      display_tree$val <- TRUE
-    } else {
-      display_tree$val <- FALSE
+    req(input$search_data_dir)
+    do_glob <- !dir.exists(input$search_data_dir)
+    display_tree$val <- !do_glob
+    if (do_glob && length(Sys.glob(input$search_data_dir) == 0)) {
+      shinyjs::addClass(class="red_background", selector="")
     }
     
     if (!isTRUE(display_tree$val)) {
       shinyjs::hide("btn_read_tree_dirs")
       display_tree$val <- FALSE
-      res <- read_server_directory(input$search_data_dir, glob_files=input$server_dir_glob)
+      res <- read_server_directory(input$search_data_dir, sample_set_name="Server files", glob_files=do_glob)
       if (res && !input$search_data_dir %in% recently_used_dirs$val) {
         recently_used_dirs$val <-
           c(input$search_data_dir, recently_used_dirs$val)

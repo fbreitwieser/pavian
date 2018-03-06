@@ -17,11 +17,10 @@ read_server_directory1 <- function(data_dirs, sample_set_name = NULL,
   read_error_msg <- list(val_neg=NULL, val_pos=NULL)
 
   return1 <- function(msg = NULL) {
-    if (!is.null(msg))
-      read_error_msg$neg <- msg
+    read_error_msg$val_neg <- msg
     if (isTRUE(display_messages)) {
-      if (!is.null(read_error_msg$neg)) { warning(read_error_msg$neg) }
-      if (!is.null(read_error_msg$pos)) { dmessage(read_error_msg$pos) }
+      if (!is.null(read_error_msg$val_neg)) { warning(read_error_msg$val_neg) }
+      if (!is.null(read_error_msg$val_pos)) { dmessage(read_error_msg$val_pos) }
       return(new_sample_sets)
     } else {
       return(list(
