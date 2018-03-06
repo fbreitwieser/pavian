@@ -356,6 +356,7 @@ filter_taxon <- function(report, filter_taxon, rm_clade = TRUE, do_message=FALSE
 #'
 read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
+  # TODO: Support for gzipped files ..
   #myfile <- file(myfile)
   #file_class <- summary(myfile)$class
   #if (file_class == "gzfile")
@@ -543,10 +544,8 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
   if (!all(c("name","taxRank") %in% colnames(report)) ||
       nrow(report) < 2 ||
-
-      report[1,"name"] != "u_unclassified" ||
-      report[2,"name"] != "-_root") {
-    warning(paste("File",myfile,"does not have the required format"))
+      !((report[1,"name"] == "u_unclassified" && report[2,"name"] == "-_root") || report[1,"name"] == "-_root")) {
+    message(paste("Warning: File",myfile,"does not have the required format"))
     print(utils::head(report))
     return(NULL)
   }
