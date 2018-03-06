@@ -195,10 +195,11 @@ assayData.merged_reports <- function(x)
 #' @param my_reports Report data.frames.
 #' @param col_names Column names.
 #' @param fix_taxnames Check if there are differences in the taxonomies of the reports.
+#' @param update_progress Update shiny progress
 #'
 #' @return Combined data.frame
 #' @export
-merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE) {
+merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE, update_progress = FALSE) {
   id_cols <- c("name", "taxRank", "taxID", "taxLineage")
   numeric_cols <- c("cladeReads","taxonReads")
   common_colnames <- Reduce(intersect, lapply(my_reports, colnames))
@@ -219,10 +220,9 @@ merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE) {
     if (!"taxID" %in% common_colnames) {
       dmessage("Can't fix taxnames without taxID!")
     } else {
-      id_to_name <- lapply(my_reports, function(r) {
+      c_id_to_name1 <- lapply(my_reports, function(r) {
         r[,c("taxID","name")]
-      })
-      c_id_to_name1 <- do.call(rbind,id_to_name)
+      }) %>% do.call(rbind, .)
       rownames(c_id_to_name1) <- NULL
       c_id_to_name <- unique(c_id_to_name1[order(c_id_to_name1$taxID),])
       rownames(c_id_to_name) <- NULL
@@ -245,7 +245,20 @@ merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE) {
     mm
   })
   
-  merged_reports <- Reduce(function(x, y) dplyr::full_join(x, y, by = id_cols), my_reports)
+  if (length(my_reports) == 1) {
+    merged_reports <- my_reports[[1]]
+  } else {
+    merged_reports <- Reduce(
+      function(merged_rep, rep_index) {
+        if (isTRUE(update_progress))
+          shiny::setProgress(value = rep_index, detail = paste(length(my_reports)-rep_index," left."))
+        dplyr::full_join(merged_rep, my_reports[[rep_index]], by = id_cols)
+      }, 
+      seq(from=2, to=length(my_reports)),
+      init=my_reports[[1]]
+      )
+      
+  }
   
   tax_data <- merged_reports[, id_cols, drop = FALSE]
   ## remove s_, g_, etc

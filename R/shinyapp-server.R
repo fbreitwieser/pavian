@@ -230,14 +230,18 @@ pavianServer <- function(input, output, session) {
   ##################
   ## Sample module
   selected_sample <- reactive({overview_res$selected_sample})
-  callModule(sampleModule, "sample", sample_data, reports, selected_sample = selected_sample, 
-             datatable_opts=datatable_opts)
+  callModule(sampleModule, "sample", sample_data, reports,
+             tax_data, clade_reads, taxon_reads,
+             selected_sample = selected_sample, datatable_opts=datatable_opts)
   
   
   ######################
   ## Comparison module
   summarized_report <- reactive({
-    withProgress(message="Merging samples ...", { merge_reports2(reports(), col_names = sample_data()[["Name"]]) })
+    withProgress(message="Merging samples reports.",
+                 detail = "This may take a while ...", 
+                 max = length(reports()), { 
+      merge_reports2(reports(), col_names = sample_data()[["Name"]], update_progress=T) })
   })
   tax_data <- reactive({ summarized_report()[[1]] })
   clade_reads <- reactive({ summarized_report()[[2]] })

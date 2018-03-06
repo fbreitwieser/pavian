@@ -25,7 +25,7 @@ read_reports <- function(report_files, report_names = basename(report_files), ca
            function(i) {
              if (is_shiny_session)
               setProgress(value = i,
-                           detail = paste(n_reports - i, "left ..."))
+                           detail = paste(n_reports - i, "left."))
              load_or_create(
                function() {
                  report <- read_report(report_files[i]) %>% shinyTryCatch(message=paste("reading file",report_files[i]))
@@ -41,7 +41,7 @@ read_reports <- function(report_files, report_names = basename(report_files), ca
     })
 
   my_reports <- withProgress(f,
-      message = paste("Loading", n_reports, "sample reports"),
+      message = paste("Reading", n_reports, "sample reports."),
       detail = 'This may take a while...', max = n_reports,
       quoted = T
     )

@@ -9,7 +9,7 @@
 #' @return sample_data data.frame
 #' @export
 read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
-                             ext = c("report","profile"), glob_files = FALSE) {
+                             ext = c("report", "profile", "report.tsv"), glob_files = FALSE) {
   gd_sample_data <- FALSE
     
   if (file.exists(file.path(my_dir,def_filename))) {

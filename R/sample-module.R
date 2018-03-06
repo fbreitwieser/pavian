@@ -110,6 +110,7 @@ sampleModuleUI_function <- function(ns, samples, selected_sample = NULL) {
 #' @return Sample module server functionality
 #' @export
 sampleModule <- function(input, output, session, sample_data, reports,
+                         tax_data, clade_reads, taxon_reads,
                          selected_sample = NULL, datatable_opts = NULL) {
   
   output$UI <- renderUI({
@@ -212,83 +213,36 @@ sampleModule <- function(input, output, session, sample_data, reports,
     
     shiny::tagList(
       "Number of reads across all samples ","(",downloadLink(ns("save_plot1"),"PDF"),")",
-      plotOutput(ns("plot1"), height=paste0(max(200,input$height/2-75),"px"), click = ns("plot_click")),
-      "Percent of reads (after filtering) (",downloadLink(ns("save_plot2"),"PDF"),")",
-      plotOutput(ns("plot2"), height=paste0(max(200,input$height/2-75),"px"), click = ns("plot_click")),
+      plotOutput(ns("plot1"), height=paste0(max(200,input$height/1.5-75),"px"), click = ns("plot_click")),
+      #"Percent of reads (after filtering) (",downloadLink(ns("save_plot2"),"PDF"),")",
+      #plotOutput(ns("plot2"), height=paste0(max(200,input$height/2-75),"px"), click = ns("plot_click")),
       "Legend: The turqoise bar shows the number of reads that are identified at the specific taxon; the orange bar shows the number of reads identified at children of the specified taxon.",
       conditionalPanel("typeof input.sankey_hover != 'undefined'", actionLink(ns("show_in_comparison"),"Show in comparison table"))
     )
   })
   
-  
-  sum_cladeReads <- reactive({
-    sapply(reports(), function(x) {
-      sel_rows <- sub("^._","",x$name) %in% input$contaminant_selector
-      ## select also child rows - as we always remove the whole clade here
-      for (ts in x$taxLineage[sel_rows])
-        sel_rows <- sel_rows | startsWith(x$taxLineage,ts)
-      
-      sel_rows <- sel_rows | x$name %in% c("-_root","u_unclassified")
-      sum(x$taxonReads[!sel_rows], na.rm=T)
-    }
-    )
-  })
-  
-  hover_cladeReads <- reactive({
-    res <- lapply(reports(), function(x) x$cladeReads[sub("^._", "", x$name) == hover_plots$taxon])
-    sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
-  })
-  
-  hover_taxonReads <- reactive({
-    res <- lapply(reports(), function(x) x$taxonReads[sub("^._", "", x$name) == hover_plots$taxon])
-    sapply(res, function(x) ifelse(length(x) == 0, 0, sum(x)))
-  })
-  
   plot_it <- function(normalize = FALSE) {
     requireNamespace("ggplot2")
+    #requireNamespace("cowplot")
     req(hover_plots$taxon)
-    req(sum_cladeReads())
-    len <- length(sum_cladeReads())
-    stopifnot(length(hover_cladeReads()) == len)
-    stopifnot(length(hover_taxonReads()) == len)
-    mydf <- data.frame(reads=c(hover_cladeReads() - hover_taxonReads(),hover_taxonReads()),
-                       type=rep(c("cladeReads", "taxonReads"), each = len),
-                       sample=rep(names(sum_cladeReads()),2))
-    
-    mydf <- mydf[mydf$type == "cladeReads" || mydf$reads > 0, ]
-    
-    my_names <- names(sum_cladeReads())
-    colvec <- ifelse(my_names == input$sample_selector, "red","black")
-    
-    type1 <- factor(mydf$type,
-                    levels = c("taxonReads","cladeReads"),
-                    labels = c("at taxon","in total"), ordered=T)
-    
-    ii <- 10
-    short_names <-substr(my_names,1,ii)
-    while (anyDuplicated(short_names)) {
-      ii <- ii + 1
-      short_names <-substr(my_names,1,ii)
-    }
-
-    mydf$sample <- factor(mydf$sample, names(sum_cladeReads()) , short_names)
-   
-    mydf <- mydf[order(mydf$sample, type1),]
-    if (normalize)
-      mydf$reads <- 100*mydf$reads / rep(sum_cladeReads(), each = 2)
-    
-    mydf$pos <- unlist(tapply(mydf$reads, mydf$sample, function(reads) cumsum(reads)))
-    
-    mydf$type <- factor(mydf$type,
-                        levels = c("cladeReads","taxonReads"),
-                        labels = c("in total","at taxon"), ordered=T)
+    selected_taxon <- hover_plots$taxon
+    taxIndex <- which(tax_data()$name == selected_taxon)[1]
+    clade_reads_m <- na0(clade_reads()[taxIndex, ]) - na0(taxon_reads()[taxIndex,])
+    mydf <- data.frame(sample=rep((substr(sample_data()$Name, 1, 10)),2), 
+                       type=factor(rep(c("in total", "at taxon"), each=ncol(clade_reads())), levels = c("in total", "at taxon")), 
+                       reads=c(clade_reads_m, taxon_reads()[taxIndex,]),
+                       pos=c(clade_reads()[taxIndex,], taxon_reads()[taxIndex,]))
+    colvec <- ifelse(colnames(clade_reads()) == input$sample_selector, "red","black")
+    #if (normalize) {
+    #  mydf$reads <- 100*mydf$reads / rep(sum_clade_reads(), each = 2)
+    #}
     
     ## TODO: Replace by D3 graph?
     ##   See e.g. http://eyeseast.github.io/visible-data/2013/08/28/responsive-charts-with-d3/
-    ggplot(mydf %>% dplyr::arrange(type), aes(x=sample)) +
-      geom_bar(aes(y=reads,fill=type), stat="identity", position="stack") +
+    ggplot(mydf, aes(x=sample)) +
+      geom_bar(aes(y=reads, fill=type), stat="identity", position="stack") +
       xlab("") + ylab("") +
-      scale_y_continuous(limits=c(0,max(mydf$pos)*1.1), expand=c(0,0)) +
+      scale_y_continuous(limits=c(0,max(mydf$pos, na.rm=T)*1.1), expand=c(0,0)) +
       scale_fill_manual("", values = c("in total"="#fc8d62", "at taxon"="#66c2a5")) +
       my_gg_theme(12) +
       theme(

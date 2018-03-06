@@ -210,6 +210,9 @@ f2si2<-function (number)
   sel <- lut >= 1
   lut <- lut[sel]
   pre <- pre[sel]
+  
+  number[is.na(number)] <- 0
+  
   ix <- findInterval(number, lut)
   ix[ix == 0] <- 1
 
