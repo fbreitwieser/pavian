@@ -30,8 +30,8 @@ Suggests:
     Rsamtools, knitr
 Remotes:
     github::fbreitwieser/sankeyD3,
-    github::fbreitwieser/shinyFileTree
-	github::dreamRs/shinyWidgets
+    github::fbreitwieser/shinyFileTree,
+    github::dreamRs/shinyWidgets
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 6.0.1
