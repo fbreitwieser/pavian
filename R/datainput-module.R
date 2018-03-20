@@ -156,6 +156,8 @@ dataInputModule <- function(input, output, session,
 
   observeEvent(pavian_options$server_dir, {
     req(pavian_options$server_dir)
+    require(shinyWidgets)
+    req(exists('updateSearchInput', where='package:shinyWidgets', mode='function'))
     shinyWidgets::updateSearchInput(session, "search_data_dir", value=pavian_options$server_dir)
   })
   
@@ -227,12 +229,11 @@ dataInputModule <- function(input, output, session,
                                existing_sample_set_names = names(sample_sets_val),
                                ...,
                                display_messages = FALSE)
-      str(res)
       read_error_msg$val_pos <- res$error_msg$val_pos
       read_error_msg$val_neg <- res$error_msg$val_neg
       if (is.null(read_error_msg$val_pos)) {
         if (is.null(res$error_msg$val_neg)) {
-          read_error_msg$val_neg <- "Unable to read server directory."
+          read_error_msg$val_neg <- "Unable to read report files form directory."
         }
         return(FALSE)
       }
@@ -364,7 +365,15 @@ dataInputModule <- function(input, output, session,
     
     for (i in seq_along(inFile$datapath)) {
       dirname <- dirname(inFile$datapath[i])
-      file.rename(inFile$datapath[i], file.path(dirname, inFile$name[i]))
+      fname <- file.path(dirname, inFile$name[i])
+      file.rename(inFile$datapath[i], fname)
+      if (grepl(".zip$|.gz$|.bzip2$|.xz$|.bz2$", fname, ignore.case = T)) {
+        tryCatch({
+          if (length(untar(fname, exdir = dirname)) > 0) { 
+            file.remove(fname)
+          }
+        }, error = message)
+      }
     }
     
     read_server_directory(dirname(inFile$datapath[1]), "Uploaded sample set")
