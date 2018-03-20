@@ -4,8 +4,8 @@
 \alias{sampleModule}
 \title{Server part for sample module}
 \usage{
-sampleModule(input, output, session, sample_data, reports,
-  selected_sample = NULL, datatable_opts = NULL)
+sampleModule(input, output, session, sample_data, reports, tax_data,
+  clade_reads, taxon_reads, selected_sample = NULL, datatable_opts = NULL)
 }
 \arguments{
 \item{input}{Shiny input object.}
@@ -17,6 +17,12 @@ sampleModule(input, output, session, sample_data, reports,
 \item{sample_data}{Samples \code{data.frame}.}
 
 \item{reports}{List of reports.}
+
+\item{tax_data}{Taxonomy data.}
+
+\item{clade_reads}{Clade reads.}
+
+\item{taxon_reads}{Taxon reads.}
 
 \item{selected_sample}{Pre-selected sample.}
 

@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
+library(magrittr)
 
 
 ## TODOL Make Sankey work for '-' taxRanks
@@ -72,10 +73,13 @@ sampleModuleUI_function <- function(ns, samples, selected_sample = NULL) {
                           div(style="display:inline-block", shinyWidgets::dropdownButton(figure_options(ns), circle = FALSE, label = "Configure Sankey ...")),
                           div(uiOutput(ns("dynamic_sankey")), style="border: 1px solid lightgray"),
                           br(),
-                          downloadLink(ns("save_sankey"),"Save Network")),
+                          downloadLink(ns("save_sankey"),"Save Network")
+                  ),
                  #tabPanel("Partition visualization",
-                 #        D3partitionR::D3partitionROutput(ns("D3partionR"))
-                 #        ),
+                #          selectInput(ns("d3part_charttype"),
+                #                      label = "Chart type", choices = c('sunburst','treemap','circle_treemap','partition_chart','icicle'), selected="sunburst"),
+                #         D3partitionR::D3partitionROutput(ns("D3partionR"))
+                #         ),
                  tabPanel("Table",
                           "Click a row to see the abundance of the taxon in other samples.",
                           div(style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_sample_view'))),
@@ -104,6 +108,9 @@ sampleModuleUI_function <- function(ns, samples, selected_sample = NULL) {
 #' @param session Shiny session object.
 #' @param sample_data Samples \code{data.frame}.
 #' @param reports List of reports.
+#' @param tax_data Taxonomy data.
+#' @param clade_reads Clade reads.
+#' @param taxon_reads Taxon reads.
 #' @param selected_sample Pre-selected sample.
 #' @param datatable_opts Additional datatable opts (mostly $class).
 #'
@@ -582,17 +589,48 @@ sampleModule <- function(input, output, session, sample_data, reports,
   }, ignoreNULL = TRUE)
   
   
+  
   ## D3partitionR does not display - might be added back at a later point in time
-  #output$D3partionR <- D3partitionR::renderD3partitionR({
-  #  my_report <- sample_view_report()
-  #  my_report <- my_report[my_report$cladeReads > 0 & my_report$taxonReads > 0 & grepl("^._root",my_report$taxLineage), ]
-  #  #taxLineage <- sub("^._root.","",my_report$taxLineage) %>% gsub("._","", .)
-  #  taxLineage <- gsub("._","", my_report$taxLineage)
-  #  path_in <- lapply(strsplit(taxLineage,"|",fixed=T), as.list)
-  #  value_in <- my_report$taxonReads
-  #  D3partitionR::D3partitionR(data=list(path=path_in,value=value_in), 
-  #                             title=list(text=input$sample_selector), trail=TRUE)
-  #})
+#  output$D3partionR <- D3partitionR::renderD3partitionR({
+#    library(D3partitionR)
+#    my_report <- sample_view_report()
+#    my_report <- my_report[my_report$cladeReads > 0 & my_report$taxonReads > 10 & grepl("^._root",my_report$taxLineage), ]
+#    #taxLineage <- sub("^._root.","",my_report$taxLineage) %>% gsub("._","", .)
+#    strsplit(my_report$taxLineage, "|", fixed=T) %>% lapply(grep, pattern= "^-_", invert = T, value = T)
+#    
+#    domains <- c("d", "p", "c", "f", "g", "s")
+#    pattern <- sprintf("^[%s]_", paste(domains, collapse=""))
+#    res <- strsplit(my_report$taxLineage, "|", fixed=T) %>% 
+#      lapply(function(x) {
+#        y <- grep(pattern, x, value = T)
+#        d <- sub("_.*", "", y)
+#        n <- sub("^._", "", y)
+#        names(n) <- d
+#        #xx <- n[domains]
+#        #xx[is.na(xx)] <- "NA"
+#        #xx
+#        n[domains]
+#      }) %>% do.call(rbind, .)
+#    colnames(res) <- domains
+#    res <- data.frame(res, stringsAsFactors = FALSE)
+#    sel <- !apply(is.na(res), 1, any) & my_report$taxonReads > 0
+#    #sel <- !apply(is.na(res), 1, all)
+#    #sel <- my_report$cladeReads
+#    res$N <- my_report$taxonRead
+#    res <- res[sel, ]
+#    library(plyr)
+#    res <- ddply(res, domains, function(x) {
+#      a = x[1, , drop=F]
+#      a$N = sum(x$N)
+#      a
+#    } )
+#    
+#    D3partitionR::D3partitionR() %>% 
+#      D3partitionR::add_data(res, count = 'N', steps = domains, color='N') %>%
+#      #D3partitionR::add_title(list(text=input$sample_selector)) %>%
+#      set_chart_type(input$d3part_charttype) %>%
+#      plot
+#  })
   
   #reactive({
   #  req(input$show_in_comparison)

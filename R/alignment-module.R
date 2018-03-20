@@ -156,7 +156,7 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
         biocLite("Rsamtools")
       }, error=function(e) {})
     }, message = "Installing Rsamtools ... (will take a while)")
-    if (require("Rsamtools")) {
+    if (requireNameSpace("Rsamtools")) {
       shinyjs::hide("warn_Rsamtools")
       shinyjs::show("align_view_rsamtools")
       shinyjs::alert("Successfully installed Rsamtools!")

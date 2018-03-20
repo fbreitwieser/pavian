@@ -127,6 +127,7 @@ dataInputModuleUI <- function(id,
 #' @param server_access Whether a directory on the server can be loaded.
 #' @param load_server_directory Load server directory.
 #' @param load_example_data Load example data.
+#' @param pavian_options General options for pavian.
 #'
 #' @return Shiny module server function, to be called by callModule.
 #' @export
@@ -156,9 +157,11 @@ dataInputModule <- function(input, output, session,
 
   observeEvent(pavian_options$server_dir, {
     req(pavian_options$server_dir)
-    require(shinyWidgets)
-    req(exists('updateSearchInput', where='package:shinyWidgets', mode='function'))
-    shinyWidgets::updateSearchInput(session, "search_data_dir", value=pavian_options$server_dir)
+    # require(shinyWidgets)
+    # req(exists('updateSearchInput', where='package:shinyWidgets', mode='function'))
+    tryCatch({
+      shinyWidgets::updateSearchInput(session, "search_data_dir", value=pavian_options$server_dir)
+    }, error = message)
   })
   
   #shinyFiles::shinyDirChoose(input, ns('search_data_dir'), roots = server_dirs, filetypes = c(""))

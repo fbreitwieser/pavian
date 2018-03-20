@@ -5,7 +5,8 @@
 \title{Merge report files into a wide format, with column(s) for each
 report.}
 \usage{
-merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE)
+merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE,
+  update_progress = FALSE)
 }
 \arguments{
 \item{my_reports}{Report data.frames.}
@@ -13,6 +14,8 @@ merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE)
 \item{col_names}{Column names.}
 
 \item{fix_taxnames}{Check if there are differences in the taxonomies of the reports.}
+
+\item{update_progress}{Update shiny progress}
 }
 \value{
 Combined data.frame

@@ -8,7 +8,7 @@ dataInputModule(input, output, session, config_dir = NULL,
   server_access = getOption("pavian.server_access", default = FALSE),
   load_server_directory = getOption("pavian.load_server_directory", default =
   FALSE), load_example_data = getOption("pavian.load_example_data", default =
-  FALSE))
+  FALSE), pavian_options = NULL)
 }
 \arguments{
 \item{input}{Scoped input.}
@@ -24,6 +24,8 @@ dataInputModule(input, output, session, config_dir = NULL,
 \item{load_server_directory}{Load server directory.}
 
 \item{load_example_data}{Load example data.}
+
+\item{pavian_options}{General options for pavian.}
 }
 \value{
 Shiny module server function, to be called by callModule.
