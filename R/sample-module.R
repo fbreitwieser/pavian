@@ -249,6 +249,15 @@ sampleModule <- function(input, output, session, sample_data, reports,
     taxIndex <- which(tax_data()$name == selected_taxon)[1]
     clade_reads_m <- na0(clade_reads()[taxIndex, ]) - na0(taxon_reads()[taxIndex,])
     short_name <- substr(sample_data()$Name, 1, 10)
+    for (si in unique(short_name)) {
+      sel <- si %in% short_name
+      if (sum(sel) > 1) {
+        short_name[sel] <- sprintf("%s-%s", short_name[sel], seq_len(sum(sel)))
+      }
+    }
+    if (any(duplicated(short_name))) {
+      short_name[duplicated(short_name)]
+    }
     mydf <- data.frame(sample=rep(factor(short_name, levels=short_name),2), 
                        type=factor(rep(c("in total", "at taxon"), each=ncol(clade_reads())), levels = c("in total", "at taxon")), 
                        reads=c(clade_reads_m, taxon_reads()[taxIndex,]),
