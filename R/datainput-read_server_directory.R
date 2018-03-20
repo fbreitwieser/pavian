@@ -17,7 +17,8 @@ read_server_directory1 <- function(data_dirs, sample_set_name = NULL,
   read_error_msg <- list(val_neg=NULL, val_pos=NULL)
 
   return1 <- function(msg = NULL) {
-    read_error_msg$val_neg <- msg
+    if (!is.null(msg)) 
+      read_error_msg$val_neg <- msg
     if (isTRUE(display_messages)) {
       if (!is.null(read_error_msg$val_neg)) { warning(read_error_msg$val_neg) }
       if (!is.null(read_error_msg$val_pos)) { dmessage(read_error_msg$val_pos) }
@@ -51,9 +52,11 @@ read_server_directory1 <- function(data_dirs, sample_set_name = NULL,
       base_name <- paste(sample_set_name, counter)
     }
     
+    bad_files <- c()
     if (isTRUE(glob_files)) {
       new_sample_sets <- list(read_sample_data(data_dir, ext=NULL, glob_files=TRUE))
       names(new_sample_sets) <- base_name
+      bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
     } else {
       dmessage("Reading files in ", data_dir)
       if (!dir.exists(data_dir)) {
@@ -71,19 +74,21 @@ read_server_directory1 <- function(data_dirs, sample_set_name = NULL,
       if (include_base_dir) {
         new_sample_sets <- list(read_sample_data(data_dir, ext=NULL))
         names(new_sample_sets) <- base_name
+        bad_files <- attr(new_sample_sets[[1]], "bad_files")
       }
   
-    dirs <- grep("^\\.", list.dirs(data_dir, recursive = FALSE), invert = TRUE, value = TRUE)
-    n_dirs <- length(dirs)
-    max_dirs <- getOption("pavian.maxSubDirs", 10)
-    if (n_dirs > max_dirs) {
-      read_error_msg$val_neg <- c(read_error_msg$val_neg, paste("There are ",n_dirs," sub-directories in ", data_dir,
-                                                                " but the highest allowed number is ",max_dirs,"  - specify individual directories with reports one at a time to load data or set the option 'pavian.maxSubDirs' to a higher number (e.g. 'options(pavian.maxSubDirs=50)')."))
-    } else if (length(dirs) > 0) {
-      sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
-      names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
-      new_sample_sets <- c(new_sample_sets, sub_dir_sets)
-    }
+      dirs <- grep("^\\.", list.dirs(data_dir, recursive = FALSE), invert = TRUE, value = TRUE)
+      n_dirs <- length(dirs)
+      max_dirs <- getOption("pavian.maxSubDirs", 10)
+      if (n_dirs > max_dirs) {
+        read_error_msg$val_neg <- c(read_error_msg$val_neg, paste("There are ",n_dirs," sub-directories in ", data_dir,
+                                                                  " but the highest allowed number is ",max_dirs,"  - specify individual directories with reports one at a time to load data or set the option 'pavian.maxSubDirs' to a higher number (e.g. 'options(pavian.maxSubDirs=50)')."))
+      } else if (length(dirs) > 0) {
+        sub_dir_sets <- lapply(dirs, read_sample_data, ext=NULL)
+        names(sub_dir_sets) <- paste0(base_name,"/",basename(dirs))
+        new_sample_sets <- c(new_sample_sets, sub_dir_sets)
+        bad_files <- c(bad_files, unlist(sapply(sub_dir_sets, attr, "bad_files")))
+      }
     }
     
     paste_last <- function(x, ..., collapse_last) {
@@ -94,7 +99,6 @@ read_server_directory1 <- function(data_dirs, sample_set_name = NULL,
       paste(y, x[length(x)], sep=collapse_last)
     }
   
-    bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
     sel_bad_sets <- sapply(new_sample_sets, function(x) is.null(x) || nrow(x) == 0)
     new_sample_sets <- new_sample_sets[!sel_bad_sets]
     
