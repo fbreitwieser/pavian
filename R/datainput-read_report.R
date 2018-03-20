@@ -374,10 +374,15 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     dmessage("Could not read ", myfile, ".")
     return(NULL)
   }
+  tryCatch({
   if (nchar(first.line) == 0) {
     dmessage("First line of ", myfile, " is empty")
     return(NULL)
   }
+  }, error = function(e) { 
+    dmessage(e)
+    return(NULL)
+  })
   
   if (!isTRUE(isASCII(first.line))) {
     dmessage(myfile," is not a ASCII file")
