@@ -370,13 +370,16 @@ dataInputModule <- function(input, output, session,
       dirname <- dirname(inFile$datapath[i])
       fname <- file.path(dirname, inFile$name[i])
       file.rename(inFile$datapath[i], fname)
-      if (grepl(".zip$|.gz$|.bzip2$|.xz$|.bz2$", fname, ignore.case = T)) {
-        tryCatch({
+      tryCatch({
+      if (grepl(".zip$", fname, ignore.case = T)) {
+          if (length(unzip(fname, exdir = dirname)) > 0) { 
+            file.remove(fname)
+          }
+      } else if (grepl(".gz$|.bzip2$|.xz$|.bz2$", fname, ignore.case = T)) {
           if (length(untar(fname, exdir = dirname)) > 0) { 
             file.remove(fname)
           }
-        }, error = message)
-      }
+      }}, error = message)
     }
     
     read_server_directory(dirname(inFile$datapath[1]), "Uploaded sample set")
