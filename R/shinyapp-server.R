@@ -1,4 +1,19 @@
 
+
+# Common datatable options. It's reactive so that we can add the compact class to tables on demand
+#' @export
+datatable_opts <- reactiveValues(
+    rownames = FALSE,
+    selection = 'single',
+    extensions = c('Buttons'),
+    # Maybe use 'Scroller' for some tables
+    # 'ColReorder' isn't really useful
+    # 'FixedColumns' is too buggy
+    # Consider adding 'Responsive' / see https://datatables.net/extensions/responsive/priority
+    class = "stripe hover row-border"
+  )
+
+
 #' Pavian server function
 #'
 #' @param input Input object
@@ -51,18 +66,6 @@ pavianServer <- function(input, output, session) {
     }
   })
   
-  # Common datatable options. It's reactive so that we can add the compact class to tables on demand
-  datatable_opts <- reactiveValues(
-    rownames = FALSE,
-    selection = 'single',
-    extensions = c('Buttons'),
-    # Maybe use 'Scroller' for some tables
-    # 'ColReorder' isn't really useful
-    # 'FixedColumns' is too buggy
-    # Consider adding 'Responsive' / see https://datatables.net/extensions/responsive/priority
-    class = "stripe hover row-border"
-  )
-
   # Trigger bookmarking
   setBookmarkExclude("bookmark_btn")
   observeEvent(input$bookmark_btn, {
