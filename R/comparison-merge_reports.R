@@ -196,12 +196,14 @@ assayData.merged_reports <- function(x)
 #' @param col_names Column names.
 #' @param fix_taxnames Check if there are differences in the taxonomies of the reports.
 #' @param update_progress Update shiny progress
+#' @param id_cols Columns for taxdata
+#' @param numeric_cols Numeric data
 #'
 #' @return Combined data.frame
 #' @export
-merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE, update_progress = FALSE) {
-  id_cols <- c("name", "taxRank", "taxID", "taxLineage")
-  numeric_cols <- c("cladeReads","taxonReads")
+merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE, update_progress = FALSE,
+                           id_cols = c("name", "taxRank", "taxID", "taxLineage"),
+                           numeric_cols = c("cladeReads","taxonReads")) {
   common_colnames <- Reduce(intersect, lapply(my_reports, colnames))
   
   if (is.null(my_reports) || length(my_reports) == 0)

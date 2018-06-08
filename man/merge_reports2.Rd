@@ -6,7 +6,8 @@
 report.}
 \usage{
 merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE,
-  update_progress = FALSE)
+  update_progress = FALSE, id_cols = c("name", "taxRank", "taxID",
+  "taxLineage"), numeric_cols = c("cladeReads", "taxonReads"))
 }
 \arguments{
 \item{my_reports}{Report data.frames.}
@@ -16,6 +17,10 @@ merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE,
 \item{fix_taxnames}{Check if there are differences in the taxonomies of the reports.}
 
 \item{update_progress}{Update shiny progress}
+
+\item{id_cols}{Columns for taxdata}
+
+\item{numeric_cols}{Numeric data}
 }
 \value{
 Combined data.frame
