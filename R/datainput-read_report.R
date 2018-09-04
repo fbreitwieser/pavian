@@ -395,7 +395,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
-  nrows <- ifelse(check_file, 5, -1)
+  nrows <- ifelse(isTRUE(check_file), 5, -1)
   if (!is_krakenu_fmt && is_kaiju_fmt) {
     cont <- readLines(myfile)
     cont <- cont[!grepl("^-", cont)]
@@ -491,6 +491,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
     ## 'fix' taxRank
     table(report$taxRank)
+    allowed_taxRanks <- c("U", "S", "G", "F", "C", "D", "O", "K", "P")
     report$taxRank[report$taxRank=="class"] <- "C"
     report$taxRank[report$taxRank=="family"] <- "F"
     report$taxRank[report$taxRank=="genus"] <- "G"
@@ -500,7 +501,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report$taxRank[report$taxRank=="phylum"] <- "P"
     report$taxRank[report$taxRank=="species"] <- "S"
     report$taxRank[report$name=="unclassified"] <- "U"
-    report$taxRank[nchar(report$taxRank) > 1] <- "-"
+    report$taxRank[!report$taxRank %in% allowed_taxRanks] <- "-"
 
     report$name <- paste(tolower(report$taxRank),report$name,sep="_")
 
