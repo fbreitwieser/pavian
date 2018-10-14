@@ -11,6 +11,11 @@ read_reports <- function(report_files, report_names = basename(report_files), ca
     return()
   }
 
+  if (any(duplicated(report_names))) {
+    report_names = report_files
+  }
+	  
+
   is_shiny_session <- !is.null(shiny::getDefaultReactiveDomain())
   if (!is_shiny_session) {
     withProgress <- function(expr, env = parent.frame(), ...) { eval(expr, env); }
