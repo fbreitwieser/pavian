@@ -174,7 +174,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_taxRanks=c("D","K","P","C","O
 
   if (has_header) {
     report <- utils::read.table(myfile,sep="\t",header = T,
-                                quote = "",stringsAsFactors=FALSE)
+                                quote = "",stringsAsFactors=FALSE, comment.char="#")
     #colnames(report) <- c("percentage","cladeReads","taxonReads","taxRank","taxID","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
@@ -196,7 +196,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_taxRanks=c("D","K","P","C","O
   } else {
     report <- utils::read.table(myfile,sep="\t",header = F,
                                 col.names = c("percentage","cladeReads","taxonReads","taxRank","taxID","name"),
-                                quote = "",stringsAsFactors=FALSE)
+                                quote = "",stringsAsFactors=FALSE, comment.char="#")
   }
 
   report$depth <- nchar(gsub("\\S.*","",report$name))/2
@@ -439,7 +439,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = T,
                         quote = "",stringsAsFactors=FALSE,
-                        comment.char = "", nrows = nrows, 
+                        comment.char = "#", nrows = nrows, 
                         check.names=FALSE)
     }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
