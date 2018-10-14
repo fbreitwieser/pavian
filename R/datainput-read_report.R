@@ -174,7 +174,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_taxRanks=c("D","K","P","C","O
 
   if (has_header) {
     report <- utils::read.table(myfile,sep="\t",header = T,
-                                quote = "",stringsAsFactors=FALSE)
+                                quote = "",stringsAsFactors=FALSE, comment.char="#")
     #colnames(report) <- c("percentage","cladeReads","taxonReads","taxRank","taxID","n_unique_kmers","n_kmers","perc_uniq_kmers","name")
 
     ## harmonize column names. TODO: Harmonize them in the scripts!
@@ -196,7 +196,7 @@ read_report2 <- function(myfile,collapse=TRUE,keep_taxRanks=c("D","K","P","C","O
   } else {
     report <- utils::read.table(myfile,sep="\t",header = F,
                                 col.names = c("percentage","cladeReads","taxonReads","taxRank","taxID","name"),
-                                quote = "",stringsAsFactors=FALSE)
+                                quote = "",stringsAsFactors=FALSE, comment.char="#")
   }
 
   report$depth <- nchar(gsub("\\S.*","",report$name))/2
@@ -395,7 +395,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
-  nrows <- ifelse(check_file, 5, -1)
+  nrows <- ifelse(isTRUE(check_file), 5, -1)
   if (!is_krakenu_fmt && is_kaiju_fmt) {
     cont <- readLines(myfile)
     cont <- cont[!grepl("^-", cont)]
@@ -439,7 +439,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = T,
                         quote = "",stringsAsFactors=FALSE,
-                        comment.char = "", nrows = nrows, 
+                        comment.char = "#", nrows = nrows, 
                         check.names=FALSE)
     }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
@@ -491,6 +491,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
     ## 'fix' taxRank
     table(report$taxRank)
+    allowed_taxRanks <- c("U", "S", "G", "F", "C", "D", "O", "K", "P")
     report$taxRank[report$taxRank=="class"] <- "C"
     report$taxRank[report$taxRank=="family"] <- "F"
     report$taxRank[report$taxRank=="genus"] <- "G"
@@ -500,7 +501,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report$taxRank[report$taxRank=="phylum"] <- "P"
     report$taxRank[report$taxRank=="species"] <- "S"
     report$taxRank[report$name=="unclassified"] <- "U"
-    report$taxRank[nchar(report$taxRank) > 1] <- "-"
+    report$taxRank[!report$taxRank %in% allowed_taxRanks] <- "-"
 
     report$name <- paste(tolower(report$taxRank),report$name,sep="_")
 
