@@ -1,0 +1,12 @@
+name: pavian
+title: pavian
+username:
+account: fbreitwieser
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 135554
+bundleId: 1121485
+url: https://fbreitwieser.shinyapps.io/pavian/
+when: 1512667143.27305
+asMultiple: FALSE
+asStatic: FALSE

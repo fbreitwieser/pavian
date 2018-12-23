@@ -109,7 +109,8 @@ comparisonModuleUI_function <- function(ns) {
 					       "Rank"="cladeReads rank","Z-score (reads)"="cladeReads z-score","Z-score (%)"="cladeReads % z-score"), justified = FALSE, 
                                                status = "primary",
                                                checkIcon = list(yes = icon("ok", lib = "glyphicon")), selected = "cladeReads")),
-        
+        div(style="display:inline-block",
+            shiny::checkboxInput(ns("opt_barplot"), "Barplot")),
         div(style="display:inline-block",selectizeInput(
       ns('contaminant_selector_clade'),
       allcontaminants, #selected = c("artificial sequences"),
@@ -130,6 +131,7 @@ comparisonModuleUI_function <- function(ns) {
         htmlOutput(ns("messages")),
         htmlOutput(ns("taxLineage")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
+        #dimple::dimpleOutput(ns("barplot")),
         shinyWidgets::searchInput(ns("search_filter_freetext"), label=NULL, placeholder = "Filter data with formula, e.g $2 > $1",
                                   btnSearch = icon("filter"), btnReset = icon("remove")),
         downloadButton(ns('downloadData'), 'Download full table in tab-separated value format')
@@ -309,6 +311,12 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
     )
   }
   
+  #output$barplot <- dimple::renderdimple({
+  #  summarized_report <- summarized_report_df()
+  #  req(summarized_report)
+  #  save(summarized_report, file = "myreport.rda")
+  #  print(head(summarized_report[[1]]))
+  #})
   
   shown_rows <- reactive({
     clade_reads <- filtered_clade_reads()

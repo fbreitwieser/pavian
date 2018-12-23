@@ -38,7 +38,7 @@ alignmentModuleUI <- function(id) {
     box(width=12,
         collapsible=TRUE, collapsed=FALSE,
         title="Instructions",
-        HTML("The alignment viewer requires a <a target='blank' href='https://genome.ucsc.edu/goldenpath/help/bam.html'>BAM alignment file and BAI index</a>.
+        HTML("The alignment viewer requires a <a target='blank' href='https://genome.ucsc.edu/goldenpath/help/bam.html'>BAM alignment file and BAI index</a>. Note that only small BAM files are supported - for large files please use a dedicated BAM viewer.
 
 To generate a BAM file, download a genome of interest, and align to it with an aligner like <a target='blank' href='http://bowtie-bio.sourceforge.net/bowtie2/index.shtml'>Bowtie2</a> or <a target='blank' href='https://github.com/lh3/bwa'>bwa mem</a>. The resulting SAM file can be compressed into a binary BAM file and indexed with <a target='blank' href='http://www.htslib.org'>samtools</a>.
 ")
@@ -90,13 +90,12 @@ To generate a BAM file, download a genome of interest, and align to it with an a
 #' @param input Shiny input object
 #' @param output Shiny output object
 #' @param session Shiny session
-#' @param sample_data \code{data.frame} for samples
 #' @param datatable_opts Additional options for creating the datatable.
 #'
 #' @return Alignment module server functionality
 #' @export
 #' @import shinydashboard
-alignmentModule <- function(input, output, session, sample_data, datatable_opts) {
+alignmentModule <- function(input, output, session, datatable_opts = pavian::datatable_opts) {
 
   bam_file_rv <- reactiveValues(val = NULL, txt = NULL)
 

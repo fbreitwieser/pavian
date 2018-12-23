@@ -4,7 +4,8 @@
 \alias{alignmentModule}
 \title{Server part of alignment module}
 \usage{
-alignmentModule(input, output, session, sample_data, datatable_opts)
+alignmentModule(input, output, session,
+  datatable_opts = pavian::datatable_opts)
 }
 \arguments{
 \item{input}{Shiny input object}
@@ -12,8 +13,6 @@ alignmentModule(input, output, session, sample_data, datatable_opts)
 \item{output}{Shiny output object}
 
 \item{session}{Shiny session}
-
-\item{sample_data}{\code{data.frame} for samples}
 
 \item{datatable_opts}{Additional options for creating the datatable.}
 }

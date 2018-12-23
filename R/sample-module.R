@@ -240,7 +240,9 @@ sampleModule <- function(input, output, session, sample_data, reports,
     
     shiny::tagList(
       "Number of reads across all samples ","(",downloadLink(ns("save_plot1"),"PDF"),")",
-      plotOutput(ns("plot1"), height=paste0(max(200,input$height/1.5-75),"px"), click = ns("plot_click")),
+      #plotOutput(ns("plot1"), height=paste0(max(200,input$height/1.5-75),"px"), click = ns("plot_click")),
+      rbokeh::rbokehOutput(ns("plot1_bokeh")),
+      #, height=paste0(max(200,input$height/1.5-75),"px")),
       #"Percent of reads (after filtering) (",downloadLink(ns("save_plot2"),"PDF"),")",
       #plotOutput(ns("plot2"), height=paste0(max(200,input$height/2-75),"px"), click = ns("plot_click")),
       "Legend: The turqoise bar shows the number of reads that are identified at the specific taxon; the orange bar shows the number of reads identified at children of the specified taxon.",
@@ -255,15 +257,17 @@ sampleModule <- function(input, output, session, sample_data, reports,
     selected_taxon <- hover_plots$taxon
     taxIndex <- which(tax_data()$name == selected_taxon)[1]
     clade_reads_m <- na0(clade_reads()[taxIndex, ]) - na0(taxon_reads()[taxIndex,])
-    short_name <- substr(sample_data()$Name, 1, 10)
+    short_name <- substr(sample_data()$Name, 1, 12)
+    str(short_name)
     for (si in unique(short_name)) {
-      sel <- si %in% short_name
+      sel <- short_name == si
       if (sum(sel) > 1) {
         short_name[sel] <- sprintf("%s-%s", short_name[sel], seq_len(sum(sel)))
       }
     }
+    str(short_name)
     if (any(duplicated(short_name))) {
-      short_name[duplicated(short_name)]
+      print(short_name[duplicated(short_name)])
     }
     mydf <- data.frame(sample=rep(factor(short_name, levels=short_name),2), 
                        type=factor(rep(c("in total", "at taxon"), each=ncol(clade_reads())), levels = c("in total", "at taxon")), 
@@ -289,6 +293,46 @@ sampleModule <- function(input, output, session, sample_data, reports,
       )
   }
   
+  
+  plot_bokeh <- function(normalize = FALSE) {
+    requireNamespace("ggplot2")
+    #requireNamespace("cowplot")
+    req(hover_plots$taxon)
+    selected_taxon <- hover_plots$taxon
+    taxIndex <- which(tax_data()$name == selected_taxon)[1]
+    clade_reads_m <- na0(clade_reads()[taxIndex, ]) - na0(taxon_reads()[taxIndex,])
+    short_name <- substr(sample_data()$Name, 1, 12)
+    str(short_name)
+    for (si in unique(short_name)) {
+      sel <- short_name == si
+      if (sum(sel) > 1) {
+        short_name[sel] <- sprintf("%s-%s", short_name[sel], seq_len(sum(sel)))
+      }
+    }
+    str(short_name)
+    if (any(duplicated(short_name))) {
+      print(short_name[duplicated(short_name)])
+    }
+    ra <- paste("reads", c("to children", "to taxon"))
+    mydf <- data.frame(sample=sample_data()$Name, 
+                       "read.assignment"=factor(rep(ra, each=ncol(clade_reads())), levels = ra), 
+                       reads=c(clade_reads_m, taxon_reads()[taxIndex,]),
+                       pos=c(clade_reads()[taxIndex,], taxon_reads()[taxIndex,]))
+    colvec <- ifelse(colnames(clade_reads()) %in% input$sample_selector, "red","black")
+    #if (normalize) {
+    #  mydf$reads <- 100*mydf$reads / rep(sum_clade_reads(), each = 2)
+    #}
+    
+    ## TODO: Replace by D3 graph?
+    ##   See e.g. http://eyeseast.github.io/visible-data/2013/08/28/responsive-charts-with-d3/
+    rbokeh::figure(legend_location=NULL, title = paste(hover_plots$taxon, "abundance across samples"), tools = c("save")) %>% 
+      rbokeh::ly_bar(x="sample", y="reads", color="read.assignment", hover=TRUE, data = mydf) %>%
+      #rbokeh::ly_bar(x="sample", y="reads", alpha=0, hover=TRUE, data = mydf) %>%
+      rbokeh::theme_axis("x", major_label_orientation = 90)
+    #rbokeh::figure(mydf) %>% 
+    #  rbokeh::ly_bar(y="sample", x="reads", color="type")
+  }
+  
   output$save_plot1 <- downloadHandler(
     filename = function() {
       paste("plot1-", Sys.Date(), ".pdf", sep="")
@@ -298,6 +342,11 @@ sampleModule <- function(input, output, session, sample_data, reports,
                geom_text(aes(label = f2si2(pos), y=pos), hjust = 0.5, vjust = -.1))
     }
   )
+  
+  output$plot1_bokeh <- rbokeh::renderRbokeh ({
+    plot_bokeh(FALSE) 
+  })
+  
   
   output$plot1 <- renderPlot({
     plot_it(FALSE) +

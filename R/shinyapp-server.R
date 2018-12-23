@@ -255,7 +255,7 @@ pavianServer <- function(input, output, session) {
   
   #####################
   ## Alignment module
-  callModule(alignmentModule, "alignment", sample_data, datatable_opts = datatable_opts)
+  callModule(alignmentModule, "alignment", datatable_opts = datatable_opts)
   
   #####################
   ## Generate report

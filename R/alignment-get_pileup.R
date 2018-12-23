@@ -36,10 +36,12 @@ get_pileup <- function(bam_file, min_mapq = 0, top_n = NULL, ...) {
   covered_bp <- tapply(pileup$pos,pileup$seqnames,function(x) length(unique(x)))
   sum_count <- tapply(pileup$count,pileup$seqnames,sum)
 
-  seq_lengths <- get_seqlengths(bam_file)
+  bamHeader <- Rsamtools::scanBamHeader()
 
   attr(pileup,"covered_bp") <- covered_bp
   attr(pileup,"sum_count") <- sum_count
+  attr(pileup,"targets") <- bamHeader[[1]][["targets"]]
+  attr(pileup, "PG") <- bamHeader[[1]][["text"]][["@PG"]]
   pileup
 }
 
