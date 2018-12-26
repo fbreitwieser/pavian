@@ -20,6 +20,12 @@ pavian::runApp(port=5000)
 
 Pavian will then be available at http://127.0.0.1:5000 in the web browser of you choice.
 
+Alternatively, you can install and test Pavian with the following command:
+```r
+shiny::runGitHub("fbreitwieser/pavian", subdir = "inst/shinyapp")
+```
+
+
 **Installing Rsamtools**
 
 The alignment viewer uses `Rsamtools`. To install this package from Bioconductor, use the following commands
