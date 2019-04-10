@@ -18,7 +18,7 @@ serverDataPanel <- function(ns) {
                               #btnReset = icon("star"),
                               width = "100%",
                               btnSearch = icon("server"))),
-    div(style="max-height=400px; overflow-y: scroll",
+    div(style="max-height:400px; overflow-y: scroll",
       shinyFileTree::shinyFileTreeOutput(ns('file_tree'))
     ),
     shinyjs::hidden(actionButton(ns("btn_read_tree_dirs"), "Read selected directories")),
