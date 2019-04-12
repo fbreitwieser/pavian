@@ -15,7 +15,8 @@ serverDataPanel <- function(ns) {
     shinyWidgets::searchInput(ns("search_data_dir"),
                               label = "Specify directory on machine running Pavian",
                               value = getOption("pavian.server_dir", ""),
-                              #btnReset = icon("star"),
+                              btnReset = icon("level-up"),
+                              resetValue = NULL,
                               width = "100%",
                               btnSearch = icon("server"))),
     div(style="max-height:400px; overflow-y: scroll",
@@ -88,7 +89,7 @@ dataInputModuleUI <- function(id,
     Read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script centrifuge-kreport that is distributed with Centrifuge. 
       </p>
       <p>
-      For help, and to report an issue with the tool, please go to <a target='blank' href='https://github.com/fbreitwieser/pavian'>https://github.com/fbreitwieser/pavian</a>.
+      For help and more documenation please go to <a target='blank' href='https://github.com/fbreitwieser/pavian'>https://github.com/fbreitwieser/pavian</a>.
       </p>"
     )
   ),
@@ -259,11 +260,16 @@ dataInputModule <- function(input, output, session,
   })
   
   display_tree <- reactiveValues(val = FALSE)
+
+  file_tree_dir <- reactiveValues(val = NULL)
+
+  #observeEvent(input$search_data_dir, {
+  #})
   
   output$file_tree <- shinyFileTree::renderShinyFileTree({
-    req(input$search_data_dir)
+    data_dir <- file_tree_dir$val
+    req(data_dir)
     req(display_tree$val)
-    data_dir <- isolate(input$search_data_dir)
     req(length(data_dir) > 0 && nchar(data_dir) > 0)
     shinyjs::disable("btn_read_tree_dirs")
     shinyjs::show("btn_read_tree_dirs")
@@ -273,6 +279,13 @@ dataInputModule <- function(input, output, session,
                                                                                       max_depth=1,
                                                                                       hide_files=TRUE)),
                                  plugins = c("wholerow"))
+  })
+
+  observeEvent(input$file_tree_dblclick, {
+    message("doubleclick observed")
+    fnames <- sub(" \\([0-9]+ f[io].*\\)$", "", input$file_tree_selected)
+    updateSearchInput(session, "search_data_dir", value = fnames)
+    file_tree_dir$val <- fnames
   })
   
   observeEvent(input$file_tree_selected, {
@@ -293,7 +306,11 @@ dataInputModule <- function(input, output, session,
   })
   
   observeEvent(input$search_data_dir_reset, {
-    message(input$search_data_dir)
+    tryCatch({
+        fnames <- dirname(input$search_data_dir)
+    updateSearchInput(session, "search_data_dir", value = fnames)
+    file_tree_dir$val <- fnames
+    })
   })
   
   observeEvent(input$search_data_dir, {
@@ -314,6 +331,8 @@ dataInputModule <- function(input, output, session,
         if (!is.null(recently_used_dir_user_config))
           writeLines(recently_used_dirs$val, recently_used_dir_user_config)
       }
+    } else {
+      file_tree_dir$val <- input$search_data_dir
     }
   })
   
