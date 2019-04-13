@@ -8,14 +8,14 @@ serverDataPanel <- function(ns) {
   tabPanel(
     "Use data on server",
     id = "server_dir",
-    "Be careful which directory you select - if there are too many files, the process might hang.",
-    " Pavian will check the specified directory and its direct children for report files.",
+    " Select a directory in the file browser and press 'Read selected directories' to load it into Pavian.",
+    " You may also use wildcards to directly upload specified paths.",
     br(),
     div(id="server_data_dir_div",
     shinyWidgets::searchInput(ns("search_data_dir"),
                               label = "Specify directory on machine running Pavian",
                               value = getOption("pavian.server_dir", ""),
-                              btnReset = icon("level-up"),
+                              btnReset = icon("glyphicon glyphicon-level-up"),
                               resetValue = NULL,
                               width = "100%",
                               btnSearch = icon("server"))),
@@ -159,7 +159,7 @@ dataInputModule <- function(input, output, session,
   observeEvent(pavian_options$server_dir, {
     req(pavian_options$server_dir)
     # require(shinyWidgets)
-    # req(exists('updateSearchInput', where='package:shinyWidgets', mode='function'))
+    #req(exists('updateSearchInput', where='package:shinyWidgets', mode='function'))
     tryCatch({
       shinyWidgets::updateSearchInput(session, "search_data_dir", value=pavian_options$server_dir)
     }, error = message)
@@ -237,7 +237,7 @@ dataInputModule <- function(input, output, session,
       read_error_msg$val_neg <- res$error_msg$val_neg
       if (is.null(read_error_msg$val_pos)) {
         if (is.null(res$error_msg$val_neg)) {
-          read_error_msg$val_neg <- "Unable to read report files form directory."
+          read_error_msg$val_neg <- "Unable to read report files from directory."
         }
         return(FALSE)
       }
@@ -277,15 +277,20 @@ dataInputModule <- function(input, output, session,
                                       state=list(opened=TRUE),
                                       children=shinyFileTree::get_list_from_directory(data_dir,
                                                                                       max_depth=1,
-                                                                                      hide_files=TRUE)),
-                                 plugins = c("wholerow"))
+                                                                                      show_dir_info=TRUE)),
+                                 opts = shinyFileTreeOpts(animation = FALSE, themes.stripes = FALSE),
+                                 plugins = c("wholerow", "types"))
   })
 
   observeEvent(input$file_tree_dblclick, {
-    message("doubleclick observed")
+    #message("doubleclick observed")
     fnames <- sub(" \\([0-9]+ f[io].*\\)$", "", input$file_tree_selected)
-    updateSearchInput(session, "search_data_dir", value = fnames)
-    file_tree_dir$val <- fnames
+    if (dir.exists(fnames)) {
+    tryCatch({
+      shinyWidgets::updateSearchInput(session, "search_data_dir", value = fnames)
+      file_tree_dir$val <- fnames
+    }, error = message)
+    }
   })
   
   observeEvent(input$file_tree_selected, {
@@ -307,10 +312,10 @@ dataInputModule <- function(input, output, session,
   
   observeEvent(input$search_data_dir_reset, {
     tryCatch({
-        fnames <- dirname(input$search_data_dir)
-    updateSearchInput(session, "search_data_dir", value = fnames)
-    file_tree_dir$val <- fnames
-    })
+      fnames <- dirname(input$search_data_dir)
+      shinyWidgets::updateSearchInput(session, "search_data_dir", value = fnames)
+      file_tree_dir$val <- fnames
+    }, error = message)
   })
   
   observeEvent(input$search_data_dir, {
@@ -350,19 +355,19 @@ dataInputModule <- function(input, output, session,
   })
   
   observeEvent(input$rud_1, {
-    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[1])
+    shinyWidgets::updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[1])
   })
   observeEvent(input$rud_2, {
-    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[2])
+    shinyWidgets::updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[2])
   })
   observeEvent(input$rud_3, {
-    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[3])
+    shinyWidgets::updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[3])
   })
   observeEvent(input$rud_4, {
-    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[4])
+    shinyWidgets::updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[4])
   })
   observeEvent(input$rud_5, {
-    updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[5])
+    shinyWidgets::updateSearchInput(session, "search_data_dir", value = recently_used_dirs$val[5])
   })
   
   update_sample_set_hot <- reactive({

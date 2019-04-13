@@ -30,6 +30,9 @@ read_server_directory1 <- function(data_dirs, sample_set_name = NULL,
       ))
     }
   }
+
+  #if (!glob_files) 
+  #}
   
   
   
