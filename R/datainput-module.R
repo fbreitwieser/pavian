@@ -15,7 +15,7 @@ serverDataPanel <- function(ns) {
     shinyWidgets::searchInput(ns("search_data_dir"),
                               label = "Specify directory on machine running Pavian",
                               value = getOption("pavian.server_dir", ""),
-                              btnReset = icon("glyphicon glyphicon-level-up"),
+                              btnReset = icon("level-up", lib="glyphicon"),
                               resetValue = NULL,
                               width = "100%",
                               btnSearch = icon("server"))),
@@ -278,7 +278,10 @@ dataInputModule <- function(input, output, session,
                                       children=shinyFileTree::get_list_from_directory(data_dir,
                                                                                       max_depth=1,
                                                                                       show_dir_info=TRUE)),
-                                 opts = shinyFileTreeOpts(animation = FALSE, themes.stripes = FALSE),
+                                 opts = shinyFileTree::shinyFileTreeOpts(
+                                            animation = FALSE, 
+                                            themes.stripes = FALSE,
+                                            multiple = TRUE),
                                  plugins = c("wholerow", "types"))
   })
 

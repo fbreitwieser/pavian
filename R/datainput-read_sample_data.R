@@ -9,11 +9,13 @@
 #' @return sample_data data.frame
 #' @export
 read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
-                             ext = c("report", "profile", "report.tsv"), glob_files = FALSE) {
+                             ext = c("report", "profile", "report.tsv"), 
+                             glob_files = FALSE, is_files = FALSE) {
   gd_sample_data <- FALSE
     
-  if (file.exists(file.path(my_dir,def_filename))) {
-    sample_data <- utils::read.delim(file.path(my_dir,def_filename), header = TRUE, sep = ";", stringsAsFactors = FALSE)
+  if (isTRUE(file.exists(file.path(my_dir,def_filename)))) {
+    sample_data <- utils::read.delim(file.path(my_dir,def_filename), 
+                                     header = TRUE, sep = ";", stringsAsFactors = FALSE)
 
     if (!"ReportFile" %in% colnames(sample_data)){
       warning("Required column 'ReportFile' not present in ",def_filename)
@@ -30,6 +32,8 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
   } else {
     if (isTRUE(glob_files)) {
       ReportFilePaths <- Sys.glob(my_dir)
+    } else if (isTRUE(is_files)) {
+      ReportFilePaths <- my_dir
     } else {
       ReportFilePaths <- setdiff(list.files(path = my_dir, full.names = TRUE),list.dirs(path = my_dir, recursive = FALSE, full.names = TRUE))
       #ReportFiles <- ReportFiles[ReportFiles != def_filename]
@@ -64,6 +68,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
   #if ("Class" %in% colnames(sample_data))
   #  sample_data$Class <- as.factor(sample_data$Class)
 
+  if (!isTRUE(glob_files) && !isTRUE(is_files)) {
   if ("CentrifugeOutFile" %in% colnames(sample_data) && !"CentrifugeOutFilePath" %in% colnames(sample_data))
     sample_data$CentrifugeOutFilePath <- file.path(my_dir, sample_data$CentrifugeOutFile)
 
@@ -72,6 +77,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
 
   if ("FastqFile" %in% colnames(sample_data) && ! "FastqFilePath" %in% colnames(sample_data))
     sample_data$FastqFilePath <- file.path(my_dir, sample_data$FastqFile)
+  }
 
   if (!"Include" %in% colnames(sample_data))
     sample_data <- cbind(FormatOK = rep(TRUE, nrow(sample_data)), 
