@@ -9,7 +9,6 @@ You can try out Pavian at https://fbreitwieser.shinyapps.io/pavian/.
 
 Pavian is a R package, and thus requires R to run. Look [here](http://a-little-book-of-r-for-bioinformatics.readthedocs.io/en/latest/src/installr.html) for how to install R. On Windows, you probably need to install [Rtools](cran.r-project.org/bin/windows/Rtools/). On Ubuntu, install `r-base-dev`. Once you started R, the following commands will install the package:
 ```r
-options(repos = c(CRAN = "http://cran.rstudio.com"))
 if (!require(remotes)) { install.packages("remotes") }
 remotes::install_github("fbreitwieser/pavian")
 ```
