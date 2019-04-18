@@ -73,9 +73,8 @@ dropdown_options <- function(ns) {
                    selected = c("Max"),inline=TRUE), 
     numericInput(ns("opt_min_scale_reads"), "Minimum scale for reads z-score", value = 1, min = 0),
     numericInput(ns("opt_min_scale_percent"), "Minimum scale for percent z-score", value = 0.001, min = 0),
-    numericInput(ns("opt_min_clade_reads"), "Hide clades with less than X reads to taxon or children", value = 1, min = 1, step = 1),
+    numericInput(ns("opt_min_clade_reads"), "Hide clades with less than X reads to taxon or children", value = 1, min = 1, step = 1)
     #numericInput(ns("opt_min_taxon_reads"), "Hide taxa with less than X reads", value = 1, min = 0, step = 1),
-    checkboxInput(ns("opt_groupSamples"),"Group samples", value = FALSE)
     )
 }
 
@@ -104,29 +103,35 @@ comparisonModuleUI_function <- function(ns) {
             shinyWidgets::radioGroupButtons(inputId = ns("opt_taxRank"), 
                                             label = NULL, choices = taxRanks1, status = "success")),
         div(style="display:inline-block",
-            shinyWidgets::checkboxGroupButtons(inputId = ns("opt_numericColumns"),  label = NULL, 
-				   choices = c("Reads"="cladeReads","%"="cladeReads %",
-					       "Rank"="cladeReads rank","Z-score (reads)"="cladeReads z-score","Z-score (%)"="cladeReads % z-score"), justified = FALSE, 
+            shinyWidgets::checkboxGroupButtons(inputId = ns("opt_numericColumns2"),  label = NULL, 
+				   choices = c("Reads"="identity", "%"="%",
+					       "Rank"="rank","Z-score (reads)"="z-score","Z-score (%)"="% z-score"), 
+                                               justified = FALSE, 
                                                status = "primary",
-                                               checkIcon = list(yes = icon("ok", lib = "glyphicon")), selected = "cladeReads")),
-        
+                                               checkIcon = list(yes = icon("ok", lib = "glyphicon")), 
+                                selected = "identity")),
+        div(style="display:inline-block",
+            shinyWidgets::checkboxGroupButtons(inputId = ns("opt_numericColumns1"), 
+                label = NULL, choices = c("Clade"="cladeReads", "Taxon"="taxonReads"), 
+                selected = "cladeReads",
+                status = "warning")),
         div(style="display:inline-block",selectizeInput(
-      ns('contaminant_selector_clade'),
-      allcontaminants, #selected = c("artificial sequences"),
-      label = NULL, multiple = TRUE,
-      options = list( maxItems = 25, create = TRUE, placeholder = 'Filter taxa' ),
-      width = "100%"
-      #   )
-        )), 
+            ns('contaminant_selector_clade'),
+            allcontaminants, #selected = c("artificial sequences"),
+            label = NULL, multiple = TRUE,
+            options = list( maxItems = 25, create = TRUE, placeholder = 'Filter taxa' ),
+            width = "100%")), 
         div(style="display:inline-block",title="Filter clade of selected taxon (click on a table row, first)",
-            actionButton(ns("btn_filter_row"), label=NULL, icon=icon("filter"))
-        ),
+            actionButton(ns("btn_filter_row"), label=NULL, icon=icon("filter"))),
         div(style="display:inline-block", shinyWidgets::dropdownButton(dropdown_options(ns),#icon=icon("gear"),
                                                                        circle = FALSE, label = "more options ..."
                                                                        #,tooltip = shinyWidgets::tooltipOptions(title = "Click to see more options."
                                                                        )),
-        div(style="display:inline-block", checkboxInput(ns("opt_hide_zero_taxa"),"Collapse taxa with no reads")),
-
+        div(style="display:inline-block", 
+            shinyWidgets::prettySwitch(ns("opt_hide_zero_taxa"),
+                                       "Collapse taxa with no reads", value=T, slim=T)),
+        div(style="display:inline-block", shinyjs::hidden(
+            shinyWidgets::prettySwitch(ns("opt_groupSamples"),"Group samples", value = FALSE, slim=T))),
         htmlOutput(ns("messages")),
         htmlOutput(ns("taxLineage")),
         div(id=ns("table_div"), style = 'overflow-x: scroll', DT::dataTableOutput(ns('dt_samples_comparison'))),
@@ -194,7 +199,8 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   })
 
   output$messages <- renderUI({
-    if (!any(grepl("clade", input$opt_numericColumns)) && input$opt_taxRank != "-") {
+    req(numericColumns1())
+    if (!any(grepl("clade", numericColumns1())) && input$opt_taxRank != "-") {
       return(tags$p("Warning: A specific taxonomic rank is selected, but data is not on the clade level. Thus any data from the taxa's children are not visible. Consider adding clade-level data."))
     }
   })
@@ -341,7 +347,6 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
         },
         error = function(e) message(e)
       )
-      str(res)
     }
     res <- res %>% na_false
     #validate(need(any(!is.na(res)), message = "Filtered all rows to NA!"),
@@ -377,16 +382,18 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
   })
   
   numericColumns <- reactive({
-    #paste0("clade",input$opt_numericColumns)
-    input$opt_numericColumns
+    req(numericColumns1())
+    req(numericColumns2())
+    paste(rep(numericColumns1(), times=length(numericColumns2())),
+          rep(numericColumns2(), each=length(numericColumns1())))
   })
 
   summarized_report_df <- reactive({
-    req(input$opt_numericColumns)
+    req(numericColumns())
     
     sel_rows <- shown_rows()
     validate(need(any(sel_rows,na.rm=T), message = "Filtered all data"))
-    message(sum(sel_rows, na.rm=T))
+    #message(sum(sel_rows, na.rm=T))
     td <- tax_data()[sel_rows,,drop=F]
     #if (input$opt_taxRank == "-" && input$opt_min_taxon_reads > 0) {
     if (input$opt_taxRank == "-" && input$opt_hide_zero_taxa) {
@@ -437,10 +444,24 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
 
   observeEvent(input$contaminant_selector_clade, {
   })
+
+  numericColumns1 <- reactive({
+    if (is.null(input$opt_numericColumns1)) {
+        shinyWidgets::updateCheckboxGroupButtons(session, ("opt_numericColumns1"), selected = "cladeReads")
+    }
+    input$opt_numericColumns1
+  })
+
+  numericColumns2 <- reactive({
+    if (is.null(input$opt_numericColumns2)) {
+        shinyWidgets::updateCheckboxGroupButtons(session, ("opt_numericColumns2"), selected = "identity")
+    }
+    input$opt_numericColumns2
+  })
   
   output$dt_samples_comparison <- DT::renderDataTable({
+    req(numericColumns())
     ## require columns that update the number of columns in the table
-    req(input$opt_numericColumns)
     input$opt_groupSamples
     input$opt_statsColumns
     
@@ -523,6 +544,15 @@ comparisonModule <- function(input, output, session, sample_data, tax_data, clad
       shinyjs::show("opt_hide_zero_taxa")
     } else {
       shinyjs::hide("opt_hide_zero_taxa")
+    }
+  })
+
+
+  observeEvent(numericColumns(), {
+    if (length(numericColumns()) > 1) {
+      shinyjs::show("opt_groupSamples")
+    } else {
+      shinyjs::hide("opt_groupSamples")
     }
   })
 

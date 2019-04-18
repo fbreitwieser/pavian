@@ -201,6 +201,9 @@ assayData.merged_reports <- function(x)
 #'
 #' @return Combined data.frame
 #' @export
+#' @examples
+#' report_dir <- system.file("shinyapp", "example-data", "brain-biopsies", package="pavian")
+#' reports <- read_reports(report_dir)
 merge_reports2 <- function(my_reports, col_names = NULL, fix_taxnames = TRUE, update_progress = FALSE,
                            id_cols = c("name", "taxRank", "taxID", "taxLineage"),
                            numeric_cols = c("cladeReads","taxonReads")) {
@@ -375,6 +378,7 @@ combine_df <- function(tax_data, reads) {
 
 get_dt_container <- function(numericColumns, taxColumns, sampleNames, groupSampleColumns = TRUE) {
   numericColumns <- sub("Reads"," reads",numericColumns)
+  numericColumns <- sub(" identity", "", numericColumns)
   if (length(numericColumns) > 1) {
     if (isTRUE(groupSampleColumns)) {
       groupedColumns <- sampleNames
@@ -437,6 +441,7 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
   numeric_data <- lapply(numericColumns2, function(column) {
     if (isTRUE(column[1] == "cladeReads")) {       mydata <- data.frame(cladeReads)
     } else if (isTRUE(column[1] == "taxonReads")) {  mydata <- data.frame(taxonReads)
+    #} else if (isTRUE(column[1] == "cladeKmers")) {  mydata <- data.frame(cladeKmers)
     } else { stop("column ", column, "??") }
     is_percent <- FALSE
     for (col in column[-1]) {
@@ -468,11 +473,13 @@ one_df <- function(cladeReads, taxonReads, tax_data, sample_data,
                                  center = med1,
                                  scale  = mad1)),4))
         
+      } else if (col == "identity") {
+        # do nothing
       } else {
         stop("Unknown columnd definition ",column[2],"?!")
       }
     }
-    colnames(mydata) <- paste(colnames(mydata),paste(column,collapse=" "),sep="\n")
+    colnames(mydata) <- paste(colnames(mydata),paste(setdiff(column,"identity"),collapse=" "),sep="\n")
     mydata[mydata == 0] <- NA
     
     if (!is.null(statsColumns)) {
