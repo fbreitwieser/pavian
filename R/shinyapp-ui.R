@@ -88,7 +88,7 @@ dashboardUI <- function(request) {
                 ),
                 dashboardBody(
                   shinyjs::useShinyjs(),
-                  tags$head(includeCSS("style.css")),
+                  tags$head(includeCSS(system.file("shinyapp", "style.css", package="pavian"))),
                   tags$script(HTML("$('body').addClass('sidebar-mini');")),
                   tabItems(
                     tabItem("Home",

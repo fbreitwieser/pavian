@@ -17,6 +17,7 @@ runApp <- function(cache_dir = "cache",
                    load_example_data = FALSE,
                    load_server_directory = FALSE,
                    maxUploadSize = NULL,
+                   enableBookmarking = "server",
                    ...) {
 
   appDir <- system.file("shinyapp", package = "pavian")
@@ -64,8 +65,14 @@ runApp <- function(cache_dir = "cache",
   )
 
   old_options <- options(new_options)
-  shiny::runApp(appDir,  ...)
-  
+
+  shiny::shinyApp(pavian::dashboardUI, pavian::pavianServer, enableBookmarking=enableBookmarking, options = list(...))
+
   ## TODO: Restoring options like this does not work - we never get here after shiny::runApp as the server keeps running
-  options(old_options)
+  #options(old_options)
+}
+
+#' @export
+pavianApp <- function(...) {
+    pavian::runApp(...)
 }
