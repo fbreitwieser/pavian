@@ -392,7 +392,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   if (is.null(has_header)) {
     has_header <- grepl("^[a-zA-Z#%\"]",first.line)
   }
-
+  is_metaphlan_fmt <- grepl("Metaphlan2_Analysis$", first.line)
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
   nrows <- ifelse(isTRUE(check_file), 5, -1)
@@ -437,9 +437,11 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     report <- report[tl_order, c("taxLineage", "taxonReads", "cladeReads")]
   } else if (has_header) {
     report <- tryCatch({
+      ## TODO: Having comment_char here causes a problem w/ Metaphlan report!!
+
       utils::read.table(myfile,sep="\t",header = T,
                         quote = "",stringsAsFactors=FALSE,
-                        comment.char = "#", nrows = nrows, 
+                        comment.char = ifelse(is_metaphlan_fmt, "", "#"), nrows = nrows, 
                         check.names=FALSE)
     }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
@@ -545,7 +547,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
       nrow(report) < 2 ||
       !((report[1,"name"] == "u_unclassified" && report[2,"name"] == "-_root") || report[1,"name"] == "-_root")) {
     message(paste("Warning: File",myfile,"does not have the required format"))
-    print(utils::head(report))
+    str(report)
     return(NULL)
   }
 

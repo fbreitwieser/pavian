@@ -103,6 +103,7 @@ read_server_directory1 <- function(dirs_or_files, sample_set_name = NULL,
     }
   
     sel_bad_sets <- sapply(new_sample_sets, function(x) is.null(x) || nrow(x) == 0)
+    bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
     new_sample_sets <- new_sample_sets[!sel_bad_sets]
     
     if (length(new_sample_sets) > 0) {
@@ -111,7 +112,6 @@ read_server_directory1 <- function(dirs_or_files, sample_set_name = NULL,
                                         paste_last(names(new_sample_sets), collapse="</b>, <b>", collapse_last="</b> and <b>"),
                                         sum(unlist(sapply(new_sample_sets, function(x) sum(x$FormatOK)))))
     }
-  bad_files <- unlist(sapply(new_sample_sets, attr, "bad_files"))
     if (length(bad_files) > 0) {
       read_error_msg$val_neg <- c(read_error_msg$val_neg,
                                   sprintf("The following files did not conform the report format: <br/> - <b>%s</b>",

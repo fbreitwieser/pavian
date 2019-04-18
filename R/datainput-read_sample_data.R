@@ -38,7 +38,7 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
       ReportFilePaths <- setdiff(list.files(path = my_dir, full.names = TRUE),list.dirs(path = my_dir, recursive = FALSE, full.names = TRUE))
       #ReportFiles <- ReportFiles[ReportFiles != def_filename]
       if (!is.null(ext))
-        ReportFilePaths <- ReportFilePaths[endsWith(ReportFilePaths, ext)]
+        ReportFilePaths <- ReportFilePaths[grepl(paste0(ext, "$", collapse="|"), ReportFilePaths)]
     }
     ReportFiles <- basename(ReportFilePaths)
     Name = basename(ReportFiles)
@@ -48,11 +48,11 @@ read_sample_data <- function(my_dir, def_filename = "sample_data.csv",
         Name <- substr(Name, 1, nchar(Name) - 1)
       }
     } else {
-    if (length(Name) > 1) {
-      while(max(nchar(Name)) >= 2 && length(unique(substr(Name, nchar(Name), nchar(Name)))) == 1) {
-        Name <- substr(Name, 1, nchar(Name) - 1)
+      if (length(Name) > 1) {
+        while(max(nchar(Name)) >= 2 && length(unique(substr(Name, nchar(Name), nchar(Name)))) == 1) {
+          Name <- substr(Name, 1, nchar(Name) - 1)
+        }
       }
-    }
     }
 
     sample_data <- data.frame(Name,
