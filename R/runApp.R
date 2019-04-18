@@ -7,6 +7,7 @@
 #' @param load_server_directory Load server directory.
 #' @param load_example_data Load example data.
 #' @param maxUploadSize Maximum upload size for reports and BAM files.
+#' @param enableBookmarking Enable bookmarking? Possible values 'disable' or 'server' (default).
 #'
 #' @param ... Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.
 #'
@@ -72,6 +73,7 @@ runApp <- function(cache_dir = "cache",
   #options(old_options)
 }
 
+#' @describeIn runApp Create pavian app (passes arguments to runApp)
 #' @export
 pavianApp <- function(...) {
     pavian::runApp(...)

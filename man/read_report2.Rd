@@ -4,8 +4,8 @@
 \alias{read_report2}
 \title{Read kraken or centrifuge-style report}
 \usage{
-read_report2(myfile, collapse = TRUE, keep_taxRanks = c("D", "K", "P", "C",
-  "O", "F", "G", "S"), min.depth = 0, filter_taxon = NULL,
+read_report2(myfile, collapse = TRUE, keep_taxRanks = c("D", "K", "P",
+  "C", "O", "F", "G", "S"), min.depth = 0, filter_taxon = NULL,
   has_header = NULL, add_taxRank_columns = FALSE)
 }
 \arguments{

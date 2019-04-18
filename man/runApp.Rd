@@ -2,11 +2,15 @@
 % Please edit documentation in R/runApp.R
 \name{runApp}
 \alias{runApp}
+\alias{pavianApp}
 \title{Run Pavian web interface}
 \usage{
 runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
   server_access = TRUE, load_example_data = FALSE,
-  load_server_directory = FALSE, maxUploadSize = NULL, ...)
+  load_server_directory = FALSE, maxUploadSize = NULL,
+  enableBookmarking = "server", ...)
+
+pavianApp(...)
 }
 \arguments{
 \item{cache_dir}{Directory to save temporary files.}
@@ -21,8 +25,15 @@ runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
 
 \item{maxUploadSize}{Maximum upload size for reports and BAM files.}
 
+\item{enableBookmarking}{Enable bookmarking? Possible values 'disable' or 'server' (default).}
+
 \item{...}{Additional arguments to \code{\link[shiny]{runApp}}, such as \code{host} and \code{port}.}
 }
 \description{
 Run Pavian web interface
 }
+\section{Functions}{
+\itemize{
+\item \code{pavianApp}: Create pavian app (passes arguments to runApp)
+}}
+

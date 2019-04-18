@@ -4,11 +4,10 @@
 \alias{read_reports}
 \title{Read metagenomics classification results ('reports'), with Shiny progress bar}
 \usage{
-read_reports(report_files, report_names = basename(report_files),
-  cache_dir = NULL)
+read_reports(report_files, report_names = NULL, cache_dir = NULL)
 }
 \arguments{
-\item{report_files}{character vector with files}
+\item{report_files}{character vector with files, or a data.frame from read_sample_data, or a single directory path}
 
 \item{report_names}{character vector with names}
 
@@ -19,4 +18,8 @@ List of reports
 }
 \description{
 Read metagenomics classification results ('reports'), with Shiny progress bar
+}
+\examples{
+report_dir <- system.file("shinyapp", "example-data", "brain-biopsies", package="pavian")
+reports <- read_reports(report_dir)
 }

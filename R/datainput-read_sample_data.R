@@ -5,6 +5,7 @@
 #' @param def_filename filename
 #' @param ext extension of report files
 #' @param glob_files glob files?
+#' @param is_files Is input a list of files?
 #'
 #' @return sample_data data.frame
 #' @export

@@ -29,3 +29,7 @@ Combined data.frame
 Merge report files into a wide format, with column(s) for each
 report.
 }
+\examples{
+report_dir <- system.file("shinyapp", "example-data", "brain-biopsies", package="pavian")
+reports <- read_reports(report_dir)
+}

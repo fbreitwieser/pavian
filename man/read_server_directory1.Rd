@@ -4,16 +4,18 @@
 \alias{read_server_directory1}
 \title{Search for classification results in a directory and its children}
 \usage{
-read_server_directory1(data_dirs, sample_set_name = NULL,
-  existing_sample_set_names = NULL, include_base_dir = T,
-  display_messages = TRUE, glob_files = FALSE)
+read_server_directory1(dirs_or_files, sample_set_name = NULL,
+  existing_sample_set_names = NULL, unique_sample_set_name = FALSE,
+  include_base_dir = T, display_messages = TRUE, glob_files = FALSE)
 }
 \arguments{
-\item{data_dirs}{data directory}
+\item{dirs_or_files}{data directory}
 
 \item{sample_set_name}{name of sample set}
 
 \item{existing_sample_set_names}{names of current sample sets that may be updated}
+
+\item{unique_sample_set_name}{Require sample set names to be unique?}
 
 \item{include_base_dir}{include base directory}
 

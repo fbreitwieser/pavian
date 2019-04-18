@@ -3,12 +3,12 @@
 #' @param dirs_or_files data directory
 #' @param sample_set_name name of sample set
 #' @param existing_sample_set_names names of current sample sets that may be updated
+#' @param unique_sample_set_name Require sample set names to be unique?
 #' @param include_base_dir include base directory
 #' @param display_messages display messages?
 #' @param glob_files glob files?
 #'
 #' @return resulting sample sets
-#' @export
 read_server_directory1 <- function(dirs_or_files, sample_set_name = NULL,
                                    existing_sample_set_names = NULL,
                                    unique_sample_set_name = FALSE,

@@ -5,8 +5,8 @@
 \title{UI part of pavian data input module}
 \usage{
 dataInputModuleUI(id, server_access = getOption("pavian.server_access",
-  default = FALSE), start_with = getOption("pavian.start_data_input_with",
-  "Upload files"))
+  default = FALSE),
+  start_with = getOption("pavian.start_data_input_with", "Upload files"))
 }
 \arguments{
 \item{id}{Namespace ID.}

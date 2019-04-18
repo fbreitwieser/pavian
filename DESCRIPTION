@@ -33,5 +33,5 @@ Remotes:
     github::fbreitwieser/shinyFileTree
 License: GPL-3
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 VignetteBuilder: knitr

@@ -1,7 +1,6 @@
 
 
 # Common datatable options. It's reactive so that we can add the compact class to tables on demand
-#' @export
 datatable_opts <- reactiveValues(
     rownames = FALSE,
     selection = 'single',

@@ -4,8 +4,8 @@
 \alias{comparisonModule}
 \title{Server part of comparison module}
 \usage{
-comparisonModule(input, output, session, sample_data, tax_data, clade_reads,
-  taxon_reads, datatable_opts = NULL, filter_func = NULL,
+comparisonModule(input, output, session, sample_data, tax_data,
+  clade_reads, taxon_reads, datatable_opts = NULL, filter_func = NULL,
   tax_data_add = NULL, search = NULL)
 }
 \arguments{
