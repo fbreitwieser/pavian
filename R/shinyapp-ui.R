@@ -9,9 +9,9 @@
 dashboardUI <- function(request) {
   dashboardPage(skin="black", title = "Pavian",
                 dashboardHeader(title = "",
-                                tags$li(class = "dropdown",
-                                        tags$img(src="baboon-outline.png")
-                                ),
+                                #tags$li(class = "dropdown",
+                                #        tags$img(src=system.file("shinyapp","www", "baboon-outline.png", package="pavian"))
+                                #),
                                 tags$li(class = "dropdown",
                                         tags$a(href="#",
                                                #target="_blank",
@@ -36,7 +36,7 @@ dashboardUI <- function(request) {
                     condition = "input.sample_set_names != ''",
                     sidebarMenu(
                       id = "tabs",
-                      menuItem("Data Selection", tabName="Home", icon = icon("cloud-upload"), selected = TRUE),
+                      menuItem("Data Input", tabName="Home", icon = icon("cloud-upload"), selected = TRUE),
                       div(class="set_selector hide_when_sidebar_collapsed no_padding", 
                           shinyjs::hidden(selectInput("sample_set_names", choices=NULL, label=NULL, multiple=TRUE, 
                                                       selectize = FALSE, size = 5))),

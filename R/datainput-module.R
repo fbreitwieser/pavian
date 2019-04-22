@@ -237,7 +237,7 @@ dataInputModule <- function(input, output, session,
       read_error_msg$val_neg <- res$error_msg$val_neg
       if (is.null(read_error_msg$val_pos)) {
         if (is.null(res$error_msg$val_neg)) {
-          read_error_msg$val_neg <- "Unable to read report files from directory."
+          read_error_msg$val_neg <- sprintf("Unable to read report files from directory %s.", data_dir)
         }
         return(FALSE)
       }
