@@ -152,8 +152,10 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
   observeEvent(input$btn_install_rsamtools, {
     shiny::withProgress({
       tryCatch({
-        source("https://bioconductor.org/biocLite.R")
-        biocLite("Rsamtools")
+        if (!requireNamespace("BiocManager", quietly = TRUE))
+            install.packages("BiocManager")
+
+        BiocManager::install("Rsamtools")
       }, error=function(e) {})
     }, message = "Installing Rsamtools ... (will take a while)")
     if (requireNameSpace("Rsamtools")) {

@@ -208,11 +208,11 @@ sampleModule <- function(input, output, session, sample_data, reports,
       p(HTML(paste0("Rank ", strong(tax_taxRank_names[sel_row$taxRank]),
                     {if ("taxID" %in% colnames(sel_row)) {
                       HTML(paste0(", TaxID ", sel_row$taxID, " [",
-                                  a(href=sprintf("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=%s", sel_row$taxID, target="_blank"), "NCBI Taxonomy"), ", ",
-                                  a(href=sprintf("https://www.ncbi.nlm.nih.gov/assembly/?term=txid%s[Organism:exp]", sel_row$taxID, target="_blank"), "Assemblies"),", "))
+                                  a(href=sprintf("https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=%s", sel_row$taxID), target="_blank", "NCBI Taxonomy"), ", ",
+                                  a(href=sprintf("https://www.ncbi.nlm.nih.gov/assembly/?term=txid%s[Organism:exp]", sel_row$taxID), target="_blank", "Assemblies"),", "))
                     } else { HTML("[")}},"",
-                    a(href=sprintf("https://www.ncbi.nlm.nih.gov/pubmed/?term=%s", sel_row$name, target="_blank"), "PubMed"),", ",
-                    a(href=sprintf("https://scholar.google.at/scholar?q=%s", sel_row$name, target="_blank"), "Google Scholar"),"]")))
+                    a(href=sprintf("https://www.ncbi.nlm.nih.gov/pubmed/?term=%s", sel_row$name), target="_blank", "PubMed"),", ",
+                    a(href=sprintf("https://scholar.google.at/scholar?q=%s", sel_row$name), target="_blank"), "Google Scholar"),"]"))
     )
   })
   

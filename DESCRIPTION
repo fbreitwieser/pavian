@@ -7,31 +7,18 @@ BugReports: https://github.com/fbreitwieser/pavian/issues
 Authors@R: person("Florian P", "Breitwieser", email = "fbreitw1@jhu.edu", role = c("aut", "cre"))
 Description: R package and Shiny app to visualize and analyze metagenomics classification results from
     Kraken, Centrifuge and MetaPhlAn.
-Imports:
-    shiny (>= 0.1.12),
-    shinydashboard,
-    shinyjs,
-    shinycssloaders,
-    shinyWidgets (>= 0.4.1.970),
-    DT,
-    dplyr,
-    htmltools,
-    htmlwidgets,
-    plyr,
-    rmarkdown,
-    sankeyD3,
-    shinyFileTree,
-    RColorBrewer,
-    colorspace,
-    ggplot2,
-    rhandsontable,
-    rappdirs
-Suggests: 
-    Rsamtools, knitr
-Remotes:
-    github::fbreitwieser/sankeyD3,
-    github::fbreitwieser/shinyFileTree
+Imports: shiny (>= 0.1.12), shinydashboard, shinyjs, shinyWidgets (>=
+        0.4.1.970), DT, dplyr, htmltools, htmlwidgets, plyr, rmarkdown,
+        sankeyD3, shinyFileTree, RColorBrewer, colorspace, ggplot2,
+        rhandsontable, rappdirs
+Suggests: Rsamtools, knitr
+Remotes: github::fbreitwieser/sankeyD3,
+        github::fbreitwieser/shinyFileTree
 License: GPL-3
 LazyData: TRUE
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2019-09-04 17:11:05 UTC; fbreitwieser
+Author: Florian P Breitwieser [aut, cre]
+Maintainer: Florian P Breitwieser <fbreitw1@jhu.edu>

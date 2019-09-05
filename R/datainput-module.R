@@ -32,9 +32,9 @@ exampleDataPanel <- function(ns) {
     "Example data",
     HTML(
       "Two example datasets are available: <i>brain-biopsies</i> and <i>hmp-stool</i>. The first set is
-      from <a href='http://nn.neurology.org/content/3/4/e251.full'>ten
+      from <a target='_blank' href='http://nn.neurology.org/content/3/4/e251.full'>ten
       patients with suspected infections of the nervous system</a>, analyzed with Kraken. The second set is sequenced stool
-      from the <a href='http://hmpdacc.org/'>Human Microbiome Project</a>,
+      from the <a target='_blank' href='http://hmpdacc.org/'>Human Microbiome Project</a>,
       analyzed with MetaPhlAn. Note that for MetaPhlAn, the values are percentages/abundances rather than reads."
     ),
     br(),
@@ -86,10 +86,10 @@ dataInputModuleUI <- function(id,
       "
       <p>
       Pavian is a tool for interactive analysis of metagenomics classification results. 
-    Read more about it in the <a target='blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='blank'>R</a> and <a target='blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script centrifuge-kreport that is distributed with Centrifuge. 
+    Read more about it in the <a target='_blank' href='http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html'>Preprint</a> or its <a target='blank' href='https://raw.githubusercontent.com/fbreitwieser/pavian/blob/master/inst/doc/pavian-walkthrough.pdf'>vignette</a>. It's built on <a href='https://www.r-project.org/' target='_blank'>R</a> and <a target='_blank' href='http://shiny.rstudio.com/'>Shiny</a>, and supports <a target='_blank' href='https://ccb.jhu.edu/software/kraken/'>Kraken</a>, <a target='_blank' href='https://github.com/infphilo/centrifuge'>Centrifuge</a> and <a target='_blank' href='https://bitbucket.org/biobakery/metaphlan2'>MetaPhlAn</a> report files. Please note that currently the default Centrifuge report format is not supported. To generate a compatible report, use the script centrifuge-kreport that is distributed with Centrifuge. 
       </p>
       <p>
-      For help and more documenation please go to <a target='blank' href='https://github.com/fbreitwieser/pavian'>https://github.com/fbreitwieser/pavian</a>.
+      For help and more documenation please go to <a target='_blank' href='https://github.com/fbreitwieser/pavian'>https://github.com/fbreitwieser/pavian</a>.
       </p>"
     )
   ),
