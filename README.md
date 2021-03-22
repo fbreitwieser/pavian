@@ -38,6 +38,11 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("Rsamtools")
 ```
 
+## Installing to Shinyapps.io
+
+In order to install to Shinyapps.io, because of the Bioconductor repo dependencies, you need to first set the options using `setRepositories()` in R. At that point a `rsconnect::deployApp('pavian/inst/shinapp/') should work.
+
+
 ## Docker image
 
 As an alternative to installing Pavian in R, a Docker image is available at [florianbw/pavian](https://hub.docker.com/r/florianbw/pavian/). When you run this docker image, Pavian will start automatically on port 80, which you need to make available to the hosting machine. On the shell, you can pull the image and remap the Docker port to port 5000 with the following commands:

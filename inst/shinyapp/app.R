@@ -8,9 +8,9 @@ if(!require(pavian)){
 }
 
 if (!require(Rsamtools)) {
-  source("https://bioconductor.org/biocLite.R")
-  biocLite("Rsamtools")
-  library(Rsamtools)
+   if (!requireNamespace("BiocManager", quietly = TRUE))
+      install.packages("BiocManager")
+   BiocManager::install("Rsamtools")
 }
 
 if (!dir.exists(rappdirs::user_config_dir("pavian", expand = FALSE))) {
