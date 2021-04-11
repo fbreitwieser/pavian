@@ -11,7 +11,11 @@ Imports: shiny (>= 0.1.12), shinydashboard, shinyjs, shinyWidgets (>=
         0.4.1.970), DT, dplyr, htmltools, htmlwidgets, plyr, rmarkdown,
         sankeyD3, shinyFileTree, RColorBrewer, colorspace, ggplot2,
         rhandsontable
-Suggests: BiocManager, Rsamtools, knitr
+Suggests: 
+    BiocManager,
+    Rsamtools,
+    knitr,
+    testthat
 Remotes: github::fbreitwieser/sankeyD3,
         github::fbreitwieser/shinyFileTree
 License: GPL-3

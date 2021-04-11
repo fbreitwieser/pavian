@@ -395,6 +395,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   is_metaphlan_fmt <- grepl("Metaphlan2_Analysis$", first.line)
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
+  ntabs <- as.numeric(regexpr('\t', first.line))
   nrows <- ifelse(isTRUE(check_file), 5, -1)
   if (!is_krakenu_fmt && is_kaiju_fmt) {
     cont <- readLines(myfile)
@@ -457,16 +458,28 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     colnames(report)[colnames(report) %in% c("dup")] <- "kmerDuplicity"
     colnames(report)[colnames(report) %in% c("cov")] <- "kmerCoverage"
   } else {
+    report <- NULL
+    if (ntabs == 5) {
+      col_names <-  c("percentage","cladeReads","taxonReads","taxRank","taxID","name")
+    } else if (ntabs == 7) {
+      col_names <- c("percentage","cladeReads","taxonReads", "n_unique_kmers","n_kmers", "taxRank","taxID","name")
+    } 
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = F,
-                        col.names = c("percentage","cladeReads","taxonReads","taxRank","taxID","name"),
+                        col.names = col_names,
                         quote = "",stringsAsFactors=FALSE,
                         nrows = nrows)
     }, error=function(x) NULL, warning=function(x) NULL)
-    if (is.null(report)) { return(NULL); }
+    
+    if (is.null(report)) {
+      dmessage(paste("Warning: File",myfile,"does not have the required format"))
+      return(NULL); 
+    }
+    
   }
 
   if (ncol(report) < 2) {
+    dmessage(paste("Warning: File",myfile,"does not have the required format"))
     return(NULL) 
   }
   if (colnames(report)[2] == "Metaphlan2_Analysis") {
@@ -546,7 +559,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   if (!all(c("name","taxRank") %in% colnames(report)) ||
       nrow(report) < 2 ||
       !((report[1,"name"] == "u_unclassified" && report[2,"name"] == "-_root") || report[1,"name"] == "-_root")) {
-    message(paste("Warning: File",myfile,"does not have the required format"))
+    dmessage(paste("Warning: File",myfile,"does not have the required format"))
     str(report)
     return(NULL)
   }
