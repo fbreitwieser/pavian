@@ -4,8 +4,7 @@
 \alias{filter_taxa}
 \title{Filter taxon}
 \usage{
-filter_taxa(tax_data, rm_clades = NULL, rm_taxa = NULL,
-  taxRank = "-")
+filter_taxa(tax_data, rm_clades = NULL, rm_taxa = NULL, taxRank = "-")
 }
 \arguments{
 \item{tax_data}{tax_data}

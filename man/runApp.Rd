@@ -5,10 +5,16 @@
 \alias{pavianApp}
 \title{Run Pavian web interface}
 \usage{
-runApp(cache_dir = "cache", server_dir = Sys.glob("~"),
-  server_access = TRUE, load_example_data = FALSE,
-  load_server_directory = FALSE, maxUploadSize = NULL,
-  enableBookmarking = "server", ...)
+runApp(
+  cache_dir = "cache",
+  server_dir = Sys.glob("~"),
+  server_access = TRUE,
+  load_example_data = FALSE,
+  load_server_directory = FALSE,
+  maxUploadSize = NULL,
+  enableBookmarking = "server",
+  ...
+)
 
 pavianApp(...)
 }

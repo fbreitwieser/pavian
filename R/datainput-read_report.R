@@ -395,7 +395,9 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   is_metaphlan_fmt <- grepl("Metaphlan2_Analysis$", first.line)
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
-  ntabs <- as.numeric(regexpr('\t', first.line))
+  
+  ntabs <- lengths(regmatches(first.line, gregexpr("\t", first.line)))
+
   nrows <- ifelse(isTRUE(check_file), 5, -1)
   if (!is_krakenu_fmt && is_kaiju_fmt) {
     cont <- readLines(myfile)

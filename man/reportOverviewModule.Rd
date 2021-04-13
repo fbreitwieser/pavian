@@ -4,8 +4,14 @@
 \alias{reportOverviewModule}
 \title{Shiny modules to display an overview of metagenomics reports}
 \usage{
-reportOverviewModule(input, output, session, sample_data, reports,
-  datatable_opts = NULL)
+reportOverviewModule(
+  input,
+  output,
+  session,
+  sample_data,
+  reports,
+  datatable_opts = NULL
+)
 }
 \arguments{
 \item{input}{Shiny input object.}

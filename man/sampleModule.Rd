@@ -4,9 +4,18 @@
 \alias{sampleModule}
 \title{Server part for sample module}
 \usage{
-sampleModule(input, output, session, sample_data, reports, tax_data,
-  clade_reads, taxon_reads, selected_sample = NULL,
-  datatable_opts = NULL)
+sampleModule(
+  input,
+  output,
+  session,
+  sample_data,
+  reports,
+  tax_data,
+  clade_reads,
+  taxon_reads,
+  selected_sample = NULL,
+  datatable_opts = NULL
+)
 }
 \arguments{
 \item{input}{Shiny input object.}

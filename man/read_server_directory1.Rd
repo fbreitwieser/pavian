@@ -4,9 +4,15 @@
 \alias{read_server_directory1}
 \title{Search for classification results in a directory and its children}
 \usage{
-read_server_directory1(dirs_or_files, sample_set_name = NULL,
-  existing_sample_set_names = NULL, unique_sample_set_name = FALSE,
-  include_base_dir = T, display_messages = TRUE, glob_files = FALSE)
+read_server_directory1(
+  dirs_or_files,
+  sample_set_name = NULL,
+  existing_sample_set_names = NULL,
+  unique_sample_set_name = FALSE,
+  include_base_dir = T,
+  display_messages = TRUE,
+  glob_files = FALSE
+)
 }
 \arguments{
 \item{dirs_or_files}{data directory}

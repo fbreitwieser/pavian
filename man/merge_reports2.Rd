@@ -5,9 +5,14 @@
 \title{Merge report files into a wide format, with column(s) for each
 report.}
 \usage{
-merge_reports2(my_reports, col_names = NULL, fix_taxnames = TRUE,
-  update_progress = FALSE, id_cols = c("name", "taxRank", "taxID",
-  "taxLineage"), numeric_cols = c("cladeReads", "taxonReads"))
+merge_reports2(
+  my_reports,
+  col_names = NULL,
+  fix_taxnames = TRUE,
+  update_progress = FALSE,
+  id_cols = c("name", "taxRank", "taxID", "taxLineage"),
+  numeric_cols = c("cladeReads", "taxonReads")
+)
 }
 \arguments{
 \item{my_reports}{Report data.frames.}

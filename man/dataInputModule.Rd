@@ -4,12 +4,16 @@
 \alias{dataInputModule}
 \title{Server part of pavian data input module.}
 \usage{
-dataInputModule(input, output, session, config_dir = NULL,
+dataInputModule(
+  input,
+  output,
+  session,
+  config_dir = NULL,
   server_access = getOption("pavian.server_access", default = FALSE),
-  load_server_directory = getOption("pavian.load_server_directory",
-  default = FALSE),
-  load_example_data = getOption("pavian.load_example_data", default =
-  FALSE), pavian_options = NULL)
+  load_server_directory = getOption("pavian.load_server_directory", default = FALSE),
+  load_example_data = getOption("pavian.load_example_data", default = FALSE),
+  pavian_options = NULL
+)
 }
 \arguments{
 \item{input}{Scoped input.}
