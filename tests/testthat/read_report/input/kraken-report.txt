@@ -1,0 +1,100 @@
+  0.62	212758	212758	U	0	unclassified
+ 99.38	34120071	149908	-	1	root
+ 98.51	33819699	134	-	131567	  cellular organisms
+ 98.45	33801051	4375	D	2	    Bacteria
+ 44.58	15304881	16363	P	1224	      Proteobacteria
+ 25.80	8858966	8538	C	1236	        Gammaproteobacteria
+  9.62	3304270	21338	O	91347	          Enterobacterales
+  6.39	2194601	135397	F	543	            Enterobacteriaceae
+  2.70	927482	48597	G	570	              Klebsiella
+  1.93	660954	659371	S	571	                Klebsiella oxytoca
+  0.00	399	0	-	1000005996	                  GCF_001548355.1 Klebsiella oxytoca strain=JKo3
+  0.00	393	393	-	1000005997	                    NZ_AP014951.1 Klebsiella oxytoca DNA, complete genome, strain: JKo3
+  0.00	5	5	-	1000005998	                    NZ_AP014952.1 Klebsiella oxytoca plasmid pKO_JKo3_1 DNA, complete genome, strain: JKo3
+  0.00	1	1	-	1000006001	                    NZ_AP014955.1 Klebsiella oxytoca plasmid pKO_JKo3_4 DNA, complete genome, strain: JKo3
+  0.00	398	0	-	1000005989	                  GCF_001022295.1 Klebsiella oxytoca strain=CAV1099
+  0.00	317	317	-	1000005990	                    NZ_CP011597.1 Klebsiella oxytoca strain CAV1099, complete genome
+  0.00	81	81	-	1000005994	                    NZ_CP011593.1 Klebsiella oxytoca strain CAV1099 plasmid pCAV1099-69, complete sequence
+  0.00	326	0	-	1000005976	                  GCF_001022195.1 Klebsiella oxytoca strain=CAV1374
+  0.00	324	324	-	1000005977	                    NZ_CP011636.1 Klebsiella oxytoca strain CAV1374, complete genome
+  0.00	1	1	-	1000005979	                    NZ_CP011633.1 Klebsiella oxytoca strain CAV1374 plasmid pCAV1374-150, complete sequence
+  0.00	1	1	-	1000005980	                    NZ_CP011628.1 Klebsiella oxytoca strain CAV1374 plasmid pCAV1374-16, complete sequence
+  0.00	293	0	-	1000006016	                  GCF_002072655.1 Klebsiella oxytoca strain=AR_0147
+  0.00	292	292	-	1000006017	                    NZ_CP020358.1 Klebsiella oxytoca strain AR_0147, complete genome
+  0.00	1	1	-	1000006018	                    NZ_CP020359.1 Klebsiella oxytoca strain AR_0147 plasmid unitig_2, complete sequence
+  0.00	110	0	-	1333852	                  Klebsiella oxytoca KONIH1
+  0.00	110	0	-	1000005964	                    GCF_000714655.1 Klebsiella oxytoca KONIH1
+  0.00	110	110	-	1000005965	                      NZ_CP008788.1 Klebsiella oxytoca KONIH1, complete genome
+  0.00	40	0	-	1000006002	                  GCF_001970835.1 Klebsiella oxytoca strain=CAV1752
+  0.00	26	26	-	1000006005	                    NZ_CP018361.1 Klebsiella oxytoca strain CAV1752 plasmid pCAV1752-278, complete sequence
+  0.00	13	13	-	1000006003	                    NZ_CP018362.1 Klebsiella oxytoca strain CAV1752, complete genome
+  0.00	1	1	-	1000006004	                    NZ_CP018360.1 Klebsiella oxytoca strain CAV1752 plasmid pCAV1752-111, complete sequence
+  0.00	15	0	-	1000005969	                  GCF_001022115.1 Klebsiella oxytoca strain=CAV1335
+  0.00	15	15	-	1000005970	                    NZ_CP011618.1 Klebsiella oxytoca strain CAV1335, complete genome
+  0.00	2	0	-	1000006009	                  GCF_001870185.1 Klebsiella oxytoca strain=CAV1015
+  0.00	2	2	-	1000006010	                    NZ_CP017928.1 Klebsiella oxytoca strain CAV1015 chromosome, complete genome
+  0.60	206219	0	S	2026240	                Klebsiella quasivariicola
+  0.60	206219	156	-	1000024047	                  GCF_002269255.1 Klebsiella quasivariicola strain=KPN1705
+  0.59	203947	203947	-	1000024048	                    NZ_CP022823.1 Klebsiella quasivariicola strain KPN1705 chromosome, complete genome
+  0.00	1333	1333	-	1000024049	                    NZ_CP022824.1 Klebsiella quasivariicola strain KPN1705 plasmid pKPN1705-1, complete sequence
+  0.00	727	727	-	1000024050	                    NZ_CP022825.1 Klebsiella quasivariicola strain KPN1705 plasmid pKPN1705-2, complete sequence
+  0.00	56	56	-	1000024051	                    NZ_CP022826.1 Klebsiella quasivariicola strain KPN1705 plasmid pKPN1705-3, complete sequence
+  0.03	10987	10033	S	573	                Klebsiella pneumoniae
+  0.00	333	29	-	72407	                  Klebsiella pneumoniae subsp. pneumoniae
+  0.00	142	0	-	1193292	                    Klebsiella pneumoniae subsp. pneumoniae 1084
+  0.00	142	0	-	1000006054	                      GCF_000294365.1 Klebsiella pneumoniae subsp. pneumoniae 1084
+  0.00	142	142	-	1000006055	                        NC_018522.1 Klebsiella pneumoniae subsp. pneumoniae 1084, complete genome
+  0.00	33	0	-	1000006252	                    GCF_001529935.1 Klebsiella pneumoniae subsp. pneumoniae strain=RJF999
+  0.00	32	32	-	1000006254	                      NZ_CP014011.1 Klebsiella pneumoniae subsp. pneumoniae strain RJF999 plasmid pRJF999, complete sequence
+  0.00	1	1	-	1000006253	                      NZ_CP014010.1 Klebsiella pneumoniae subsp. pneumoniae strain RJF999, complete genome
+  0.00	29	0	-	1123862	                    Klebsiella pneumoniae subsp. pneumoniae Kp13
+  0.00	29	0	-	1000006091	                      GCF_000512165.1 Klebsiella pneumoniae subsp. pneumoniae Kp13
+  0.00	25	25	-	1000006092	                        NZ_CP003999.1 Klebsiella pneumoniae subsp. pneumoniae Kp13 chromosome, complete genome
+  0.00	3	3	-	1000006096	                        NZ_CP003997.1 Klebsiella pneumoniae subsp. pneumoniae Kp13 plasmid pKP13d, complete sequence
+  0.00	1	1	-	1000006095	                        NZ_CP003995.1 Klebsiella pneumoniae subsp. pneumoniae Kp13 plasmid pKP13c, complete sequence
+  0.00	17	0	-	1125630	                    Klebsiella pneumoniae subsp. pneumoniae HS11286
+  0.00	17	0	-	1000006036	                      GCF_000240185.1 Klebsiella pneumoniae subsp. pneumoniae HS11286
+  0.00	15	15	-	1000006037	                        NC_016845.1 Klebsiella pneumoniae subsp. pneumoniae HS11286 chromosome, complete genome
+  0.00	1	1	-	1000006039	                        NC_016846.1 Klebsiella pneumoniae subsp. pneumoniae HS11286 plasmid pKPHS2, complete sequence
+  0.00	1	1	-	1000006042	                        NC_016847.1 Klebsiella pneumoniae subsp. pneumoniae HS11286 plasmid pKPHS5, complete sequence
+  0.00	11	0	-	1000006159	                    GCF_000784945.1 Klebsiella pneumoniae subsp. pneumoniae strain=KPNIH29
+  0.00	9	9	-	1000006160	                      NZ_CP009863.1 Klebsiella pneumoniae subsp. pneumoniae strain KPNIH29, complete genome
+  0.00	2	2	-	1000006162	                      NZ_CP009865.1 Klebsiella pneumoniae subsp. pneumoniae strain KPNIH29 plasmid pKPN-80a, complete sequence
+  0.00	9	0	-	1000006197	                    GCF_000981845.1 Klebsiella pneumoniae subsp. pneumoniae strain=234-12
+  0.00	8	8	-	1000006198	                      NZ_CP011313.1 Klebsiella pneumoniae subsp. pneumoniae strain 234-12, complete genome
+  0.00	1	1	-	1000006200	                      NZ_CP011314.1 Klebsiella pneumoniae subsp. pneumoniae strain 234-12 plasmid pKpn23412-362, complete sequence
+  0.00	9	0	-	1000006255	                    GCF_001530015.1 Klebsiella pneumoniae subsp. pneumoniae strain=RJF293
+  0.00	9	9	-	1000006256	                      NZ_CP014008.1 Klebsiella pneumoniae subsp. pneumoniae strain RJF293, complete genome
+  0.00	9	0	-	1392499	                    Klebsiella pneumoniae subsp. pneumoniae 1158
+  0.00	9	0	-	1000006186	                      GCF_000814805.1 Klebsiella pneumoniae subsp. pneumoniae 1158
+  0.00	9	9	-	1000006187	                        NZ_CP006722.1 Klebsiella pneumoniae subsp. pneumoniae 1158, complete genome
+  0.00	7	0	-	1000006266	                    GCF_001611055.1 Klebsiella pneumoniae subsp. pneumoniae strain=TGH8
+  0.00	7	7	-	1000006267	                      NZ_CP012743.1 Klebsiella pneumoniae subsp. pneumoniae strain TGH8, complete genome
+  0.00	7	0	-	1328324	                    Klebsiella pneumoniae subsp. pneumoniae KPNIH27
+  0.00	7	0	-	1000006118	                      GCF_000695935.1 Klebsiella pneumoniae subsp. pneumoniae KPNIH27
+  0.00	5	5	-	1000006119	                        NZ_CP007731.1 Klebsiella pneumoniae subsp. pneumoniae KPNIH27, complete genome
+  0.00	1	1	-	1000006122	                        NZ_CP007734.1 Klebsiella pneumoniae subsp. pneumoniae KPNIH27 plasmid pKPN-262, complete sequence
+  0.00	1	1	-	1000006123	                        NZ_CP007735.1 Klebsiella pneumoniae subsp. pneumoniae KPNIH27 plasmid pKPN-a41, complete sequence
+  0.00	6	0	-	1000006248	                    GCF_001521895.1 Klebsiella pneumoniae subsp. pneumoniae strain=NUHL24835
+  0.00	3	3	-	1000006249	                      NZ_CP014004.1 Klebsiella pneumoniae subsp. pneumoniae strain NUHL24835, complete genome
+  0.00	3	3	-	1000006250	                      NZ_CP014005.1 Klebsiella pneumoniae subsp. pneumoniae strain NUHL24835 plasmid unnamed1, complete sequence
+  0.00	5	0	-	1000006355	                    GCF_001746535.1 Klebsiella pneumoniae subsp. pneumoniae strain=TGH13
+  0.00	5	5	-	1000006356	                      NZ_CP012745.1 Klebsiella pneumoniae subsp. pneumoniae strain TGH13, complete genome
+  0.00	4	0	-	272620	                    Klebsiella pneumoniae subsp. pneumoniae MGH 78578
+  0.00	4	0	-	1000006022	                      GCF_000016305.1 Klebsiella pneumoniae subsp. pneumoniae MGH 78578 strain=ATCC 700721; MGH 78578
+  0.00	3	3	-	1000006026	                        NC_009651.1 Klebsiella pneumoniae subsp. pneumoniae MGH 78578 plasmid pKPN5, complete sequence
+  0.00	1	1	-	1000006023	                        NC_009648.1 Klebsiella pneumoniae subsp. pneumoniae MGH 78578, complete genome
+  0.00	4	0	-	1000006139	                    GCF_000742755.1 Klebsiella pneumoniae subsp. pneumoniae strain=ATCC 43816 KPPR1
+  0.00	4	4	-	1000006140	                      NZ_CP009208.1 Klebsiella pneumoniae subsp. pneumoniae strain ATCC 43816 KPPR1, complete genome
+  0.00	4	0	-	1000006264	                    GCF_001611095.1 Klebsiella pneumoniae subsp. pneumoniae strain=TGH10
+  0.00	4	4	-	1000006265	                      NZ_CP012744.1 Klebsiella pneumoniae subsp. pneumoniae strain TGH10, complete genome
+  0.00	3	0	-	1094170	                    Klebsiella pneumoniae subsp. pneumoniae KPNIH10
+  0.00	3	0	-	1000006044	                      GCF_000281435.2 Klebsiella pneumoniae subsp. pneumoniae KPNIH10
+  0.00	3	3	-	1000006045	                        NZ_CP007727.1 Klebsiella pneumoniae subsp. pneumoniae KPNIH10, complete genome
+  0.00	3	0	-	1000006595	                    GCF_002163895.1 Klebsiella pneumoniae subsp. pneumoniae strain=RJA166
+  0.00	3	3	-	1000006596	                      NZ_CP019047.1 Klebsiella pneumoniae subsp. pneumoniae strain RJA166 chromosome, complete genome
+  0.00	1	0	-	484021	                    Klebsiella pneumoniae subsp. pneumoniae NTUH-K2044
+  0.00	1	0	-	1000006019	                      GCF_000009885.1 Klebsiella pneumoniae subsp. pneumoniae NTUH-K2044
+  0.00	1	1	-	1000006020	                        NC_012731.1 Klebsiella pneumoniae subsp. pneumoniae NTUH-K2044 DNA, complete genome
+  0.00	1	0	-	1000006714	                    GCF_002249975.1 Klebsiella pneumoniae subsp. pneumoniae strain=AUSMDU00008079
+  0.00	1	1	-	1000006718	                      NZ_CP022694.1 Klebsiella pneumoniae subsp. pneumoniae strain AUSMDU00008079 plasmid pAUSMDU8079-3, complete sequence

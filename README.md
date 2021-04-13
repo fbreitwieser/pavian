@@ -1,7 +1,11 @@
 Pavian is a interactive browser application for analyzing and visualization metagenomics classification results from classifiers such as 
 Kraken, Centrifuge and MetaPhlAn. Pavian also provides an alignment viewer for validation of matches to a particular genome.
 
-For more information look at the preprint at http://biorxiv.org/content/early/2016/10/31/084715.full.pdf+html . Please cite the preprint if you use Pavian in your research.
+For more information look at the publication at https://doi.org/10.1093/bioinformatics/btz715
+
+Pavian: interactive analysis of metagenomics data for microbiome studies and pathogen identification. FP Breitwieser, SL Salzberg - Bioinformatics, 2020
+
+Thank you for citing the publication if Pavian helps in your research :).
 
 You can try out Pavian at https://fbreitwieser.shinyapps.io/pavian/.
 
