@@ -1,7 +1,7 @@
 Package: pavian
 Type: Package
 Title: Visualize and analyze metagenomics classification results
-Version: 1.1.0
+Version: 1.2.0
 URL: https://github.com/fbreitwieser/pavian
 BugReports: https://github.com/fbreitwieser/pavian/issues
 Authors@R: person("Florian P", "Breitwieser", email = "fpbreitwieser@gmail.com", role = c("aut", "cre"))

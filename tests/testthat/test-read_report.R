@@ -25,3 +25,19 @@ test_that("kraken2uniq input works", {
   expect_equal(res, readRDS("read_report/ref_output/k2uniq-report-res.rds"))
 })
 
+test_that("metaphlan2 input works", {
+  res <- read_report("read_report/input/metaphlan2-report.txt")
+  if (write_ref_output)
+    saveRDS(res, "read_report/ref_output/metaphlan2-report-res.rds")
+  
+  expect_equal(res, readRDS("read_report/ref_output/metaphlan2-report-res.rds"))
+})
+
+
+test_that("metaphlan3 input works", {
+  res <- read_report("read_report/input/metaphlan3-report.txt")
+  if (write_ref_output)
+    saveRDS(res, "read_report/ref_output/metaphlan3-report-res.rds")
+  
+  expect_equal(res, readRDS("read_report/ref_output/metaphlan3-report-res.rds"))
+})

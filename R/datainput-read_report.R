@@ -392,6 +392,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   if (is.null(has_header)) {
     has_header <- grepl("^[a-zA-Z#%\"]",first.line)
   }
+  is_metaphlan3_fmt <- grepl("^#mpa_v3", first.line)
   is_metaphlan_fmt <- grepl("Metaphlan2_Analysis$", first.line)
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
@@ -438,6 +439,20 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     tl_order <- order(report$taxLineage)
     tl_order <- c(tl_order[length(tl_order)],tl_order[-length(tl_order)])
     report <- report[tl_order, c("taxLineage", "taxonReads", "cladeReads")]
+  } else if (is_metaphlan3_fmt) {
+    report <- tryCatch({
+      ## TODO: Having comment_char here causes a problem w/ Metaphlan report!!
+      
+      utils::read.table(myfile,sep="\t",header = F,
+                        quote = "",stringsAsFactors=FALSE,
+                        comment.char = "#", nrows = nrows,
+                        col.names = c("taxLineage", "taxID", "cladeReads", "additional_species"),
+                        check.names=FALSE)
+    }, error = function(x) NULL, warning = function(x) NULL)
+    if (is.null(report)) { return(NULL); }
+    
+    report$taxID <- sub(".*\\|", "", report$taxID)
+    
   } else if (has_header) {
     report <- tryCatch({
       ## TODO: Having comment_char here causes a problem w/ Metaphlan report!!
@@ -484,17 +499,22 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     dmessage(paste("Warning: File",myfile,"does not have the required format"))
     return(NULL) 
   }
-  if (colnames(report)[2] == "Metaphlan2_Analysis") {
+  if (is_metaphlan_fmt || is_metaphlan3_fmt) {
     ## Metaphlan report
-    colnames(report) <- c("taxLineage", "cladeReads")
+    colnames(report)[1] <- "taxLineage"
+    colnames(report)[colnames(report) == "Metaphlan2_Analysis"] <- "cladeReads"
     report <- report[order(report$taxLineage), ]
     report$taxLineage <- gsub("_"," ",report$taxLineage)
     report$taxLineage <- gsub("  ","_",report$taxLineage)
     report$taxLineage <- paste0("-_root|", report$taxLineage)
-
-    report <- rbind(
-      data.frame(taxLineage=c("u_unclassified","-_root"),"cladeReads"=c(0,100), stringsAsFactors = F),
-      report)
+    root_lines <- data.frame(taxLineage=c("u_unclassified","-_root"),"cladeReads"=c(0,100), stringsAsFactors = F)
+    
+    if ("taxID" %in% colnames(report)) {
+      root_lines <- cbind(root_lines, "taxID" = c(0, 1))
+      report <- report[, c("taxLineage", "cladeReads", "taxID")]
+    }
+      
+    report <- rbind(root_lines, report)
   }
 
   if (all(c("name","taxRank") %in% colnames(report)) && !"taxLineage" %in% colnames(report)) {
