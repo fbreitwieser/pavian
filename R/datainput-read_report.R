@@ -368,7 +368,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     if (length(txt) == 0)
       return(FALSE)
     raw <- charToRaw(txt)
-    all(raw <= as.raw(127) && (raw >= as.raw(32) | raw == as.raw(9)))
+    all(raw <= as.raw(127) & (raw >= as.raw(32) | raw == as.raw(9)))
   }
   if (length(first.line) == 0) { 
     dmessage("Could not read ", myfile, ".")
