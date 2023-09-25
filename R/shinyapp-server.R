@@ -113,7 +113,7 @@ pavianServer <- function(input, output, session) {
   
   output$dynamic_sidebar_menu_sample <- shinydashboard::renderMenu({
     req(sample_sets$val)
-    shinydashboard::menuItem("Sample", tabName="Sample", icon = icon("sun-o"))
+    shinydashboard::menuItem("Sample", tabName="Sample", icon = icon("sun"))
   })
   
   output$dynamic_sidebar_menu_comparison <- shinydashboard::renderMenu({

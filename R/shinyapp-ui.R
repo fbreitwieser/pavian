@@ -42,7 +42,7 @@ dashboardUI <- function(request) {
                                                       selectize = FALSE, size = 5))),
                       # The following menus are just displayed when a sample set has been loaded
                       shinydashboard::menuItem("Results Overview", tabName="Overview", icon = icon("table")),
-                      shinydashboard::menuItem("Sample", tabName="Sample", icon = icon("sun-o")),
+                      shinydashboard::menuItem("Sample", tabName="Sample", icon = icon("sun")),
                       shinydashboard::menuItem("Comparison", icon = icon("line-chart"), tabName = "Comparison"),
                                                #shinydashboard::menuSubItem("All data", tabName="Comparison"),
                                                #actionLink("show_bacteria","Bacteria and Archaea", tabName="Bacteria")

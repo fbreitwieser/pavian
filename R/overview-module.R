@@ -92,7 +92,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     
     ## TODO (sometime): Add buttons to go to sample view from table
     #samples_summary[["action"]] <-
-    #  paste0('<a href="#" class="action-button shiny-bound-input" id=view_',1:nrow(samples_summary),'><i class="fa fa-sun-o"></i></a>')
+    #  paste0('<a href="#" class="action-button shiny-bound-input" id=view_',1:nrow(samples_summary),'><i class="fa fa-sun"></i></a>')
     
     
     DT::datatable(
@@ -130,7 +130,7 @@ reportOverviewModule <- function(input, output, session, sample_data, reports, d
     ns <- session$ns
     actionLink(ns("btn_sample_percent"),
                label = sprintf("See identifications from sample %s in Sample Viewer.", get_samples_summary()[input$dt_percent_rows_selected,"Name"]),
-               icon = icon("sun-o"))
+               icon = icon("sun"))
   })
   
   rv = reactiveValues(selected_sample=NULL, go_to_sample_comparison=FALSE)
