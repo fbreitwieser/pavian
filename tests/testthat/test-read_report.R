@@ -41,3 +41,11 @@ test_that("metaphlan3 input works", {
   
   expect_equal(res, readRDS("read_report/ref_output/metaphlan3-report-res.rds"))
 })
+
+test_that("metaphlan4 input works", {
+  res <- read_report("read_report/input/metaphlan4-report.txt")
+  if (write_ref_output)
+    saveRDS(res, "read_report/ref_output/metaphlan4-report-res.rds")
+  
+  expect_equal(res, readRDS("read_report/ref_output/metaphlan4-report-res.rds"))
+})

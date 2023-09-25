@@ -392,8 +392,8 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
   if (is.null(has_header)) {
     has_header <- grepl("^[a-zA-Z#%\"]",first.line)
   }
-  is_metaphlan3_fmt <- grepl("^#mpa_v3", first.line)
-  is_metaphlan_fmt <- grepl("Metaphlan2_Analysis$", first.line)
+  is_metaphlan3_fmt <- grepl("^#mpa_v", first.line)
+  is_metaphlan2_fmt <- grepl("Metaphlan2_Analysis$", first.line)
   is_krakenu_fmt <- grepl("^.?%\treads\ttaxReads\tkmers", first.line)
   is_kaiju_fmt <- grepl("^  *%\t  *reads", first.line)
   
@@ -459,7 +459,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
 
       utils::read.table(myfile,sep="\t",header = T,
                         quote = "",stringsAsFactors=FALSE,
-                        comment.char = ifelse(is_metaphlan_fmt, "", "#"), nrows = nrows, 
+                        comment.char = ifelse(is_metaphlan2_fmt, "", "#"), nrows = nrows, 
                         check.names=FALSE)
     }, error = function(x) NULL, warning = function(x) NULL)
     if (is.null(report)) { return(NULL); }
@@ -499,7 +499,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     dmessage(paste("Warning: File",myfile,"does not have the required format"))
     return(NULL) 
   }
-  if (is_metaphlan_fmt || is_metaphlan3_fmt) {
+  if (is_metaphlan2_fmt || is_metaphlan3_fmt) {
     ## Metaphlan report
     colnames(report)[1] <- "taxLineage"
     colnames(report)[colnames(report) == "Metaphlan2_Analysis"] <- "cladeReads"
