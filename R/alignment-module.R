@@ -258,9 +258,10 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
 
 
   output$table <- DT::renderDataTable({
-    req(seqinfo_df())
-
-    DT::datatable(seqinfo_df(), selection = list(mode='single', selected = 1, target = 'row'),
+    df <- seqinfo_df()
+    req(df)
+    
+    DT::datatable(df, selection = list(mode='single', selected = 1, target = 'row'),
               rownames = FALSE,
               colnames = c("Sequence"="seqnames","Length"="genome_size","# of reads"="n_reads",
                            "Covered bp"="covered_bp","Average\ncoverage"="avg_coverage",
@@ -271,8 +272,8 @@ alignmentModule <- function(input, output, session, sample_data, datatable_opts)
               options=list(
                 buttons = common_buttons(sub(".bam$","",basename(isolate(bam_file_rv$val)), ignore.case = T),"alignment-summary"),
                 columnDefs=list(
-                  list(targets = c(2:ncol(seqinfo_df()), orderSequence = c('desc', 'asc'))
-                  )))) %>%
+                  list(targets = c(2:ncol(df))-1, orderSequence = c('desc', 'asc'))
+                  ))) %>%
       DT::formatCurrency(2, currency = '', digits = 0 ) %>%
       DT::formatString(3, suffix = "x") %>%
       DT::formatString(7, suffix = "%")
