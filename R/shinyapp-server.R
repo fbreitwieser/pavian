@@ -267,7 +267,11 @@ pavianServer <- function(input, output, session) {
         textInput(ns("report_author"), "Author", sprintf("Pavian R package v%s", utils::packageVersion("pavian")), width="100%"),
         textInput(ns("report_date"), "Date", date(), width="100%"),
         checkboxInput(ns("report_include_sankey"),"Include sankey flow charts for each sample", value = TRUE),
-        selectizeInput(ns("report_filter_taxa"), "Filter taxa in sankey", selected=c("Chordata","artificial sequences"), choices=allcontaminants,multiple=TRUE, options(create=TRUE)),
+        #selectizeInput(ns("report_filter_taxa"), "Filter taxa in sankey", selected=c("Chordata","artificial sequences"), choices=allcontaminants,multiple=TRUE, options(create=TRUE)),
+	textAreaInput(ns("report_filter_taxa"), "Filter taxa in sankey (one per line)", 
+              value = paste(c("Chordata", "artificial sequences"), collapse = "\n"), 
+              rows = 100, 
+              placeholder = "Enter taxa to filter, one per line"),
         footer = tagList(
           modalButton("Cancel"),
           downloadButton("dl_report", "Generate HTML report")
@@ -281,8 +285,14 @@ pavianServer <- function(input, output, session) {
                   )
     }
   }
-  
-  
+
+# new filtering logic
+  filter_taxa <- reactive({
+  req(input$report_filter_taxa)
+  taxa <- strsplit(input$report_filter_taxa, "\n")[[1]]
+  taxa <- trimws(taxa)
+  taxa[nzchar(taxa)]
+})
   
   observeEvent(input$link_generate_report, {
     showModal(generate_report_modal())
@@ -312,7 +322,7 @@ pavianServer <- function(input, output, session) {
                      sample_data=sample_data(),
                      reports=reports(),
                      include_sankey=input$report_include_sankey,
-                     filter_taxa=input$report_filter_taxa)
+                     filter_taxa=filter_taxa())
       
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
