@@ -67,9 +67,9 @@ docker run --rm -p 5000:80 florianbw/pavian
 pavian natively supports the Kraken and MetaPhlAn-style report formats. In extension, you can use Centrifuge results by running `centrifuge-kreport` on Centrifuge output files, and Kaiju results by running `kraken-report` on Kaiju output files (see issue #11)
 
 **Error: Maximum upload size exceeded**
-The maximum upload size is defined by the option `shiny.maxRequestSize`. To increase it to 500 MB, for example, type the following before `pavian::runApp()`:
+The maximum upload size is defined by the option `shiny.maxRequestSize`. To increase it to 500 MB, for example, run the following instead of `pavian::runApp()`:
 ```
-options(shiny.maxRequestSize=500*1024^2)
+pavian::runApp(port=5000, maxUploadSize = (500*1024^2))
 ```
 If your BAM file contains the unaligned reads, you can decrease the file size before uploading by getting rid of non-aligned reads using samtools view -F4.
 
