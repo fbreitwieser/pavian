@@ -479,7 +479,7 @@ read_report <- function(myfile, has_header=NULL, check_file = FALSE) {
     if (ntabs == 5) {
       col_names <-  c("percentage","cladeReads","taxonReads","taxRank","taxID","name")
     } else if (ntabs == 7) {
-      col_names <- c("percentage","cladeReads","taxonReads", "n_unique_kmers","n_kmers", "taxRank","taxID","name")
+      col_names <- c("percentage","cladeReads","taxonReads","n_kmers", "n_unique_kmers", "taxRank","taxID","name")
     } 
     report <- tryCatch({
       utils::read.table(myfile,sep="\t",header = F,
