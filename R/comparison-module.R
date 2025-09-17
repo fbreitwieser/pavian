@@ -62,7 +62,7 @@ dropdown_options <- function(ns) {
       ns('contaminant_selector'),
       allcontaminants,
       label = "Filter taxon", multiple = TRUE,
-      options = list(maxItems = 25, create = TRUE, placeholder = 'Filter taxa'),
+      options = list(maxItems = 40, create = TRUE, placeholder = 'Filter taxa'),
       width = "100%"
       #)
     )),
@@ -119,7 +119,7 @@ comparisonModuleUI_function <- function(ns) {
             ns('contaminant_selector_clade'),
             allcontaminants, #selected = c("artificial sequences"),
             label = NULL, multiple = TRUE,
-            options = list( maxItems = 25, create = TRUE, placeholder = 'Filter taxa' ),
+            options = list( maxItems = 40, create = TRUE, placeholder = 'Filter taxa' ),
             width = "100%")), 
         div(style="display:inline-block",title="Filter clade of selected taxon (click on a table row, first)",
             actionButton(ns("btn_filter_row"), label=NULL, icon=icon("filter"))),

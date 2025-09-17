@@ -10,7 +10,7 @@ tax_taxRank_names <- c("D"="Domain","K"="Kingdom","P"="Phylum","C"="Clade","O"="
 
 figure_options <- function(ns) {
   shiny::tagList(checkboxGroupInput(ns("taxRanks"),"Taxonomical ranks to display",tax_taxRanks,setdiff(tax_taxRanks,c("O","C","-")), inline = TRUE),
-                 sliderInput(ns("sankey_maxn"), "Number of taxa at each level", 1, 25, value = 10, step = 1),
+                 sliderInput(ns("sankey_maxn"), "Number of taxa at each level", 1, 40, value = 10, step = 1),
                  sliderInput(ns("scalingFactor"),"Scale distance between nodes", value = .9, min = .5, max = 1.5, step=.05),
                  sliderInput(ns("height"),"Figure height", value = 400, min = 300, max = 1200, step=50),
                  sliderInput(ns("nodeStrokeWidth"),"Node border width", value = 0, min = 0, max = 5, step=1),
@@ -58,7 +58,7 @@ sampleModuleUI_function <- function(ns, samples, selected_sample = NULL) {
               selectizeInput(
                 ns('contaminant_selector'), label = NULL,
                 allcontaminants, selected = c("artificial sequences", "Chordata", "unclassified"),
-                multiple = TRUE, options = list(maxItems = 25, create = TRUE, placeholder = 'Filter clade'),
+                multiple = TRUE, options = list(maxItems = 40, create = TRUE, placeholder = 'Filter clade'),
                 width = "100%"
               )
           )
